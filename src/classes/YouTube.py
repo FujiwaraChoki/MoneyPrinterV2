@@ -394,7 +394,7 @@ class YouTube:
 
     def upload_video(self) -> bool:
         """
-        Uplaods the video to YouTube.
+        Uploads the video to YouTube.
 
         Returns:
             success (bool): Whether the upload was successful or not.
