@@ -67,7 +67,7 @@ def get_accounts(provider: str) -> List[dict]:
         # Get accounts dictionary
         return parsed['accounts']
 
-def add_account(account: dict) -> None:
+def add_account(provider: str, account: dict) -> None:
     """
     Adds an account to the cache.
 
@@ -77,17 +77,30 @@ def add_account(account: dict) -> None:
     Returns:
         None
     """
-    # Get the current accounts
-    accounts = get_accounts()
+    if provider == "twitter":
+        # Get the current accounts
+        accounts = get_accounts("twitter")
 
-    # Add the new account
-    accounts.append(account)
+        # Add the new account
+        accounts.append(account)
 
-    # Write the new accounts to the cache
-    with open(get_twitter_cache_path(), 'w') as file:
-        json.dump({
-            "accounts": accounts
-        }, file, indent=4)
+        # Write the new accounts to the cache
+        with open(get_twitter_cache_path(), 'w') as file:
+            json.dump({
+                "accounts": accounts
+            }, file, indent=4)
+    elif provider == "youtube":
+        # Get the current accounts
+        accounts = get_accounts("youtube")
+
+        # Add the new account
+        accounts.append(account)
+
+        # Write the new accounts to the cache
+        with open(get_youtube_cache_path(), 'w') as file:
+            json.dump({
+                "accounts": accounts
+            }, file, indent=4)
 
 def remove_account(account_id: str) -> None:
     """

@@ -3,7 +3,7 @@ import g4f
 import json
 import requests
 
-from Tts import TTS
+from .Tts import TTS
 from cache import *
 from config import *
 from status import *
@@ -96,7 +96,7 @@ class YouTube:
         """
         return self._language
     
-    def generate_response(self, prompt: str) -> str:
+    def generate_response(self, prompt: str, prompts: bool = False) -> str:
         """
         Generates an LLM Response based on a prompt and the user-provided model.
 
@@ -106,15 +106,26 @@ class YouTube:
         Returns:
             response (str): The generated AI Repsonse.
         """
-        return g4f.ChatCompletion.create(
-            model=parse_model(get_model()),
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
-        )
+        if not prompts:
+            return g4f.ChatCompletion.create(
+                model=parse_model(get_model()),
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
+        else:
+            return g4f.ChatCompletion.create(
+                model=g4f.models.codellama_70b_instruct,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
 
     def generate_topic(self) -> str:
         """
@@ -123,7 +134,7 @@ class YouTube:
         Returns:
             topic (str): The generated topic.
         """
-        completion = self.generate_response(f"Please generate a specific video idea that takes about the following topic: {self.niche}. Make it exactly one sentence.")
+        completion = self.generate_response(f"Please generate a specific video idea that takes about the following topic: {self.niche}. Make it exactly one sentence. Only return the topic, nothing else.")
 
         if not completion:
             error("Failed to generate Topic.")
@@ -195,7 +206,7 @@ class YouTube:
         Returns:
             image_prompts (List[str]): Generated List of image prompts.
         """
-        n_prompts = len(self.script) / 8
+        n_prompts = len(self.script) / 3
 
         prompt = f"""
         Generate {n_prompts} Image Prompts for AI Image Generation,
@@ -217,35 +228,44 @@ class YouTube:
         
         The search terms must be related to the subject of the video.
         Here is an example of a JSON-Array of strings:
-        ["search term 1", "search term 2", "search term 3"]
+        ["image prompt 1", "image prompt 2", "image prompt 3"]
 
         For context, here is the full text:
         {self.script}
         """
 
-        completion = self.generate_response(prompt)
+        completion = str(self.generate_response(prompt))
 
         image_prompts = []
 
-        try:
-            image_prompts = json.loads(image_prompts)
-            if not isinstance(image_prompts, list) or not all(isinstance(prompt, str) for prompt in image_prompts):
-                raise ValueError("Response is not a list of strings.")
+        if "image_prompts" in completion:
+            image_prompts = json.loads(completion)["image_prompts"]
+        else:
 
-        except (json.JSONDecodeError, ValueError):
-            if get_verbose():
-                info("GPT returned an unformatted response. Attempting to clean...")
+            try:
+                image_prompts = json.loads(completion)
+                if get_verbose():
+                    info(f" => Generated Image Prompts: {image_prompts}")
+            except Exception:
+                if get_verbose():
+                    info("GPT returned an unformatted response. Attempting to clean...")
 
-            # Attempt to extract list-like string and convert to list
-            match = re.search(r'\["(?:[^"\\]|\\.)*"(?:,\s*"[^"\\]*")*\]', completion)
-            if match:
-                try:
-                    image_prompts = json.loads(match.group())
-                except json.JSONDecodeError:
-                    error("[-] Could not parse response.", "red")
-                    return []
+                print(completion)
+
+                # Attempt to extract list-like string and convert to list
+                match = re.search(r'\["(?:[^"\\]|\\.)*"(?:,\s*"[^"\\]*")*\]', completion)
+                if match:
+                    try:
+                        image_prompts = json.loads(match.group())
+                    except json.JSONDecodeError:
+                        error("[-] Could not parse response.", "red")
+                        sys.exit(1)
+                else:
+                    print(type(completion))
                 
         self.image_prompts = image_prompts
+
+        success(f"Generated {len(image_prompts)} Image Prompts.")
 
         return image_prompts
 
@@ -259,31 +279,40 @@ class YouTube:
         Returns:
             path (str): The path to the generated image.
         """
-        url = f"https://hercai.onrender.com/{get_image_model()}/text2image?prompt={prompt}"
+        ok = False
+        while ok == False:
+            url = f"https://hercai.onrender.com/{get_image_model()}/text2image?prompt={prompt}"
 
-        r = requests.get(url)
-        parsed = r.json()
+            r = requests.get(url)
+            parsed = r.json()
 
-        image_url = parsed["url"]
+            if "url" not in parsed or not parsed.get("url"):
+                # Retry
+                if get_verbose():
+                    info(f" => Failed to generate Image for Prompt: {prompt}. Retrying...")
+                ok = False
+            else:
+                ok = True
+                image_url = parsed["url"]
 
-        if get_verbose():
-            info(f" => Generated Image: {image_url}")
+                if get_verbose():
+                    info(f" => Generated Image: {image_url}")
 
-        image_path = os.path.join(ROOT_DIR, ".mp", uuid4() + ".png")
+                image_path = os.path.join(ROOT_DIR, ".mp", str(uuid4()) + ".png")
+                
+                with open(image_path, "wb") as image_file:
+                    # Write bytes to file
+                    image_r = requests.get(image_url)
+
+                    image_file.write(image_r.content)
+
+                if get_verbose():
+                    info(f" => Wrote Image to \"{image_path}\"\n")
+
+                self.images.append(image_path)
+                
+                return image_path
         
-        with open(image_path, "wb") as image_file:
-            # Write bytes to file
-            image_r = requests.get(image_url)
-
-            image_file.write(image_r.content)
-
-        if get_verbose():
-            info(f" => Wrote Image to \"{image_path}\"")
-
-        self.images.append(image_path)
-        
-        return image_path
-    
     def generate_script_to_speech(self, tts_instance: TTS) -> str:
         """
         Converts the generated script into Speech using CoquiTTS and returns the path to the wav file.
@@ -294,7 +323,10 @@ class YouTube:
         Returns:
             path_to_wav (str): Path to generated audio (WAV Format).
         """
-        path = os.path.join(ROOT_DIR, ".mp", uuid4() + ".wav")
+        path = os.path.join(ROOT_DIR, ".mp", str(uuid4()) + ".wav")
+
+        # Clean script, remove every non-alphanumeric character
+        self.script = re.sub(r'\W+', ' ', self.script)
 
         tts_instance.synthesize(self.script, path)
 
@@ -312,7 +344,7 @@ class YouTube:
         Returns:
             path (str): The path to the generated MP4 File.
         """
-        combined_image_path = os.path.join(ROOT_DIR, ".mp", uuid4() + ".mp4")
+        combined_image_path = os.path.join(ROOT_DIR, ".mp", str(uuid4()) + ".mp4")
         threads = get_threads()
         tts_clip = AudioFileClip(self.tts_path)
         max_duration = tts_clip.duration
@@ -344,15 +376,17 @@ class YouTube:
                                 x_center=clip.w / 2, \
                                 y_center=clip.h / 2)
                 clip = clip.resize((1080, 1920))
+                clip = clip.crossfadein(2.0)
 
                 clips.append(clip)
                 tot_dur += clip.duration
 
         final_clip = concatenate_videoclips(clips)
         final_clip = final_clip.set_fps(30)
+        final_clip = final_clip.set_audio(tts_clip)
         final_clip.write_videofile(combined_image_path, threads=threads)
 
-        print(colored(f"[+] Wrote Video to \"{combined_image_path}\"", "green"))
+        success(f"Wrote Video to \"{combined_image_path}\"")
 
         return combined_image_path
 
@@ -368,6 +402,8 @@ class YouTube:
         """
         # Generate the Topic
         topic = self.generate_topic()
+
+        print(topic)
 
         # Generate the Script
         script = self.generate_script()
@@ -388,6 +424,9 @@ class YouTube:
         # Combine everything
         path = self.combine()
 
+        if get_verbose():
+            info(f" => Generated Video: {path}")
+
         self.video_path = path
 
         return path
@@ -400,3 +439,17 @@ class YouTube:
             success (bool): Whether the upload was successful or not.
         """
         pass
+
+    def get_videos(self) -> List[dict]:
+        """
+        Gets the uploaded videos from the YouTube Channel.
+
+        Returns:
+            videos (List[dict]): The uploaded videos.
+        """
+        if not os.path.exists(get_youtube_cache_path()):
+            # Create the cache file
+            with open(get_youtube_cache_path(), 'w') as file:
+                json.dump({
+                    "videos": []
+                }, file, indent=4)

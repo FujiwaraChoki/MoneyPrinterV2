@@ -27,6 +27,19 @@ TWITTER_CRON_OPTIONS = [
     "Quit"
 ]
 
+YOUTUBE_OPTIONS = [
+    "Upload Short",
+    "Show all Shorts",
+    "Quit"
+]
+
+YOUTUBE_CRON_OPTIONS = [
+    "Once a day",
+    "Twice a day",
+    "Thrice a day",
+    "Quit"
+]
+
 def parse_model(model_name: str) -> any:
     if model_name == "gpt4":
         return g4f.models.gpt_4

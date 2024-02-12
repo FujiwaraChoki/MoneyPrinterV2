@@ -20,14 +20,16 @@ Literally.
 
 ## Installation
 
-Install [Microsoft Visual C++ build tools](https://visualstudio.microsoft.com/de/visual-cpp-build-tools/).
+Install [Microsoft Visual C++ build tools](https://visualstudio.microsoft.com/de/visual-cpp-build-tools/), so that CoquiTTS can function correctly.
 
 ```bash
-git clone
+git clone https://github.com/FujiwaraChoki/MoneyPrinterV2.git
 
 # Activate the virtual environment
+
 # Windows
 .\venv\Scripts\activate
+
 # Unix
 source venv/bin/activate
 

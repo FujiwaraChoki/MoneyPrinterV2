@@ -3,10 +3,12 @@ import subprocess
 
 from art import *
 from cache import *
+from utils import *
 from config import *
 from status import *
 from uuid import uuid4
 from constants import *
+from classes.Tts import TTS
 from crontab import CronTab
 from termcolor import colored
 from classes.Twitter import Twitter
@@ -32,6 +34,120 @@ def main():
         info("Starting YT Shorts & TikTok Automater...")
 
         cached_accounts = get_accounts("youtube")
+
+        if len(cached_accounts) == 0:
+            warning("No accounts found in cache. Create one now?")
+
+            user_input = question("Yes/No: ")
+
+            if user_input.lower() == "yes":
+                generated_uuid = str(uuid4())
+
+                success(f" => Generated ID: {generated_uuid}")
+                nickname = question(" => Enter a nickname for this account: ")
+                fp_profile = question(" => Enter the path to the Firefox profile: ")
+                niche = question(" => Enter the account niche: ")
+                language = question(" => Enter the account language: ")
+
+                add_account("youtube", {
+                    "id": generated_uuid,
+                    "nickname": nickname,
+                    "firefox_profile": fp_profile,
+                    "niche": niche,
+                    "language": language,
+                    "videos": []
+                })
+        else:
+            table = PrettyTable()
+            table.field_names = ["ID", "UUID", "Nickname", "Niche"]
+
+            for account in cached_accounts:
+                table.add_row([cached_accounts.index(account) + 1, colored(account["id"], "cyan"), colored(account["nickname"], "blue"), colored(account["niche"], "green")])
+
+            print(table)
+
+            user_input = question("Select an account to start: ")
+
+            selected_account = None
+
+            for account in cached_accounts:
+                if str(cached_accounts.index(account) + 1) == user_input:
+                    selected_account = account
+
+            if selected_account is None:
+                error("Invalid account selected. Please try again.", "red")
+                main()
+            else:
+                youtube = YouTube(
+                    selected_account["id"],
+                    selected_account["nickname"],
+                    selected_account["firefox_profile"],
+                    selected_account["niche"],
+                    selected_account["language"]
+                )
+
+                while True:
+                    
+                    info("\n============ OPTIONS ============", False)
+
+                    for idx, youtube_option in enumerate(YOUTUBE_OPTIONS):
+                        print(colored(f" {idx + 1}. {youtube_option}", "cyan"))
+
+                    info("=================================\n", False)
+
+                    # Get user input
+                    user_input = int(question("Select an option: "))
+                    tts = TTS()
+
+                    if user_input == 1:
+                        youtube.generate_video(tts)
+                    elif user_input == 2:
+                        videos = youtube.get_videos()
+
+                        videos_table = PrettyTable()
+
+                        videos_table.field_names = ["ID", "Date", "Title"]
+
+                        for video in videos:
+                            videos_table.add_row([
+                                videos.index(video) + 1,
+                                colored(video["date"], "blue"),
+                                colored(video["title"][:60] + "...", "green")
+                            ])
+
+                        print(videos_table)
+                    elif user_input == 3:
+                        info("How often do you want to upload?")
+
+                        info("\n============ OPTIONS ============", False)
+                        for idx, cron_option in enumerate(YOUTUBE_CRON_OPTIONS):
+                            print(colored(f" {idx + 1}. {cron_option}", "cyan"))
+
+                        info("=================================\n", False)
+
+                        user_input = int(question("Select an Option: "))
+
+                        cron_script_path = os.path.join(ROOT_DIR, "src", "cron.py")
+                        command = f"python {cron_script_path} youtube {selected_account['id']}"
+
+                        def job():
+                            subprocess.run(command)
+
+                        if user_input == 1:
+                            # Upload Once
+                            schedule.every(1).day.do(job)
+                            success("Set up CRON Job.")
+                        elif user_input == 2:
+                            # Upload Twice a day
+                            schedule.every().day.at("10:00").do(job)
+                            schedule.every().day.at("16:00").do(job)
+                            success("Set up CRON Job.")
+                        else:
+                            break
+                    elif user_input == 4:
+                        if get_verbose():
+                            info(" => Climbing Options Ladder...", False)
+                        break
     elif user_input == 3:
         info("Starting Twitter Bot...")
 
@@ -49,7 +165,7 @@ def main():
                 fp_profile = question(" => Enter the path to the Firefox profile: ")
                 topic = question(" => Enter the account topic: ")
 
-                add_account({
+                add_account("twitter", {
                     "id": generated_uuid,
                     "nickname": nickname,
                     "firefox_profile": fp_profile,
@@ -168,5 +284,12 @@ if __name__ == "__main__":
     # Setup file tree
     assert_folder_structure()
 
-    while True:
-        main()
+    # Remove temporary files
+    rem_temp_files()
+
+    try:
+        while True:
+            main()
+    except Exception as e:
+        error(f"An error occurred: {e}", "red")
+        sys.exit(1)

@@ -28,20 +28,20 @@ class TTS:
         # Initialize the ModelManager
         self._model_manager = ModelManager(models_json_path)
 
-        # Download tts_models/en/ljspeech/tacotron2-DDC
+        # Download tts_models/en/ljspeech/tacotron2-DCA
         self._model_path, self._config_path, self._model_item = \
-            self._model_manager.download_model("tts_models/en/ljspeech/tacotron2-DDC")
+            self._model_manager.download_model("tts_models/en/ljspeech/tacotron2-DCA")
 
         # Download the default vocoder
-        voc_path, voc_config_path, _ = self._model_manager. \
-            download_model(self._model_item["default_vocoder"])
+        #voc_path, voc_config_path, _ = self._model_manager. \
+        #    download_model(self._model_item["default_vocoder"])
         
         # Initialize the Synthesizer
         self._synthesizer = Synthesizer(
             tts_checkpoint=self._model_path,
             tts_config_path=self._config_path,
-            vocoder_checkpoint=voc_path,
-            vocoder_config=voc_config_path
+            #vocoder_checkpoint=voc_path,
+            #vocoder_config=voc_config_path
         )
 
     @property

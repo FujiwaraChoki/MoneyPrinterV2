@@ -9,3 +9,4 @@ selenium
 g4f
 python-crontab
 moviepy
+Pillow==9.5.0
