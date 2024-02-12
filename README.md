@@ -15,7 +15,8 @@ Literally.
 - [ ] Dropshipping
 - [ ] Find local businesses & cold outreach
 - [ ] Affiliate Marketing (AliBaba, Amazon, etc.)
-- [ ] Twitter Bot
+- [ ] YouTube Shorts & TikTok Uploader
+- [x] Twitter Bot (with CRON Jobs => `scheduler`)
 
 ## Installation
 
