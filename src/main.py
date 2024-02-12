@@ -7,10 +7,10 @@ from config import *
 from status import *
 from uuid import uuid4
 from constants import *
-from classes.TTS import TTS
 from crontab import CronTab
 from termcolor import colored
 from classes.Twitter import Twitter
+from classes.YouTube import YouTube
 from prettytable import PrettyTable
 
 def main():
@@ -30,10 +30,12 @@ def main():
         info("Starting Cold Outreach on Local Businesses...")
     elif user_input == 2:
         info("Starting YT Shorts & TikTok Automater...")
+
+        cached_accounts = get_accounts("youtube")
     elif user_input == 3:
         info("Starting Twitter Bot...")
 
-        cached_accounts = get_accounts()
+        cached_accounts = get_accounts("twitter")
 
         if len(cached_accounts) == 0:
             warning("No accounts found in cache. Create one now?")

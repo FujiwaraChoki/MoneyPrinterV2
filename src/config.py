@@ -87,3 +87,23 @@ def get_twitter_language() -> str:
     """
     with open(os.path.join(ROOT_DIR, 'config.json'), 'r') as file:
         return json.load(file)['twitter_language']
+
+def get_image_model() -> str:
+    """
+    Gets the Image MOdel from the config file.
+
+    Returns:
+        model (str): The image model
+    """
+    with open(os.path.join(ROOT_DIR, 'config.json'), 'r') as file:
+        return json.load(file)['image_model']
+
+def get_threads() -> int:
+    """
+    Gets the amount of threads to use for example when writing to a file with MoviePy.
+
+    Returns:
+        threads (int): Amount of threads
+    """
+    with open(os.path.join(ROOT_DIR, 'config.json'), 'r') as file:
+        return json.load(file)['threads']

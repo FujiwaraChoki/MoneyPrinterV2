@@ -8,3 +8,4 @@ selenium_firefox
 selenium
 g4f
 python-crontab
+moviepy

@@ -22,21 +22,40 @@ def get_twitter_cache_path() -> str:
     """
     return os.path.join(get_cache_path(), 'twitter.json')
 
-def get_accounts() -> List[dict]:
+def get_youtube_cache_path() -> str:
+    """
+    Gets the path to the YouTube cache file.
+
+    Returns:
+        path (str): The path to the YouTube cache folder
+    """
+    return os.path.join(get_cache_path(), 'youtube.json')
+
+def get_accounts(provider: str) -> List[dict]:
     """
     Gets the accounts from the cache.
+
+    Args:
+        provider (str): The provider to get the accounts for
 
     Returns:
         account (List[dict]): The accounts
     """
-    if not os.path.exists(get_twitter_cache_path()):
+    cache_path = ""
+
+    if provider == "twitter":
+        cache_path = get_twitter_cache_path()
+    elif provider == "youtube":
+        cache_path = get_youtube_cache_path()
+
+    if not os.path.exists(cache_path):
         # Create the cache file
-        with open(get_twitter_cache_path(), 'w') as file:
+        with open(cache_path, 'w') as file:
             json.dump({
                 "accounts": []
             }, file, indent=4)
 
-    with open(get_twitter_cache_path(), 'r') as file:
+    with open(cache_path, 'r') as file:
         parsed = json.load(file)
 
         if parsed is None:

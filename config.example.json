@@ -2,5 +2,7 @@
   "verbose": true,
   "firefox_profile": "",
   "headless": false,
-  "twitter_language": "English"
+  "twitter_language": "English",
+  "image_model": "prodia",
+  "threads": 2
 }
