@@ -127,3 +127,13 @@ def get_zip_url() -> str:
     """
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file)["zip_url"]
+
+def get_is_for_kids() -> bool:
+    """
+    Gets the is for kids flag from the config file.
+
+    Returns:
+        is_for_kids (bool): The is for kids flag
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file)["is_for_kids"]

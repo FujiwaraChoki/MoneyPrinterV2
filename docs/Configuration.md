@@ -33,6 +33,7 @@ All your configurations will be in a file in the root directory, called `config.
     * `raava`
     * `shonin`
 - `threads`: `number` - The amount of threads that will be used to execute operations, e.g. writing to a file using MoviePy.
+- `is_for_kids`: `boolean` - If `true`, the application will upload the video to YouTube Shorts as a video for kids.
 
 ## Example
 

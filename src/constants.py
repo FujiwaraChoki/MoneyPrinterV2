@@ -41,23 +41,13 @@ YOUTUBE_CRON_OPTIONS = [
     "Quit"
 ]
 
-YOUTUBE_UPLOAD_BUTTON_XPATH = "/html/body/ytcp-uploads-dialog/tp-yt-paper-dialog/div/ytcp-uploads-file-picker/div/input"
-
-YOUTUBE_TITLE_INPUT_XPATH = "/html/body/ytcp-uploads-dialog/tp-yt-paper-dialog/div/ytcp-animatable[1]/ytcp-ve/ytcp-video-metadata-editor/div/ytcp-video-metadata-editor-basics/div[1]/ytcp-video-title/ytcp-social-suggestions-textbox/ytcp-form-input-container/div[1]/div[2]/div/ytcp-social-suggestion-input/div"
-
-YOUTUBE_DESCRIPTION_INPUT_XPATH = "/html/body/ytcp-uploads-dialog/tp-yt-paper-dialog/div/ytcp-animatable[1]/ytcp-ve/ytcp-video-metadata-editor/div/ytcp-video-metadata-editor-basics/div[2]/ytcp-video-description/div/ytcp-social-suggestions-textbox/ytcp-form-input-container/div[1]/div[2]/div/ytcp-social-suggestion-input/div"
-
-YOUTUBE_NOT_MADE_FOR_KIDS_XPATH = "/html/body/ytcp-uploads-dialog/tp-yt-paper-dialog/div/ytcp-animatable[1]/ytcp-ve/ytcp-video-metadata-editor/div/ytcp-video-metadata-editor-basics/div[5]/ytkc-made-for-kids-select/div[4]/tp-yt-paper-radio-group/tp-yt-paper-radio-button[2]/div[2]/ytcp-ve"
-
-YOUTUBE_NEXT_BUTTON_XPATH = "/html/body/ytcp-uploads-dialog/tp-yt-paper-dialog/div/ytcp-animatable[2]/div/div[2]/ytcp-button[2]/div"
-
-YOUTUBE_SECOND_NEXT_BUTTON_XPATH = "/html/body/ytcp-uploads-dialog/tp-yt-paper-dialog/div/ytcp-animatable[2]/div/div[2]/ytcp-button[2]"
-
-YOUTUBE_THIRD_NEXT_BUTTON_XPATH = "/html/body/ytcp-uploads-dialog/tp-yt-paper-dialog/div/ytcp-animatable[2]/div/div[2]/ytcp-button[2]"
-
-YOUTUBE_PUBLIC_BUTTON_XPATH = "/html/body/ytcp-uploads-dialog/tp-yt-paper-dialog/div/ytcp-animatable[1]/ytcp-uploads-review/div[2]/div[1]/ytcp-video-visibility-select/div[2]/tp-yt-paper-radio-group/tp-yt-paper-radio-button[3]/div[1]/div[1]"
-
-YOUTUBE_DONE_BUTTON_XPATH = "/html/body/ytcp-uploads-dialog/tp-yt-paper-dialog/div/ytcp-animatable[2]/div/div[2]/ytcp-button[3]"
+# YouTube Section
+YOUTUBE_TEXTBOX_ID = "textbox"
+YOUTUBE_MADE_FOR_KIDS_NAME = "VIDEO_MADE_FOR_KIDS_MFK"
+YOUTUBE_NOT_MADE_FOR_KIDS_NAME = "VIDEO_MADE_FOR_KIDS_NOT_MFK"
+YOUTUBE_NEXT_BUTTON_ID = "next-button"
+YOUTUBE_RADIO_BUTTON_XPATH = "//*[@id=\"radioLabel\"]"
+YOUTUBE_DONE_BUTTON_ID = "done-button"
 
 def parse_model(model_name: str) -> any:
     if model_name == "gpt4":

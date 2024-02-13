@@ -2,9 +2,43 @@ import os
 import random
 import zipfile
 import requests
+import platform
 
 from status import *
 from config import *
+
+def close_running_selenium_instances() -> None:
+    """
+    Closes any running Selenium instances.
+
+    Returns:
+        None
+    """
+    try:
+        info(" => Closing running Selenium instances...")
+
+        # Kill all running Firefox instances
+        if platform.system() == "Windows":
+            os.system("taskkill /f /im firefox.exe")
+        else:
+            os.system("pkill firefox")
+
+        success(" => Closed running Selenium instances.")
+
+    except Exception as e:
+        error(f"Error occurred while closing running Selenium instances: {str(e)}")
+
+def build_url(youtube_video_id: str) -> str:
+    """
+    Builds the URL to the YouTube video.
+
+    Args:
+        youtube_video_id (str): The YouTube video ID.
+
+    Returns:
+        url (str): The URL to the YouTube video.
+    """
+    return f"https://www.youtube.com/watch?v={youtube_video_id}"
 
 def rem_temp_files() -> None:
     """

@@ -203,10 +203,12 @@ class YouTube:
         title = self.generate_response(f"Please generate a YouTube Video Title for the following subject, including hashtags: {self.subject}")
         description = self.generate_response(f"Please generate a YouTube Video Description for the following script: {self.script}")
         
-        return {
+        self.metadata = {
             "title": title,
             "description": description
         }
+
+        return self.metadata
     
     def generate_prompts(self) -> List[str]:
         """
@@ -260,22 +262,21 @@ class YouTube:
                 if get_verbose():
                     warning("GPT returned an unformatted response. Attempting to clean...")
 
-                    print(completion)
-
                 # Get everything between [ and ], and turn it into a list
                 r = re.compile(r"\[.*\]")
                 image_prompts = r.findall(completion)
                 if len(image_prompts) == 0:
                     if get_verbose():
                         warning("Failed to generate Image Prompts. Retrying...")
-                    self.generate_prompts()
-                print(image_prompts)
-                try:
-                    image_prompts = json.loads(image_prompts + "]")
-                except Exception:
-                    self.generate_prompts()
+                    return self.generate_prompts()
 
         self.image_prompts = image_prompts
+
+        # Check the amount of image prompts
+        # and remove if it's more than needed
+        if len(image_prompts) > n_prompts:
+            image_prompts = image_prompts[:n_prompts]
+
         success(f"Generated {len(image_prompts)} Image Prompts.")
 
         return image_prompts
@@ -478,6 +479,21 @@ class YouTube:
         self.video_path = os.path.abspath(path)
 
         return path
+    
+    def get_channel_id(self) -> str:
+        """
+        Gets the Channel ID of the YouTube Account.
+
+        Returns:
+            channel_id (str): The Channel ID.
+        """
+        driver = self.browser
+        driver.get("https://studio.youtube.com")
+        time.sleep(2)
+        channel_id = driver.current_url.split("/")[-1]
+        self.channel_id = channel_id
+
+        return channel_id
 
     def upload_video(self) -> bool:
         """
@@ -487,58 +503,139 @@ class YouTube:
             success (bool): Whether the upload was successful or not.
         """
         try:
+            self.get_channel_id()
+
+            driver = self.browser
+            verbose = get_verbose()
+
             # Go to youtube.com/upload
-            self.browser.get("https://www.youtube.com/upload")
+            driver.get("https://www.youtube.com/upload")
 
-            # Wait for the page to load
-            self.browser.implicitly_wait(2)
-
-            # Enter file path into the file input
-            file_input = self.browser.find_element(By.XPATH, YOUTUBE_UPLOAD_BUTTON_XPATH)
-
-            # Send the file path to the file input
+            # Set video file
+            FILE_PICKER_TAG = "ytcp-uploads-file-picker"
+            file_picker = driver.find_element(By.TAG_NAME, FILE_PICKER_TAG)
+            INPUT_TAG = "input"
+            file_input = file_picker.find_element(By.TAG_NAME, INPUT_TAG)
             file_input.send_keys(self.video_path)
 
-            # Wait for the video to upload
-            self.browser.implicitly_wait(4)
+            # Wait for upload to finish
+            time.sleep(3)
 
-            # Get the title input
-            title_el = self.browser.find_element(By.XPATH, YOUTUBE_TITLE_INPUT_XPATH)
+            # Set title
+            textboxes = driver.find_elements(By.ID, YOUTUBE_TEXTBOX_ID)
 
-            # Send the title to the title input
+            title_el = textboxes[0]
+            description_el = textboxes[-1]
+
+            if verbose:
+                info("\t=> Setting title...")
+
+            title_el.click()
+            time.sleep(0.5)
+            title_el.clear()
             title_el.send_keys(self.metadata["title"])
 
-            # Get the description input
-            description_el = self.browser.find_element(By.XPATH, YOUTUBE_DESCRIPTION_INPUT_XPATH)
+            if verbose:
+                info("\t=> Setting description...")
 
-            # Send the description to the description input
+            # Set description
+            time.sleep(0.5)
+            description_el.click()
+            time.sleep(0.5)
+            description_el.clear()
             description_el.send_keys(self.metadata["description"])
 
-            # Set not made for kids
-            not_made_for_kids_el = self.browser.find_element(By.XPATH, YOUTUBE_NOT_MADE_FOR_KIDS_XPATH)
+            time.sleep(0.5)
 
-            # Click the not made for kids button
-            not_made_for_kids_el.click()
+            # Set `made for kids` option
+            if verbose:
+                info("\t=> Setting `made for kids` option...")
+
+            is_for_kids_checkbox = driver.find_element(By.NAME, YOUTUBE_MADE_FOR_KIDS_NAME)
+            is_not_for_kids_checkbox = driver.find_element(By.NAME, YOUTUBE_NOT_MADE_FOR_KIDS_NAME)
+
+            if get_is_for_kids():
+                is_not_for_kids_checkbox.click()
+            else:
+                is_for_kids_checkbox.click()
+
+            time.sleep(0.5)
 
             # Click next
-            self.browser.find_element(By.XPATH, YOUTUBE_NEXT_BUTTON_XPATH).click()
+            if verbose:
+                info("\t=> Clicking next...")
 
-            # Click second next
-            self.browser.find_element(By.XPATH, YOUTUBE_SECOND_NEXT_BUTTON_XPATH).click()
+            next_button = driver.find_element(By.ID, YOUTUBE_NEXT_BUTTON_ID)
+            next_button.click()
 
-            # Click third next
-            self.browser.find_element(By.XPATH, YOUTUBE_THIRD_NEXT_BUTTON_XPATH).click()
+            # Click next again
+            if verbose:
+                info("\t=> Clicking next again...")
+            next_button = driver.find_element(By.ID, YOUTUBE_NEXT_BUTTON_ID)
+            next_button.click()
 
-            # Make video public
-            self.browser.find_element(By.XPATH, YOUTUBE_PUBLIC_BUTTON_XPATH).click()
+            # Wait for 2 seconds
+            time.sleep(2)
 
-            # Click done
-            self.browser.find_element(By.XPATH, YOUTUBE_DONE_BUTTON_XPATH).click()
+            # Click next again
+            if verbose:
+                info("\t=> Clicking next again...")
+            next_button = driver.find_element(By.ID, YOUTUBE_NEXT_BUTTON_ID)
+            next_button.click()
 
-            time.sleep(5)
+            # Set as unlisted
+            if verbose:
+                info("\t=> Setting as unlisted...")
+            
+            radio_button = driver.find_elements(By.XPATH, YOUTUBE_RADIO_BUTTON_XPATH)
+            radio_button[1].click()
+
+            if verbose:
+                info("\t=> Clicking done button...")
+
+            # Click done button
+            done_button = driver.find_element(By.ID, YOUTUBE_DONE_BUTTON_ID)
+            done_button.click()
+
+            # Wait for 2 seconds
+            time.sleep(2)
+
+            # Get latest video
+            if verbose:
+                print(colored("\t=> Getting video URL...", "yellow"))
+
+            # Get the latest uploaded video URL
+            driver.get(f"https://studio.youtube.com/channel/{self.channel_id}/videos/short")
+            time.sleep(2)
+            videos = driver.find_elements(By.TAG_NAME, "ytcp-video-row")
+            first_video = videos[0]
+            anchor_tag = first_video.find_element(By.TAG_NAME, "a")
+            href = anchor_tag.get_attribute("href")
+            if verbose:
+                info(f"\t=> Extracting video ID from URL: {href}")
+            video_id = href.split("/")[-2]
+
+            # Build URL
+            url = build_url(video_id)
+
+            self.uploaded_video_url = url
+
+            if verbose:
+                success(f" => Uploaded Video: {url}")
+
+            # Add video to cache
+            self.add_video({
+                "title": self.metadata["title"],
+                "description": self.metadata["description"],
+                "url": url
+            })
+
+            # Close the browser
+            driver.quit()
 
             return True
         except:
+            self.browser.quit()
             return False
 
 
