@@ -1,6 +1,7 @@
 import re
 import g4f
 import json
+import time
 import requests
 
 from utils import *
@@ -270,17 +271,14 @@ class YouTube:
                     self.generate_prompts()
                 print(image_prompts)
                 try:
-                    image_prompts = json.loads(image_prompts)
+                    image_prompts = json.loads(image_prompts + "]")
                 except Exception:
                     self.generate_prompts()
 
-        if len(image_prompts) == 0:
-            self.generate_prompts()
-        else:
-            self.image_prompts = image_prompts
-            success(f"Generated {len(image_prompts)} Image Prompts.")
+        self.image_prompts = image_prompts
+        success(f"Generated {len(image_prompts)} Image Prompts.")
 
-            return image_prompts
+        return image_prompts
 
     def generate_image(self, prompt: str) -> str:
         """
@@ -349,6 +347,34 @@ class YouTube:
             info(f" => Wrote TTS to \"{path}\"")
 
         return path
+    
+    def add_video(self, video: dict) -> None:
+        """
+        Adds a video to the cache.
+
+        Args:
+            video (dict): The video to add
+
+        Returns:
+            None
+        """
+        videos = self.get_videos()
+        videos.append(video)
+
+        cache = get_youtube_cache_path()
+
+        with open(cache, "r") as file:
+            previous_json = json.loads(file.read())
+            
+            # Find our account
+            accounts = previous_json["accounts"]
+            for account in accounts:
+                if account["id"] == self.account_uuid:
+                    account["videos"].append(video)
+            
+            # Commit changes
+            with open(cache, "w") as f:
+                f.write(json.dumps(previous_json))
 
     def combine(self) -> str:
         """
@@ -449,7 +475,7 @@ class YouTube:
         if get_verbose():
             info(f" => Generated Video: {path}")
 
-        self.video_path = path
+        self.video_path = os.path.abspath(path)
 
         return path
 
@@ -460,7 +486,61 @@ class YouTube:
         Returns:
             success (bool): Whether the upload was successful or not.
         """
-        pass
+        try:
+            # Go to youtube.com/upload
+            self.browser.get("https://www.youtube.com/upload")
+
+            # Wait for the page to load
+            self.browser.implicitly_wait(2)
+
+            # Enter file path into the file input
+            file_input = self.browser.find_element(By.XPATH, YOUTUBE_UPLOAD_BUTTON_XPATH)
+
+            # Send the file path to the file input
+            file_input.send_keys(self.video_path)
+
+            # Wait for the video to upload
+            self.browser.implicitly_wait(4)
+
+            # Get the title input
+            title_el = self.browser.find_element(By.XPATH, YOUTUBE_TITLE_INPUT_XPATH)
+
+            # Send the title to the title input
+            title_el.send_keys(self.metadata["title"])
+
+            # Get the description input
+            description_el = self.browser.find_element(By.XPATH, YOUTUBE_DESCRIPTION_INPUT_XPATH)
+
+            # Send the description to the description input
+            description_el.send_keys(self.metadata["description"])
+
+            # Set not made for kids
+            not_made_for_kids_el = self.browser.find_element(By.XPATH, YOUTUBE_NOT_MADE_FOR_KIDS_XPATH)
+
+            # Click the not made for kids button
+            not_made_for_kids_el.click()
+
+            # Click next
+            self.browser.find_element(By.XPATH, YOUTUBE_NEXT_BUTTON_XPATH).click()
+
+            # Click second next
+            self.browser.find_element(By.XPATH, YOUTUBE_SECOND_NEXT_BUTTON_XPATH).click()
+
+            # Click third next
+            self.browser.find_element(By.XPATH, YOUTUBE_THIRD_NEXT_BUTTON_XPATH).click()
+
+            # Make video public
+            self.browser.find_element(By.XPATH, YOUTUBE_PUBLIC_BUTTON_XPATH).click()
+
+            # Click done
+            self.browser.find_element(By.XPATH, YOUTUBE_DONE_BUTTON_XPATH).click()
+
+            time.sleep(5)
+
+            return True
+        except:
+            return False
+
 
     def get_videos(self) -> List[dict]:
         """

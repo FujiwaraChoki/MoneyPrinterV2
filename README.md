@@ -7,7 +7,7 @@ An Application that automates every process of making money online.
 ## Features
 
 - [x] Twitter Bot (with CRON Jobs => `scheduler`)
-- [ ] YouTube Shorts & TikTok Uploader
+- [ ] YouTube Shorts Automater
 - [ ] Trading Predictions
 - [ ] Automated Content Generation
 - [ ] Item Flipping

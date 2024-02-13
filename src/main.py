@@ -31,7 +31,7 @@ def main():
     if user_input == 1:
         info("Starting Cold Outreach on Local Businesses...")
     elif user_input == 2:
-        info("Starting YT Shorts & TikTok Automater...")
+        info("Starting YT Shorts Automater...")
 
         cached_accounts = get_accounts("youtube")
 
@@ -101,6 +101,9 @@ def main():
 
                     if user_input == 1:
                         youtube.generate_video(tts)
+                        upload_to_yt = question("Do you want to upload this video to YouTube? (Yes/No): ")
+                        if upload_to_yt.lower() == "yes":
+                            youtube.upload_video()
                     elif user_input == 2:
                         videos = youtube.get_videos()
 

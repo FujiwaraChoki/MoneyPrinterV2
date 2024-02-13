@@ -53,6 +53,7 @@ def main():
                     acc["topic"]
                 )
                 youtube.generate_video(tts)
+                youtube.upload_video()
                 if verbose:
                     success("Uploaded Short.")
                 break
