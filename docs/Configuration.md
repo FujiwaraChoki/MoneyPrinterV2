@@ -42,6 +42,7 @@ All your configurations will be in a file in the root directory, called `config.
     "firefox_profile": "/home/user/.mozilla/firefox/your_profile",
     "headless": true,
     "llm": "gpt4",
+    "image_prompt_llm": "gpt4",
     "twitter_language": "English",
     "image_model": "v1",
     "threads": 4
