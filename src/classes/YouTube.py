@@ -153,7 +153,7 @@ class YouTube:
             script (str): The script of the video.
         """
         prompt = f"""
-        Generate a script for a video, depending on the subject of the video.
+        Generate a script for a video in 4 sentences, depending on the subject of the video.
 
         The script is to be returned as a string with the specified number of paragraphs.
 
@@ -165,15 +165,14 @@ class YouTube:
         Get straight to the point, don't start with unnecessary things like, "welcome to this video".
 
         Obviously, the script should be related to the subject of the video.
-
+        
+        YOU MUST NOT EXCEED THE 4 SENTENCES LIMIT. MAKE SURE THE 4 SENTENCES ARE SHORT.
         YOU MUST NOT INCLUDE ANY TYPE OF MARKDOWN OR FORMATTING IN THE SCRIPT, NEVER USE A TITLE.
         YOU MUST WRITE THE SCRIPT IN THE LANGUAGE SPECIFIED IN [LANGUAGE].
         ONLY RETURN THE RAW CONTENT OF THE SCRIPT. DO NOT INCLUDE "VOICEOVER", "NARRATOR" OR SIMILAR INDICATORS OF WHAT SHOULD BE SPOKEN AT THE BEGINNING OF EACH PARAGRAPH OR LINE. YOU MUST NOT MENTION THE PROMPT, OR ANYTHING ABOUT THE SCRIPT ITSELF. ALSO, NEVER TALK ABOUT THE AMOUNT OF PARAGRAPHS OR LINES. JUST WRITE THE SCRIPT
         
         Subject: {self.subject}
         Language: {self.language}
-
-        DO NOT EXCEED THE LIMIT OF 4 SENTENCES. 
         """
         completion = self.generate_response(prompt)
 
@@ -183,6 +182,11 @@ class YouTube:
         if not completion:
             error("The generated script is empty.")
             return
+        
+        if len(completion) > 5000:
+            if get_verbose():
+                warning("Generated Script is too long. Retrying...")
+            self.generate_script()
         
         self.script = completion
     
@@ -263,7 +267,7 @@ class YouTube:
                 image_prompts = r.findall(completion)
                 if len(image_prompts) == 0:
                     if get_verbose():
-                        warning(" => Failed to generate Image Prompts. Retrying...")
+                        warning("Failed to generate Image Prompts. Retrying...")
                     self.generate_prompts()
                 image_prompts = json.loads(image_prompts[0])
                 
@@ -428,8 +432,11 @@ class YouTube:
         # Generate the Image Prompts
         image_prompts = self.generate_prompts()
 
+        if get_verbose():
+            print(self.image_prompts)
+
         # Generate the Images
-        for prompt in image_prompts:
+        for prompt in self.image_prompts:
             self.generate_image(prompt)
 
         # Generate the TTS
