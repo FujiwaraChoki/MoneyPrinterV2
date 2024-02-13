@@ -261,7 +261,10 @@ class YouTube:
                 # Get everything between [ and ], and turn it into a list
                 r = re.compile(r"\[.*\]")
                 image_prompts = r.findall(completion)
-                print(image_prompts)
+                if len(image_prompts) == 0:
+                    if get_verbose():
+                        warning(" => Failed to generate Image Prompts. Retrying...")
+                    self.generate_prompts()
                 image_prompts = json.loads(image_prompts[0])
                 
         self.image_prompts = image_prompts
@@ -382,7 +385,8 @@ class YouTube:
                 clip = clip.resize((1080, 1920))
 
                 # FX (Fade In, Fade Out)
-                clip = clip.fx(vfx.fadein, duration=1).fx(vfx.fadeout, duration=1)
+                clip = vfx.fadein(clip, 1)
+                clip = vfx.fadeout(clip, 1)
 
                 clips.append(clip)
                 tot_dur += clip.duration
