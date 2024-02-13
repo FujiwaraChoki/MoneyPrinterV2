@@ -96,7 +96,7 @@ class YouTube:
         """
         return self._language
     
-    def generate_response(self, prompt: str) -> str:
+    def generate_response(self, prompt: str, model: any = None) -> str:
         """
         Generates an LLM Response based on a prompt and the user-provided model.
 
@@ -106,15 +106,26 @@ class YouTube:
         Returns:
             response (str): The generated AI Repsonse.
         """
-        return g4f.ChatCompletion.create(
-            model=parse_model(get_model()),
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt + "\n. The Limit is 3000 characters."
-                }
-            ]
-        )
+        if not model:
+            return g4f.ChatCompletion.create(
+                model=parse_model(get_model()),
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
+        else:
+            return g4f.ChatCompletion.create(
+                model=model,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
 
     def generate_topic(self) -> str:
         """
@@ -223,7 +234,7 @@ class YouTube:
         {self.script}
         """
 
-        completion = str(self.generate_response(prompt))
+        completion = str(self.generate_response(prompt, model=parse_model(get_image_prompt_llm())))
 
         print(completion)
 

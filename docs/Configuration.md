@@ -14,6 +14,13 @@ All your configurations will be in a file in the root directory, called `config.
     * `llama2_13b`
     * `llama2_70b`
     * `mixtral_8x7b`
+- `image_prompt_llm`: `string` - The Large Language Model that will be used to generate image prompts. If left empty, the default model (`gpt35_turbo`) will be used. Here are your choices:
+    * `gpt4`
+    * `gpt35_turbo`
+    * `llama2_7b`
+    * `llama2_13b`
+    * `llama2_70b`
+    * `mixtral_8x7b`
 - `twitter_language`: `string` - The language that will be used to generate & post tweets.
 - `image_model`: `string` - What AI Model you want to use to generate images, here are your choices:
     * `v1`

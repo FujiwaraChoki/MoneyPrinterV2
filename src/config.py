@@ -107,3 +107,13 @@ def get_threads() -> int:
     """
     with open(os.path.join(ROOT_DIR, 'config.json'), 'r') as file:
         return json.load(file)['threads']
+    
+def get_image_prompt_llm() -> str:
+    """
+    Gets the image prompt for LLM from the config file.
+
+    Returns:
+        prompt (str): The image prompt
+    """
+    with open(os.path.join(ROOT_DIR, 'config.json'), 'r') as file:
+        return json.load(file)['image_prompt_llm']
