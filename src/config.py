@@ -76,7 +76,7 @@ def get_model() -> str:
         model (str): The model
     """
     with open(os.path.join(ROOT_DIR, 'config.json'), 'r') as file:
-        return json.load(file)['llm_model']
+        return json.load(file)['llm']
 
 def get_twitter_language() -> str:
     """

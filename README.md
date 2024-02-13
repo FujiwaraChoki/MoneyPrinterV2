@@ -3,7 +3,7 @@
 An Application that automated the tedious part of making money, all set on a cron job.
 Literally.
 
-> **Note:** Needs Python 3.9.
+> **Note:** MPV2 needs Python 3.9 to function effectively.
 
 ## Features
 
@@ -43,3 +43,24 @@ pip install -r requirements.txt
 # Run the application
 python src/main.py
 ```
+
+## Documentation
+
+All relevant document can be found [here](docs/).
+
+## Contributing
+
+> Please read the [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
+
+## License
+
+MoneyPrinterV2 is licensed under `Affero General Public License v3.0`. See [LICENSE](LICENSE) for more information.
+
+## Acknowledgments
+
+- [CoquiTTS](https://github.com/coqui-ai/TTS)
+- [gpt4free](https://github.com/xtekky/gpt4free)
+
+## Disclaimer
+
+This project is for educational purposes only. The author will not be responsible for any misuse of the information provided. All the information on this website is published in good faith and for general information purpose only. The author does not make any warranties about the completeness, reliability, and accuracy of this information. Any action you take upon the information you find on this website (FujiwaraChoki/MoneyPrinterV2), is strictly at your own risk. The author will not be liable for any losses and/or damages in connection with the use of our website.

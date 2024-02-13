@@ -3,6 +3,7 @@
   "firefox_profile": "",
   "headless": false,
   "twitter_language": "English",
+  "llm": "gpt4",
   "image_model": "prodia",
   "threads": 2
 }

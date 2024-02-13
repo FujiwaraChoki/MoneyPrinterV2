@@ -96,7 +96,7 @@ class YouTube:
         """
         return self._language
     
-    def generate_response(self, prompt: str, prompts: bool = False) -> str:
+    def generate_response(self, prompt: str) -> str:
         """
         Generates an LLM Response based on a prompt and the user-provided model.
 
@@ -106,26 +106,15 @@ class YouTube:
         Returns:
             response (str): The generated AI Repsonse.
         """
-        if not prompts:
-            return g4f.ChatCompletion.create(
-                model=parse_model(get_model()),
-                messages=[
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ]
-            )
-        else:
-            return g4f.ChatCompletion.create(
-                model=g4f.models.codellama_70b_instruct,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ]
-            )
+        return g4f.ChatCompletion.create(
+            model=parse_model(get_model()),
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt + "\n. The Limit is 3000 characters."
+                }
+            ]
+        )
 
     def generate_topic(self) -> str:
         """
@@ -236,6 +225,8 @@ class YouTube:
 
         completion = str(self.generate_response(prompt))
 
+        print(completion)
+
         image_prompts = []
 
         if "image_prompts" in completion:
@@ -250,20 +241,16 @@ class YouTube:
                 if get_verbose():
                     info("GPT returned an unformatted response. Attempting to clean...")
 
-                print(completion)
-
-                # Attempt to extract list-like string and convert to list
-                match = re.search(r'\["(?:[^"\\]|\\.)*"(?:,\s*"[^"\\]*")*\]', completion)
-                if match:
-                    try:
-                        image_prompts = json.loads(match.group())
-                    except json.JSONDecodeError:
-                        error("[-] Could not parse response.", "red")
-                        sys.exit(1)
-                else:
-                    print(type(completion))
+                # Get everything between [ and ], and turn it into a list
+                r = re.compile(r"\[.*\]")
+                image_prompts = r.findall(completion)
+                print(image_prompts)
+                image_prompts = json.loads(image_prompts[0])
                 
         self.image_prompts = image_prompts
+
+        if len(image_prompts) == 0:
+            self.generate_prompts()
 
         success(f"Generated {len(image_prompts)} Image Prompts.")
 
@@ -376,7 +363,10 @@ class YouTube:
                                 x_center=clip.w / 2, \
                                 y_center=clip.h / 2)
                 clip = clip.resize((1080, 1920))
-                clip = clip.crossfadein(2.0)
+                # Fade in
+                clip = clip.crossfadein(0.5)
+                # Fade out
+                clip = clip.crossfadeout(0.5)
 
                 clips.append(clip)
                 tot_dur += clip.duration
