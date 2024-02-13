@@ -170,6 +170,8 @@ class YouTube:
         
         Subject: {self.subject}
         Language: {self.language}
+
+        DO NOT EXCEED THE LIMIT OF 4 SENTENCES.
         """
         completion = self.generate_response(prompt)
 
