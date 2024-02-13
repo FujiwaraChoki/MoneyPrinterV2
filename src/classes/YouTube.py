@@ -251,7 +251,6 @@ class YouTube:
         if "image_prompts" in completion:
             image_prompts = json.loads(completion)["image_prompts"]
         else:
-
             try:
                 image_prompts = json.loads(completion)
                 if get_verbose():
@@ -269,16 +268,19 @@ class YouTube:
                     if get_verbose():
                         warning("Failed to generate Image Prompts. Retrying...")
                     self.generate_prompts()
-                image_prompts = json.loads(image_prompts[0])
-                
-        self.image_prompts = image_prompts
+                print(image_prompts)
+                try:
+                    image_prompts = json.loads(image_prompts)
+                except Exception:
+                    self.generate_prompts()
 
         if len(image_prompts) == 0:
             self.generate_prompts()
+        else:
+            self.image_prompts = image_prompts
+            success(f"Generated {len(image_prompts)} Image Prompts.")
 
-        success(f"Generated {len(image_prompts)} Image Prompts.")
-
-        return image_prompts
+            return image_prompts
 
     def generate_image(self, prompt: str) -> str:
         """
@@ -389,18 +391,23 @@ class YouTube:
                 clip = clip.resize((1080, 1920))
 
                 # FX (Fade In)
-                clip = clip.fadein(2)
+                #clip = clip.fadein(2)
 
                 clips.append(clip)
                 tot_dur += clip.duration
 
         final_clip = concatenate_videoclips(clips)
         final_clip = final_clip.set_fps(30)
-        concatenated_audio = concatenate_audioclips([
-            tts_clip,
-            AudioFileClip(choose_random_song())
+        random_song = choose_random_song()
+        random_song_clip = AudioFileClip(random_song).set_fps(44100)
+        # Turn down volume
+        random_song_clip = random_song_clip.fx(afx.volumex, 0.1)
+        comp_audio = CompositeAudioClip([
+            tts_clip.set_fps(44100),
+            random_song_clip
         ])
-        final_clip = final_clip.set_audio(concatenated_audio)
+        final_clip = final_clip.set_audio(comp_audio)
+        final_clip = final_clip.set_duration(tts_clip.duration)
         final_clip.write_videofile(combined_image_path, threads=threads)
 
         success(f"Wrote Video to \"{combined_image_path}\"")
@@ -418,21 +425,16 @@ class YouTube:
             path (str): The path to the generated MP4 File.
         """
         # Generate the Topic
-        topic = self.generate_topic()
-
-        print(topic)
+        self.generate_topic()
 
         # Generate the Script
-        script = self.generate_script()
+        self.generate_script()
 
         # Generate the Metadata
-        metadata = self.generate_metadata()
+        self.generate_metadata()
 
         # Generate the Image Prompts
-        image_prompts = self.generate_prompts()
-
-        if get_verbose():
-            print(self.image_prompts)
+        self.generate_prompts()
 
         # Generate the Images
         for prompt in self.image_prompts:

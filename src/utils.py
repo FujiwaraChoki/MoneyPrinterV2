@@ -71,6 +71,6 @@ def choose_random_song() -> str:
         songs = os.listdir(os.path.join(ROOT_DIR, "Songs"))
         song = random.choice(songs)
         success(f" => Chose song: {song}")
-        return os.path.join(ROOT_DIR, "Songs", {song})
+        return os.path.join(ROOT_DIR, "Songs", song)
     except Exception as e:
         error(f"Error occurred while choosing random song: {str(e)}")

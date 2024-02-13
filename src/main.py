@@ -290,9 +290,5 @@ if __name__ == "__main__":
     # Fetch MP3 Files
     fetch_songs()
 
-    try:
-        while True:
-            main()
-    except Exception as e:
-        error(f"An error occurred: {e}", "red")
-        sys.exit(1)
+    while True:
+        main()
