@@ -1,6 +1,10 @@
 import os
+import random
+import zipfile
+import requests
 
-from config import ROOT_DIR
+from status import *
+from config import *
 
 def rem_temp_files() -> None:
     """
@@ -17,3 +21,56 @@ def rem_temp_files() -> None:
     for file in files:
         if not file.endswith(".json"):
             os.remove(os.path.join(mp_dir, file))
+
+def fetch_songs() -> None:
+    """
+    Downloads songs into songs/ directory to use with geneated videos.
+
+    Returns:
+        None
+    """
+    try:
+        info(f" => Fetching songs...")
+
+        files_dir = os.path.join(ROOT_DIR, "Songs")
+        if not os.path.exists(files_dir):
+            os.mkdir(files_dir)
+            if get_verbose():
+                info(f" => Created directory: {files_dir}")
+        else:
+            # Skip if songs are already downloaded
+            return
+
+        # Download songs
+        response = requests.get(get_zip_url() or "https://filebin.net/klylrens0uk2pnrg/drive-download-20240209T180019Z-001.zip")
+
+        # Save the zip file
+        with open(os.path.join(files_dir, "songs.zip"), "wb") as file:
+            file.write(response.content)
+
+        # Unzip the file
+        with zipfile.ZipFile(os.path.join(files_dir, "songs.zip"), "r") as file:
+            file.extractall(files_dir)
+
+        # Remove the zip file
+        os.remove(os.path.join(files_dir, "songs.zip"))
+
+        success(" => Downloaded Songs to ../Songs.")
+
+    except Exception as e:
+        error(f"Error occurred while fetching songs: {str(e)}")
+
+def choose_random_song() -> str:
+    """
+    Chooses a random song from the songs/ directory.
+
+    Returns:
+        str: The path to the chosen song.
+    """
+    try:
+        songs = os.listdir(os.path.join(ROOT_DIR, "Songs"))
+        song = random.choice(songs)
+        success(f" => Chose song: {song}")
+        return os.path.join(ROOT_DIR, "Songs", {song})
+    except Exception as e:
+        error(f"Error occurred while choosing random song: {str(e)}")

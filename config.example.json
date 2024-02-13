@@ -6,5 +6,6 @@
   "llm": "gpt4",
   "image_prompt_llm": "gpt35_turbo",
   "image_model": "prodia",
-  "threads": 2
+  "threads": 2,
+  "zip_url": ""
 }

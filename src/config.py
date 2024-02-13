@@ -14,10 +14,10 @@ def assert_folder_structure() -> None:
         None
     """
     # Create the .mp folder
-    if not os.path.exists(os.path.join(ROOT_DIR, '.mp')):
+    if not os.path.exists(os.path.join(ROOT_DIR, ".mp")):
         if get_verbose():
-            print(colored(f"=> Creating .mp folder at {os.path.join(ROOT_DIR, '.mp')}", 'green'))
-        os.makedirs(os.path.join(ROOT_DIR, '.mp'))
+            print(colored(f"=> Creating .mp folder at {os.path.join(ROOT_DIR, '.mp')}", "green"))
+        os.makedirs(os.path.join(ROOT_DIR, ".mp"))
 
 def get_first_time_running() -> bool:
     """
@@ -26,7 +26,7 @@ def get_first_time_running() -> bool:
     Returns:
         exists (bool): True if the program is running for the first time, False otherwise
     """
-    return not os.path.exists(os.path.join(ROOT_DIR, '.mp'))
+    return not os.path.exists(os.path.join(ROOT_DIR, ".mp"))
 
 def get_email_credentials() -> dict:
     """
@@ -35,8 +35,8 @@ def get_email_credentials() -> dict:
     Returns:
         credentials (dict): The email credentials
     """
-    with open(os.path.join(ROOT_DIR, 'config.json'), 'r') as file:
-        return json.load(file)['email']
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file)["email"]
 
 def get_verbose() -> bool:
     """
@@ -45,8 +45,8 @@ def get_verbose() -> bool:
     Returns:
         verbose (bool): The verbose flag
     """
-    with open(os.path.join(ROOT_DIR, 'config.json'), 'r') as file:
-        return json.load(file)['verbose']
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file)["verbose"]
 
 def get_firefox_profile_path() -> str:
     """
@@ -55,8 +55,8 @@ def get_firefox_profile_path() -> str:
     Returns:
         path (str): The path to the Firefox profile
     """
-    with open(os.path.join(ROOT_DIR, 'config.json'), 'r') as file:
-        return json.load(file)['firefox_profile']
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file)["firefox_profile"]
 
 def get_headless() -> bool:
     """
@@ -65,8 +65,8 @@ def get_headless() -> bool:
     Returns:
         headless (bool): The headless flag
     """
-    with open(os.path.join(ROOT_DIR, 'config.json'), 'r') as file:
-        return json.load(file)['headless']
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file)["headless"]
 
 def get_model() -> str:
     """
@@ -75,8 +75,8 @@ def get_model() -> str:
     Returns:
         model (str): The model
     """
-    with open(os.path.join(ROOT_DIR, 'config.json'), 'r') as file:
-        return json.load(file)['llm']
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file)["llm"]
 
 def get_twitter_language() -> str:
     """
@@ -85,8 +85,8 @@ def get_twitter_language() -> str:
     Returns:
         language (str): The Twitter language
     """
-    with open(os.path.join(ROOT_DIR, 'config.json'), 'r') as file:
-        return json.load(file)['twitter_language']
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file)["twitter_language"]
 
 def get_image_model() -> str:
     """
@@ -95,8 +95,8 @@ def get_image_model() -> str:
     Returns:
         model (str): The image model
     """
-    with open(os.path.join(ROOT_DIR, 'config.json'), 'r') as file:
-        return json.load(file)['image_model']
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file)["image_model"]
 
 def get_threads() -> int:
     """
@@ -105,8 +105,8 @@ def get_threads() -> int:
     Returns:
         threads (int): Amount of threads
     """
-    with open(os.path.join(ROOT_DIR, 'config.json'), 'r') as file:
-        return json.load(file)['threads']
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file)["threads"]
     
 def get_image_prompt_llm() -> str:
     """
@@ -115,5 +115,15 @@ def get_image_prompt_llm() -> str:
     Returns:
         prompt (str): The image prompt
     """
-    with open(os.path.join(ROOT_DIR, 'config.json'), 'r') as file:
-        return json.load(file)['image_prompt_llm']
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file)["image_prompt_llm"]
+
+def get_zip_url() -> str:
+    """
+    Gets the URL to the zip file containing the songs.
+
+    Returns:
+        url (str): The URL to the zip file
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file)["zip_url"]

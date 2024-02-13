@@ -287,6 +287,9 @@ if __name__ == "__main__":
     # Remove temporary files
     rem_temp_files()
 
+    # Fetch MP3 Files
+    fetch_songs()
+
     try:
         while True:
             main()

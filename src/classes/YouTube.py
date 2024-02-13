@@ -3,8 +3,9 @@ import g4f
 import json
 import requests
 
-from .Tts import TTS
+from utils import *
 from cache import *
+from .Tts import TTS
 from config import *
 from status import *
 from uuid import uuid4
@@ -15,6 +16,7 @@ from datetime import datetime
 from termcolor import colored
 from selenium_firefox import *
 from selenium import webdriver
+from moviepy.video import fx as vfx
 from moviepy.video.fx.all import crop
 from selenium.common import exceptions
 from selenium.webdriver.common import keys
@@ -171,7 +173,7 @@ class YouTube:
         Subject: {self.subject}
         Language: {self.language}
 
-        DO NOT EXCEED THE LIMIT OF 4 SENTENCES.
+        DO NOT EXCEED THE LIMIT OF 4 SENTENCES. 
         """
         completion = self.generate_response(prompt)
 
@@ -312,7 +314,7 @@ class YouTube:
                 self.images.append(image_path)
                 
                 return image_path
-        
+
     def generate_script_to_speech(self, tts_instance: TTS) -> str:
         """
         Converts the generated script into Speech using CoquiTTS and returns the path to the wav file.
@@ -376,17 +378,20 @@ class YouTube:
                                 x_center=clip.w / 2, \
                                 y_center=clip.h / 2)
                 clip = clip.resize((1080, 1920))
-                # Fade in
-                clip = clip.crossfadein(0.5)
-                # Fade out
-                clip = clip.crossfadeout(0.5)
+
+                # FX (Fade In, Fade Out)
+                clip = clip.fx(vfx.fadein, duration=1).fx(vfx.fadeout, duration=1)
 
                 clips.append(clip)
                 tot_dur += clip.duration
 
         final_clip = concatenate_videoclips(clips)
         final_clip = final_clip.set_fps(30)
-        final_clip = final_clip.set_audio(tts_clip)
+        concatenated_audio = concatenate_audioclips([
+            tts_clip,
+            AudioFileClip(choose_random_song())
+        ])
+        final_clip = final_clip.set_audio(concatenated_audio)
         final_clip.write_videofile(combined_image_path, threads=threads)
 
         success(f"Wrote Video to \"{combined_image_path}\"")
