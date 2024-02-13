@@ -234,9 +234,9 @@ class YouTube:
         {self.script}
         """
 
-        completion = str(self.generate_response(prompt, model=parse_model(get_image_prompt_llm())))
-
-        print(completion)
+        completion = str(self.generate_response(prompt, model=parse_model(get_image_prompt_llm())))\
+            .replace("```json", "") \
+            .replace("```", "")
 
         image_prompts = []
 
