@@ -200,8 +200,9 @@ class YouTube:
         Returns:
             metadata (dict): The generated metadata.
         """
-        title = self.generate_response(f"Please generate a YouTube Video Title for the following subject, including hashtags: {self.subject}")
-        description = self.generate_response(f"Please generate a YouTube Video Description for the following script: {self.script}")
+        title = self.generate_response(f"Please generate a YouTube Video Title for the following subject, including hashtags: {self.subject}. Only return the title, nothing else.")
+
+        description = self.generate_response(f"Please generate a YouTube Video Description for the following script: {self.script}. Only return the description, nothing else.")
         
         self.metadata = {
             "title": title,
@@ -519,7 +520,7 @@ class YouTube:
             file_input.send_keys(self.video_path)
 
             # Wait for upload to finish
-            time.sleep(3)
+            time.sleep(5)
 
             # Set title
             textboxes = driver.find_elements(By.ID, YOUTUBE_TEXTBOX_ID)
@@ -531,7 +532,7 @@ class YouTube:
                 info("\t=> Setting title...")
 
             title_el.click()
-            time.sleep(0.5)
+            time.sleep(1)
             title_el.clear()
             title_el.send_keys(self.metadata["title"])
 
@@ -539,7 +540,7 @@ class YouTube:
                 info("\t=> Setting description...")
 
             # Set description
-            time.sleep(0.5)
+            time.sleep(10)
             description_el.click()
             time.sleep(0.5)
             description_el.clear()
@@ -602,7 +603,7 @@ class YouTube:
 
             # Get latest video
             if verbose:
-                print(colored("\t=> Getting video URL...", "yellow"))
+                info("\t=> Getting video URL...")
 
             # Get the latest uploaded video URL
             driver.get(f"https://studio.youtube.com/channel/{self.channel_id}/videos/short")
