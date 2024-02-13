@@ -58,9 +58,12 @@ class Twitter:
         # Initialize the browser
         self.browser: webdriver.Firefox = webdriver.Firefox(service=self.service, options=self.options)
 
-    def post(self) -> None:
+    def post(self, text: str = None) -> None:
         """
         Starts the Twitter Bot.
+
+        Args:
+            text (str): The text to post
 
         Returns:
             None
@@ -84,7 +87,7 @@ class Twitter:
             bot.find_element(By.XPATH, "//a[@data-testid='SideNav_NewTweet_Button']").click()
 
         time.sleep(2) 
-        body = post_content
+        body = post_content if text is None else text
 
         try:
             bot.find_element(By.XPATH, "//div[@role='textbox']").send_keys(body)

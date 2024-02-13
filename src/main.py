@@ -9,11 +9,11 @@ from status import *
 from uuid import uuid4
 from constants import *
 from classes.Tts import TTS
-from crontab import CronTab
 from termcolor import colored
 from classes.Twitter import Twitter
 from classes.YouTube import YouTube
 from prettytable import PrettyTable
+from classes.AFM import AffiliateMarketing
 
 def main():
     # Show user options
@@ -266,7 +266,53 @@ def main():
                         break
     elif user_input == 3:
         info("Starting Affiliate Marketing...")
-        
+
+        cached_products = get_products()
+
+        if len(cached_products) == 0:
+            warning("No products found in cache. Create one now?")
+            user_input = question("Yes/No: ")
+
+            if user_input.lower() == "yes":
+                affiliate_link = question(" => Enter the affiliate link: ")
+                twitter_uuid = question(" => Enter the Twitter Account UUID: ")
+
+                # Find the account
+                account = None
+                for acc in get_accounts("twitter"):
+                    if acc["id"] == twitter_uuid:
+                        account = acc
+
+                afm = AffiliateMarketing(affiliate_link, account["firefox_profile"], account["id"], account["nickname"], account["topic"])
+
+                afm.generate_pitch()
+                afm.share_pitch("twitter")
+        else:
+            table = PrettyTable()
+            table.field_names = ["ID", "Affiliate Link", "Twitter Account UUID"]
+
+            for product in cached_products:
+                table.add_row([cached_products.index(product) + 1, colored(product["affiliate_link"], "cyan"), colored(product["twitter_uuid"], "blue")])
+
+            print(table)
+
+            user_input = question("Select a product to start: ")
+
+            selected_product = None
+
+            for product in cached_products:
+                if str(cached_products.index(product) + 1) == user_input:
+                    selected_product = product
+
+            if selected_product is None:
+                error("Invalid product selected. Please try again.", "red")
+                main()
+            else:
+                afm = AffiliateMarketing(selected_product["affiliate_link"], account["firefox_profile"], account["id"], account["nickname"], account["topic"])
+
+                afm.generate_pitch()
+                afm.share_pitch("twitter")
+
     elif user_input == 4:
         if get_verbose():
             print(colored(" => Quitting...", "blue"))

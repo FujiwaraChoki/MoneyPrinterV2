@@ -13,6 +13,15 @@ def get_cache_path() -> str:
     """
     return os.path.join(ROOT_DIR, '.mp')
 
+def get_afm_cache_path() -> str:
+    """
+    Gets the path to the Affiliate Marketing cache file.
+
+    Returns:
+        path (str): The path to the AFM cache folder
+    """
+    return os.path.join(get_cache_path(), 'afm.json')
+
 def get_twitter_cache_path() -> str:
     """
     Gets the path to the Twitter cache file.
@@ -123,3 +132,23 @@ def remove_account(account_id: str) -> None:
         json.dump({
             "accounts": accounts
         }, file, indent=4)
+
+def get_products() -> List[dict]:
+    """
+    Gets the products from the cache.
+
+    Returns:
+        products (List[dict]): The products
+    """
+    if not os.path.exists(get_afm_cache_path()):
+        # Create the cache file
+        with open(get_afm_cache_path(), 'w') as file:
+            json.dump({
+                "products": []
+            }, file, indent=4)
+
+    with open(get_afm_cache_path(), 'r') as file:
+        parsed = json.load(file)
+
+        # Get the products
+        return parsed["products"]

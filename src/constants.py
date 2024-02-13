@@ -49,6 +49,10 @@ YOUTUBE_NEXT_BUTTON_ID = "next-button"
 YOUTUBE_RADIO_BUTTON_XPATH = "//*[@id=\"radioLabel\"]"
 YOUTUBE_DONE_BUTTON_ID = "done-button"
 
+# Amazon Section (AFM)$
+AMAZON_PRODUCT_TITLE_ID = "productTitle"
+AMAZON_FEATURE_BULLETS_ID = "feature-bullets"
+
 def parse_model(model_name: str) -> any:
     if model_name == "gpt4":
         return g4f.models.gpt_4
