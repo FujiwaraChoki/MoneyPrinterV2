@@ -35,7 +35,6 @@ def main():
 
         if len(cached_accounts) == 0:
             warning("No accounts found in cache. Create one now?")
-
             user_input = question("Yes/No: ")
 
             if user_input.lower() == "yes":
