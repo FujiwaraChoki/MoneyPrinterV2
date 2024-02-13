@@ -254,7 +254,9 @@ class YouTube:
                     info(f" => Generated Image Prompts: {image_prompts}")
             except Exception:
                 if get_verbose():
-                    info("GPT returned an unformatted response. Attempting to clean...")
+                    warning("GPT returned an unformatted response. Attempting to clean...")
+
+                    print(completion)
 
                 # Get everything between [ and ], and turn it into a list
                 r = re.compile(r"\[.*\]")
