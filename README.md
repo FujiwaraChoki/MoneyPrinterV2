@@ -1,26 +1,23 @@
 # MoneyPrinter V2
 
-An Application that automated the tedious part of making money, all set on a cron job.
-Literally.
+An Application that automates every process of making money online.
 
 > **Note:** MPV2 needs Python 3.9 to function effectively.
 
 ## Features
 
+- [x] Twitter Bot (with CRON Jobs => `scheduler`)
+- [ ] YouTube Shorts & TikTok Uploader
 - [ ] Trading Predictions
 - [ ] Automated Content Generation
-- [ ] Run any Agency on Autopilot
 - [ ] Item Flipping
 - [ ] Automated Cold Calling
-- [ ] Dropshipping
 - [ ] Find local businesses & cold outreach
 - [ ] Affiliate Marketing (AliBaba, Amazon, etc.)
-- [ ] YouTube Shorts & TikTok Uploader
-- [x] Twitter Bot (with CRON Jobs => `scheduler`)
 
 ## Installation
 
-Install [Microsoft Visual C++ build tools](https://visualstudio.microsoft.com/de/visual-cpp-build-tools/), so that CoquiTTS can function correctly.
+Please install [Microsoft Visual C++ build tools](https://visualstudio.microsoft.com/de/visual-cpp-build-tools/) first, so that CoquiTTS can function correctly.
 
 ```bash
 git clone https://github.com/FujiwaraChoki/MoneyPrinterV2.git
