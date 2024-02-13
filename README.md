@@ -4,16 +4,17 @@ An Application that automates every process of making money online.
 
 > **Note:** MPV2 needs Python 3.9 to function effectively.
 
+Please note MPV2 is a work in progress and does not have all mentioned features implemented yet.
+
 ## Features
 
 - [x] Twitter Bot (with CRON Jobs => `scheduler`)
-- [x] YouTube Shorts Automater
+- [x] YouTube Shorts Automater (with CRON Jobs => `scheduler`)
+- [ ] Affiliate Marketing (AliBaba, Amazon, etc.)
 - [ ] Trading Predictions
-- [ ] Automated Content Generation
 - [ ] Item Flipping
 - [ ] Automated Cold Calling
 - [ ] Find local businesses & cold outreach
-- [ ] Affiliate Marketing (AliBaba, Amazon, etc.)
 
 ## Installation
 

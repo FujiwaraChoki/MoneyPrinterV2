@@ -13,14 +13,10 @@ from uuid import uuid4
 from constants import *
 from typing import List
 from moviepy.editor import *
-from datetime import datetime
 from termcolor import colored
 from selenium_firefox import *
 from selenium import webdriver
-from moviepy.video import fx as vfx
 from moviepy.video.fx.all import crop
-from selenium.common import exceptions
-from selenium.webdriver.common import keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.firefox.options import Options
@@ -37,8 +33,8 @@ class YouTube:
     4. Generate AI Image Prompts [DONE]
     4. Generate Images based on generated Prompts [DONE]
     5. Convert Text-to-Speech [DONE]
-    6. Show images each for n seconds, n: Duration of TTS / Amount of images
-    7. Combine Concatenated Images with the Text-to-Speech
+    6. Show images each for n seconds, n: Duration of TTS / Amount of images [DONE]
+    7. Combine Concatenated Images with the Text-to-Speech [DONE]
     """
     def __init__(self, account_uuid: str, account_nickname: str, fp_profile_path: str, niche: str, language: str) -> None:
         """
@@ -201,6 +197,11 @@ class YouTube:
             metadata (dict): The generated metadata.
         """
         title = self.generate_response(f"Please generate a YouTube Video Title for the following subject, including hashtags: {self.subject}. Only return the title, nothing else.")
+
+        if len(title) > 100:
+            if get_verbose():
+                warning("Generated Title is too long. Retrying...")
+            return self.generate_metadata()
 
         description = self.generate_response(f"Please generate a YouTube Video Description for the following script: {self.script}. Only return the description, nothing else.")
         
@@ -589,7 +590,7 @@ class YouTube:
                 info("\t=> Setting as unlisted...")
             
             radio_button = driver.find_elements(By.XPATH, YOUTUBE_RADIO_BUTTON_XPATH)
-            radio_button[1].click()
+            radio_button[2].click()
 
             if verbose:
                 info("\t=> Clicking done button...")

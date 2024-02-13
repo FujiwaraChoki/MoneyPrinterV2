@@ -29,8 +29,6 @@ def main():
 
     # Start the selected option
     if user_input == 1:
-        info("Starting Cold Outreach on Local Businesses...")
-    elif user_input == 2:
         info("Starting YT Shorts Automater...")
 
         cached_accounts = get_accounts("youtube")
@@ -151,7 +149,7 @@ def main():
                         if get_verbose():
                             info(" => Climbing Options Ladder...", False)
                         break
-    elif user_input == 3:
+    elif user_input == 2:
         info("Starting Twitter Bot...")
 
         cached_accounts = get_accounts("twitter")
@@ -266,6 +264,9 @@ def main():
                         if get_verbose():
                             info(" => Climbing Options Ladder...", False)
                         break
+    elif user_input == 3:
+        info("Starting Affiliate Marketing...")
+        
     elif user_input == 4:
         if get_verbose():
             print(colored(" => Quitting...", "blue"))

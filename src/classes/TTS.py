@@ -30,11 +30,11 @@ class TTS:
 
         # Download tts_models/en/ljspeech/fast_pitch
         self._model_path, self._config_path, self._model_item = \
-            self._model_manager.download_model("tts_models/en/ljspeech/fast_pitch")
+            self._model_manager.download_model("tts_models/en/ljspeech/tacotron2-DDC_ph")
 
         # Download vocoder_models/en/ljspeech/hifigan_v2 as our vocoder
         voc_path, voc_config_path, _ = self._model_manager. \
-            download_model("vocoder_models/en/ljspeech/hifigan_v2")
+            download_model("vocoder_models/en/ljspeech/univnet")
         
         # Initialize the Synthesizer
         self._synthesizer = Synthesizer(
