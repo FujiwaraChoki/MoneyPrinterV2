@@ -388,9 +388,8 @@ class YouTube:
                                 y_center=clip.h / 2)
                 clip = clip.resize((1080, 1920))
 
-                # FX (Fade In, Fade Out)
-                clip = vfx.fadein(clip, 1)
-                clip = vfx.fadeout(clip, 1)
+                # FX (Fade In)
+                clip = clip.fadein(2)
 
                 clips.append(clip)
                 tot_dur += clip.duration
