@@ -50,7 +50,8 @@ def main():
                     acc["id"],
                     acc["nickname"],
                     acc["firefox_profile"],
-                    acc["topic"]
+                    acc["niche"],
+                    acc["language"]
                 )
                 youtube.generate_video(tts)
                 youtube.upload_video()
