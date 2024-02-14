@@ -34,6 +34,15 @@ All your configurations will be in a file in the root directory, called `config.
     * `shonin`
 - `threads`: `number` - The amount of threads that will be used to execute operations, e.g. writing to a file using MoviePy.
 - `is_for_kids`: `boolean` - If `true`, the application will upload the video to YouTube Shorts as a video for kids.
+- `email`: `object`:
+    - `smtp_server`: `string` - Your SMTP server.
+    - `smtp_port`: `number` - The port of your SMTP server.
+    - `username`: `string` - Your email address.
+    - `password`: `string` - Your email password.
+- `google_maps_scraper_niche`: `string` - The niche you want to scrape Google Maps for.
+- `scraper_timeout`: `number` - The timeout for the Google Maps scraper.
+- `outreach_message_subject`: `string` - The subject of your outreach message. `{{COMPANY_NAME}}` will be replaced with the company name.
+- `outreach_message_body_file`: `string` - The file that contains the body of your outreach message, should be HTML. `{{COMPANY_NAME}}` will be replaced with the company name.
 
 ## Example
 

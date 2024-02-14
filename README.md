@@ -11,7 +11,7 @@ Please note MPV2 is a work in progress and does not have all mentioned features 
 - [x] Twitter Bot (with CRON Jobs => `scheduler`)
 - [x] YouTube Shorts Automater (with CRON Jobs => `scheduler`)
 - [x] Affiliate Marketing (Amazon + Twitter)
-- [ ] Find local businesses & cold outreach
+- [x] Find local businesses & cold outreach
 - [ ] Trading Predictions
 - [ ] Item Flipping
 - [ ] Automated Cold Calling
