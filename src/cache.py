@@ -153,6 +153,28 @@ def get_products() -> List[dict]:
         # Get the products
         return parsed["products"]
     
+def add_product(product: dict) -> None:
+    """
+    Adds a product to the cache.
+
+    Args:
+        product (dict): The product to add
+
+    Returns:
+        None
+    """
+    # Get the current products
+    products = get_products()
+
+    # Add the new product
+    products.append(product)
+
+    # Write the new products to the cache
+    with open(get_afm_cache_path(), 'w') as file:
+        json.dump({
+            "products": products
+        }, file, indent=4)
+    
 def get_results_cache_path() -> str:
     """
     Gets the path to the results cache file.

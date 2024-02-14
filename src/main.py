@@ -283,6 +283,12 @@ def main():
                     if acc["id"] == twitter_uuid:
                         account = acc
 
+                add_product({
+                    "id": str(uuid4()),
+                    "affiliate_link": affiliate_link,
+                    "twitter_uuid": twitter_uuid
+                })
+
                 afm = AffiliateMarketing(affiliate_link, account["firefox_profile"], account["id"], account["nickname"], account["topic"])
 
                 afm.generate_pitch()
