@@ -193,9 +193,9 @@ class Twitter:
             sys.exit(1)
 
         # Apply Regex to remove all *
-        completion = re.sub(r"\*", "", completion)
+        completion = re.sub(r"\*", "", completion).replace("\"", "")
 
-        if len(completion) >= 280:
-            self.generate_post()
+        if len(completion) >= 560:
+            return self.generate_post()
 
         return completion

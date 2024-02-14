@@ -1,5 +1,6 @@
 import g4f
 
+from status import *
 from config import *
 from constants import *
 from .Twitter import Twitter
@@ -73,11 +74,17 @@ class AffiliateMarketing:
         # Get the product name
         product_title: str = self.browser.find_element(By.ID, AMAZON_PRODUCT_TITLE_ID).text
 
+        if get_verbose():
+            info(f"Product Title: {product_title}")
+
         # Set the product title
         self.product_title: str = product_title
 
         # Get the features of the product
         features: any = self.browser.find_elements(By.ID, AMAZON_FEATURE_BULLETS_ID)
+
+        if get_verbose():
+            info(f"Features: {features}")
 
         # Set the features
         self.features: any = features
