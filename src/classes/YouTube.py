@@ -556,7 +556,7 @@ class YouTube:
             is_for_kids_checkbox = driver.find_element(By.NAME, YOUTUBE_MADE_FOR_KIDS_NAME)
             is_not_for_kids_checkbox = driver.find_element(By.NAME, YOUTUBE_NOT_MADE_FOR_KIDS_NAME)
 
-            if get_is_for_kids():
+            if not get_is_for_kids():
                 is_not_for_kids_checkbox.click()
             else:
                 is_for_kids_checkbox.click()
