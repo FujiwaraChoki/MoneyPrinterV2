@@ -10,6 +10,7 @@ OPTIONS = [
     "YouTube Shorts Automation",
     "Twitter Bot",
     "Affiliate Marketing",
+    "Outreach",
     "Quit"
 ]
 

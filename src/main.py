@@ -13,6 +13,7 @@ from termcolor import colored
 from classes.Twitter import Twitter
 from classes.YouTube import YouTube
 from prettytable import PrettyTable
+from classes.Outreach import Outreach
 from classes.AFM import AffiliateMarketing
 
 def main():
@@ -311,8 +312,13 @@ def main():
 
                 afm.generate_pitch()
                 afm.share_pitch("twitter")
-
     elif user_input == 4:
+        info("Starting Outreach...")
+
+        outreach = Outreach()
+
+        outreach.start()
+    elif user_input == 5:
         if get_verbose():
             print(colored(" => Quitting...", "blue"))
         sys.exit(0)

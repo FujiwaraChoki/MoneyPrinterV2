@@ -8,5 +8,16 @@
   "image_model": "prodia",
   "threads": 2,
   "zip_url": "",
-  "is_for_kids": false
+  "is_for_kids": false,
+  "google_maps_scraper": "https://github.com/gosom/google-maps-scraper/archive/refs/tags/v0.9.7.zip",
+  "email": {
+    "smtp_server": "smtp.gmail.com",
+    "smtp_port": 587,
+    "username": "",
+    "password": ""
+  },
+  "google_maps_scraper_niche": "",
+  "scraper_timeout": 300,
+  "outreach_message_subject": "I have a question...",
+  "outreach_message_body_file": "outreach_message.html"
 }

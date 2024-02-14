@@ -137,3 +137,53 @@ def get_is_for_kids() -> bool:
     """
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file)["is_for_kids"]
+
+def get_google_maps_scraper_zip_url() -> str:
+    """
+    Gets the URL to the zip file containing the Google Maps scraper.
+
+    Returns:
+        url (str): The URL to the zip file
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file)["google_maps_scraper"]
+
+def get_google_maps_scraper_niche() -> str:
+    """
+    Gets the niche for the Google Maps scraper.
+
+    Returns:
+        niche (str): The niche
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file)["google_maps_scraper_niche"]
+
+def get_scraper_timeout() -> int:
+    """
+    Gets the timeout for the scraper.
+
+    Returns:
+        timeout (int): The timeout
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file)["scraper_timeout"] or 300
+
+def get_outreach_message_subject() -> str:
+    """
+    Gets the outreach message subject.
+
+    Returns:
+        subject (str): The outreach message subject
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file)["outreach_message_subject"]
+    
+def get_outreach_message_body_file() -> str:
+    """
+    Gets the outreach message body file.
+
+    Returns:
+        file (str): The outreach message body file
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file)["outreach_message_body_file"]

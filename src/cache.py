@@ -152,3 +152,12 @@ def get_products() -> List[dict]:
 
         # Get the products
         return parsed["products"]
+    
+def get_results_cache_path() -> str:
+    """
+    Gets the path to the results cache file.
+
+    Returns:
+        path (str): The path to the results cache folder
+    """
+    return os.path.join(get_cache_path(), 'scraper_results.csv')
