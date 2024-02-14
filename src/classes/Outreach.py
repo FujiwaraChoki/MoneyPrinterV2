@@ -180,7 +180,7 @@ class Outreach:
         message_body = get_outreach_message_body_file()
 
         # Run
-        self.run_scraper_with_args_for_30_seconds(f"-input niche.txt -results {output_path}", timeout=get_scraper_timeout())
+        self.run_scraper_with_args_for_30_seconds(f"-input niche.txt -results \"{output_path}\"", timeout=get_scraper_timeout())
 
         # Get the items from the file
         items = self.get_items_from_file(output_path)
