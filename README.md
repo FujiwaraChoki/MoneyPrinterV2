@@ -17,7 +17,7 @@ Please note MPV2 is a work in progress and does not have all mentioned features 
 
 Please install [Microsoft Visual C++ build tools](https://visualstudio.microsoft.com/de/visual-cpp-build-tools/) first, so that CoquiTTS can function correctly.
 
-> If you are planning to use reach out to scraped businesses per E-Mail, please first install the [Go Programming Language](https://golang.org/).
+> **If you are planning to use reach out to scraped businesses per E-Mail, please first install the [Go Programming Language](https://golang.org/)**.
 
 ```bash
 git clone https://github.com/FujiwaraChoki/MoneyPrinterV2.git
