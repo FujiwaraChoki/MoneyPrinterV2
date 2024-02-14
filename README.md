@@ -43,6 +43,12 @@ python src/main.py
 
 All relevant document can be found [here](docs/).
 
+## Scripts
+
+For easier usage, there are some scripts in the `scripts` directory, that can be used to directly access the core functionality of MPV2, without the need of user interaction.
+
+All scripts need to be run from the root directory of the project, e.g. `bash scripts/upload_video.sh`.
+
 ## Contributing
 
 Please read the [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
