@@ -52,7 +52,7 @@ All scripts need to be run from the root directory of the project, e.g. `bash sc
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us. Check out [docs/ROADMAP.md](docs/ROADMAP.md) for a list of features that need to be implemented.
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us. Check out [docs/Roadmap.md](docs/Roadmap.md) for a list of features that need to be implemented.
 
 ## Code of Conduct
 
