@@ -180,7 +180,7 @@ class Twitter:
             messages=[
                 {
                     "role": "user",
-                    "content": f"Generate a Twitter post about: {self.topic} in {get_twitter_language()}. The Limit is 3 sentences."
+                    "content": f"Generate a Twitter post about: {self.topic} in {get_twitter_language()}. The Limit is 2 sentences. Choose a specific sub-topic of the provided topic."
                 }
             ]
         )
@@ -194,8 +194,10 @@ class Twitter:
 
         # Apply Regex to remove all *
         completion = re.sub(r"\*", "", completion).replace("\"", "")
-
-        if len(completion) >= 560:
+    
+        if get_verbose():
+            info(f"Length of post: {len(completion)}")
+        if len(completion) >= 260:
             return self.generate_post()
 
         return completion
