@@ -48,12 +48,26 @@ All your configurations will be in a file in the root directory, called `config.
 
 ```json
 {
-    "verbose": true,
-    "firefox_profile": "/home/user/.mozilla/firefox/your_profile",
-    "headless": true,
-    "llm": "gpt4",
-    "image_prompt_llm": "gpt4",
-    "twitter_language": "English",
-    "image_model": "v1",
-    "threads": 4
+  "verbose": true,
+  "firefox_profile": "",
+  "headless": false,
+  "twitter_language": "English",
+  "llm": "gpt4",
+  "image_prompt_llm": "gpt35_turbo",
+  "image_model": "prodia",
+  "threads": 2,
+  "zip_url": "",
+  "is_for_kids": false,
+  "google_maps_scraper": "https://github.com/gosom/google-maps-scraper/archive/refs/tags/v0.9.7.zip",
+  "email": {
+    "smtp_server": "smtp.gmail.com",
+    "smtp_port": 587,
+    "username": "",
+    "password": ""
+  },
+  "google_maps_scraper_niche": "",
+  "scraper_timeout": 300,
+  "outreach_message_subject": "I have a question...",
+  "outreach_message_body_file": "outreach_message.html"
 }
+```
