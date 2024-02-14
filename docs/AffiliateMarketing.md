@@ -20,3 +20,4 @@ In your `config.json`, you need the following attributes filled out, so that the
 Here are some features that are planned for the future:
 
 - [ ] Scrape more information about the product, to be able to create a more detailed pitch.
+- [ ] Join online communities related to the product, and post a pitch (with a link to the product) there.
