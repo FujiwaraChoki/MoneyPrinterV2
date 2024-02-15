@@ -98,6 +98,7 @@ def main():
                     tts = TTS()
 
                     if user_input == 1:
+                        rem_temp_files()
                         youtube.generate_video(tts)
                         upload_to_yt = question("Do you want to upload this video to YouTube? (Yes/No): ")
                         if upload_to_yt.lower() == "yes":
