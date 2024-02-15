@@ -6,6 +6,7 @@ This document outlines the features that need to be implemented in MPV2.
 
 - [ ] Automated Cold Calling
 - [ ] Item Flipping (such as sneakers)
+- [ ] Create a Short based on long-form content
 
 ## Adding a new feature
 
