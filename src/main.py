@@ -8,7 +8,7 @@ from config import *
 from status import *
 from uuid import uuid4
 from constants import *
-from classes.Tts import TTS
+from classes.TTS import TTS
 from termcolor import colored
 from classes.Twitter import Twitter
 from classes.YouTube import YouTube
