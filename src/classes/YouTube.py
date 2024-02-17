@@ -381,22 +381,17 @@ class YouTube:
             with open(cache, "w") as f:
                 f.write(json.dumps(previous_json))
 
-    def generate_subtitles(self, video_path: str) -> str:
+    def generate_subtitles(self, audio_path: str) -> str:
         """
-        Generates subtitles for the video using AssemblyAI.
+        Generates subtitles for the audio using AssemblyAI.
 
         Args:
-            video_path (str): The path to the video file.
+            audio_path (str): The path to the audio file.
 
         Returns:
             path (str): The path to the generated SRT File.
         """
         # Turn the video into audio
-        audio_path = os.path.join(ROOT_DIR, ".mp", str(uuid4()) + ".wav")
-        video = VideoFileClip(video_path)
-        audio = video.audio
-        audio.write_audiofile(audio_path)
-
         aai.settings.api_key = get_assemblyai_api_key()
         config = aai.TranscriptionConfig()
         transcriber = aai.Transcriber(config=config)
@@ -432,13 +427,6 @@ class YouTube:
             stroke_color="black",
             stroke_width=5,
         )
-
-        subtitles_path = self.generate_subtitles(self.video_path)
-
-        # Burn the subtitles into the video
-        subtitles = SubtitlesClip(subtitles_path, generator)
-
-        equalize_subtitles(subtitles_path)
 
         print(colored("[+] Combining images...", "blue"))
 
@@ -476,6 +464,14 @@ class YouTube:
         final_clip = concatenate_videoclips(clips)
         final_clip = final_clip.set_fps(30)
         random_song = choose_random_song()
+        
+        subtitles_path = self.generate_subtitles(self.tts_path)
+
+        # Burn the subtitles into the video
+        subtitles = SubtitlesClip(subtitles_path, generator)
+
+        equalize_subtitles(subtitles_path)
+
         subtitles.set_pos(("center", "center"))
         random_song_clip = AudioFileClip(random_song).set_fps(44100)
 
