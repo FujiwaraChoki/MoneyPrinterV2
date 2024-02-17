@@ -53,8 +53,6 @@ All scripts need to be run from the root directory of the project, e.g. `bash sc
 
 ## Contributing
 
-> ⚠️ Contributions are currently not accepted, and all PRs will be closed without review. This will change in the future.
-
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us. Check out [docs/Roadmap.md](docs/Roadmap.md) for a list of features that need to be implemented.
 
 ## Code of Conduct
