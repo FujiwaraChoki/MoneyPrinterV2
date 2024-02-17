@@ -13,3 +13,4 @@ Pillow==9.5.0
 yagmail
 assemblyai
 srt_equalizer
+numpy==1.26.4
