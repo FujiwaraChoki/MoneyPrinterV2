@@ -45,6 +45,8 @@ All your configurations will be in a file in the root directory, called `config.
 - `scraper_timeout`: `number` - The timeout for the Google Maps scraper.
 - `outreach_message_subject`: `string` - The subject of your outreach message. `{{COMPANY_NAME}}` will be replaced with the company name.
 - `outreach_message_body_file`: `string` - The file that contains the body of your outreach message, should be HTML. `{{COMPANY_NAME}}` will be replaced with the company name.
+- `assembly_ai_api_key`: `string` - Your Assembly AI API key. Get yours from [here](https://www.assemblyai.com/app/).
+- `font`: `string` - The font that will be used to generate images. This should be a `.ttf` file in the `Fonts/` directory.
 
 ## Example
 
@@ -70,6 +72,8 @@ All your configurations will be in a file in the root directory, called `config.
   "google_maps_scraper_niche": "",
   "scraper_timeout": 300,
   "outreach_message_subject": "I have a question...",
-  "outreach_message_body_file": "outreach_message.html"
+  "outreach_message_body_file": "outreach_message.html",
+  "assembly_ai_api_key": "",
+  "font": "bold_font.ttf"
 }
 ```

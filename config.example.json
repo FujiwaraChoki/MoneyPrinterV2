@@ -19,5 +19,7 @@
   "google_maps_scraper_niche": "",
   "scraper_timeout": 300,
   "outreach_message_subject": "I have a question...",
-  "outreach_message_body_file": "outreach_message.html"
+  "outreach_message_body_file": "outreach_message.html",
+  "assembly_ai_api_key": "",
+  "font": "bold_font.ttf"
 }

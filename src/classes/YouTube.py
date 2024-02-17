@@ -3,6 +3,7 @@ import g4f
 import json
 import time
 import requests
+import assemblyai as aai
 
 from utils import *
 from cache import *
@@ -20,6 +21,7 @@ from moviepy.video.fx.all import crop
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.firefox.options import Options
+from moviepy.video.tools.subtitles import SubtitlesClip
 from webdriver_manager.firefox import GeckoDriverManager
 
 class YouTube:
@@ -379,6 +381,35 @@ class YouTube:
             with open(cache, "w") as f:
                 f.write(json.dumps(previous_json))
 
+    def generate_subtitles(self, video_path: str) -> str:
+        """
+        Generates subtitles for the video using AssemblyAI.
+
+        Args:
+            video_path (str): The path to the video file.
+
+        Returns:
+            path (str): The path to the generated SRT File.
+        """
+        # Turn the video into audio
+        audio_path = os.path.join(ROOT_DIR, ".mp", str(uuid4()) + ".wav")
+        video = VideoFileClip(video_path)
+        audio = video.audio
+        audio.write_audiofile(audio_path)
+
+        aai.settings.api_key = get_assemblyai_api_key()
+        config = aai.TranscriptionConfig()
+        transcriber = aai.Transcriber(config=config)
+        transcript = transcriber.transcribe(audio_path)
+        subtitles = transcript.export_subtitles_srt()
+
+        srt_path = os.path.join(ROOT_DIR, ".mp", str(uuid4()) + ".srt")
+
+        with open(srt_path, "w") as file:
+            file.write(subtitles)
+
+        return srt_path
+
     def combine(self) -> str:
         """
         Combines everything into the final video.
@@ -391,6 +422,23 @@ class YouTube:
         tts_clip = AudioFileClip(self.tts_path)
         max_duration = tts_clip.duration
         req_dur = max_duration / len(self.images)
+
+        # Make a generator that returns a TextClip when called with consecutive
+        generator = lambda txt: TextClip(
+            txt,
+            font=os.path.join(get_fonts_dir(), get_font()),
+            fontsize=100,
+            color="#FFFF00",
+            stroke_color="black",
+            stroke_width=5,
+        )
+
+        subtitles_path = self.generate_subtitles(self.video_path)
+
+        # Burn the subtitles into the video
+        subtitles = SubtitlesClip(subtitles_path, generator)
+
+        equalize_subtitles(subtitles_path)
 
         print(colored("[+] Combining images...", "blue"))
 
@@ -428,15 +476,25 @@ class YouTube:
         final_clip = concatenate_videoclips(clips)
         final_clip = final_clip.set_fps(30)
         random_song = choose_random_song()
+        subtitles.set_pos(("center", "center"))
         random_song_clip = AudioFileClip(random_song).set_fps(44100)
+
         # Turn down volume
         random_song_clip = random_song_clip.fx(afx.volumex, 0.1)
         comp_audio = CompositeAudioClip([
             tts_clip.set_fps(44100),
             random_song_clip
         ])
+
         final_clip = final_clip.set_audio(comp_audio)
         final_clip = final_clip.set_duration(tts_clip.duration)
+
+        # Add subtitles
+        final_clip = CompositeVideoClip([
+            final_clip,
+            subtitles
+        ])
+
         final_clip.write_videofile(combined_image_path, threads=threads)
 
         success(f"Wrote Video to \"{combined_image_path}\"")
