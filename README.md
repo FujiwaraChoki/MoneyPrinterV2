@@ -21,12 +21,13 @@ Please install [Microsoft Visual C++ build tools](https://visualstudio.microsoft
 ```bash
 git clone https://github.com/FujiwaraChoki/MoneyPrinterV2.git
 
-# Activate the virtual environment
+# Create a virtual environment
+python -m venv venv
 
-# Windows
+# Activate the virtual environment - Windows
 .\venv\Scripts\activate
 
-# Unix
+# Activate the virtual environment - Unix
 source venv/bin/activate
 
 # Install the requirements
