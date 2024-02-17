@@ -7,7 +7,7 @@ import assemblyai as aai
 
 from utils import *
 from cache import *
-from .Tts import TTS
+from .TTS import TTS
 from config import *
 from status import *
 from uuid import uuid4
