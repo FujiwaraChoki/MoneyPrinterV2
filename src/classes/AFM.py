@@ -65,26 +65,26 @@ class AffiliateMarketing:
 
     def scrape_product_information(self) -> None:
         """
-        This method will be used to scrape the product information from the affiliate link.
+        This method will be used to scrape the product
+        information from the affiliate link.
         """
         # Open the affiliate link
         self.browser.get(self.affiliate_link)
 
-
         # Get the product name
         product_title: str = self.browser.find_element(By.ID, AMAZON_PRODUCT_TITLE_ID).text
-
-        if get_verbose():
-            info(f"Product Title: {product_title}")
-
-        # Set the product title
-        self.product_title: str = product_title
-
+        
         # Get the features of the product
         features: any = self.browser.find_elements(By.ID, AMAZON_FEATURE_BULLETS_ID)
 
         if get_verbose():
+            info(f"Product Title: {product_title}")
+
+        if get_verbose():
             info(f"Features: {features}")
+            
+        # Set the product title
+        self.product_title: str = product_title
 
         # Set the features
         self.features: any = features
