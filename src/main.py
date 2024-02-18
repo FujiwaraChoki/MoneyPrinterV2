@@ -314,10 +314,17 @@ def main():
                 error("Invalid product selected. Please try again.", "red")
                 main()
             else:
+                # Find the account
+                account = None
+                for acc in get_accounts("twitter"):
+                    if acc["id"] == twitter_uuid:
+                        account = acc
+
                 afm = AffiliateMarketing(selected_product["affiliate_link"], account["firefox_profile"], account["id"], account["nickname"], account["topic"])
 
                 afm.generate_pitch()
                 afm.share_pitch("twitter")
+
     elif user_input == 4:
         info("Starting Outreach...")
 
