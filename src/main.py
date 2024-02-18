@@ -105,18 +105,20 @@ def main():
                     elif user_input == 2:
                         videos = youtube.get_videos()
 
-                        videos_table = PrettyTable()
+                        if len(videos) > 0:
+                            videos_table = PrettyTable()
+                            videos_table.field_names = ["ID", "Date", "Title"]
 
-                        videos_table.field_names = ["ID", "Date", "Title"]
+                            for video in videos:
+                                videos_table.add_row([
+                                    videos.index(video) + 1,
+                                    colored(video["date"], "blue"),
+                                    colored(video["title"][:60] + "...", "green")
+                                ])
 
-                        for video in videos:
-                            videos_table.add_row([
-                                videos.index(video) + 1,
-                                colored(video["date"], "blue"),
-                                colored(video["title"][:60] + "...", "green")
-                            ])
-
-                        print(videos_table)
+                            print(videos_table)
+                        else:
+                            warning(" No videos found.")
                     elif user_input == 3:
                         info("How often do you want to upload?")
 

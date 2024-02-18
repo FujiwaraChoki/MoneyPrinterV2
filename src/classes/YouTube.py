@@ -2,6 +2,7 @@ import re
 import g4f
 import json
 import time
+import datetime
 import requests
 import assemblyai as aai
 
@@ -24,6 +25,7 @@ from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.firefox.options import Options
 from moviepy.video.tools.subtitles import SubtitlesClip
 from webdriver_manager.firefox import GeckoDriverManager
+from datetime import datetime
 
 # Set ImageMagick Path
 change_settings({"IMAGEMAGICK_BINARY": get_imagemagick_path()})
@@ -378,7 +380,7 @@ class YouTube:
             # Find our account
             accounts = previous_json["accounts"]
             for account in accounts:
-                if account["id"] == self.account_uuid:
+                if account["id"] == self._account_uuid:
                     account["videos"].append(video)
             
             # Commit changes
@@ -430,7 +432,7 @@ class YouTube:
             color="#FFFF00",
             stroke_color="black",
             stroke_width=5,
-            size=(1080, 0),
+            size=(1080, 1920),
             method="caption",
         )
 
@@ -689,7 +691,8 @@ class YouTube:
             self.add_video({
                 "title": self.metadata["title"],
                 "description": self.metadata["description"],
-                "url": url
+                "url": url,
+                "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             })
 
             # Close the browser
@@ -714,3 +717,16 @@ class YouTube:
                 json.dump({
                     "videos": []
                 }, file, indent=4)
+            return []
+
+        videos = []
+        # Read the cache file
+        with open(get_youtube_cache_path(), 'r') as file:
+            previous_json = json.loads(file.read())
+            # Find our account
+            accounts = previous_json["accounts"]
+            for account in accounts:
+                if account["id"] == self._account_uuid:
+                    videos = account["videos"]
+
+        return videos
