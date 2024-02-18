@@ -430,6 +430,8 @@ class YouTube:
             color="#FFFF00",
             stroke_color="black",
             stroke_width=5,
+            size=(1080, 0),
+            method="caption",
         )
 
         print(colored("[+] Combining images...", "blue"))
