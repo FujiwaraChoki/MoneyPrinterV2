@@ -230,3 +230,13 @@ def get_fonts_dir() -> str:
         dir (str): The fonts directory
     """
     return os.path.join(ROOT_DIR, "Fonts")
+
+def get_imagemagick_path() -> str:
+    """
+    Gets the path to ImageMagick.
+
+    Returns:
+        path (str): The path to ImageMagick
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file)["imagemagick_path"]

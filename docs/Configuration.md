@@ -47,6 +47,7 @@ All your configurations will be in a file in the root directory, called `config.
 - `outreach_message_body_file`: `string` - The file that contains the body of your outreach message, should be HTML. `{{COMPANY_NAME}}` will be replaced with the company name.
 - `assembly_ai_api_key`: `string` - Your Assembly AI API key. Get yours from [here](https://www.assemblyai.com/app/).
 - `font`: `string` - The font that will be used to generate images. This should be a `.ttf` file in the `Fonts/` directory.
+- `imagemagick_path`: `string` - The path to the ImageMagick binary. This is used by MoviePy to manipulate images. Install ImageMagick from [here](https://imagemagick.org/script/download.php) and set the path to the `magick.exe` on Windows, or on Linux/MacOS the path to `convert` (usually /usr/bin/convert).
 
 ## Example
 
@@ -74,6 +75,7 @@ All your configurations will be in a file in the root directory, called `config.
   "outreach_message_subject": "I have a question...",
   "outreach_message_body_file": "outreach_message.html",
   "assembly_ai_api_key": "",
-  "font": "bold_font.ttf"
+  "font": "bold_font.ttf",
+  "imagemagick_path": "C:\\Program Files\\ImageMagick-7.1.0-Q16\\magick.exe"
 }
 ```

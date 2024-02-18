@@ -18,11 +18,15 @@ from termcolor import colored
 from selenium_firefox import *
 from selenium import webdriver
 from moviepy.video.fx.all import crop
+from moviepy.config import change_settings
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.firefox.options import Options
 from moviepy.video.tools.subtitles import SubtitlesClip
 from webdriver_manager.firefox import GeckoDriverManager
+
+# Set ImageMagick Path
+change_settings({"IMAGEMAGICK_BINARY": get_imagemagick_path()})
 
 class YouTube:
     """
