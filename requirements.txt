@@ -13,3 +13,5 @@ Pillow==9.5.0
 yagmail
 assemblyai
 srt_equalizer
+undetected_chromedriver
+platformdirs
