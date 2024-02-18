@@ -7,7 +7,6 @@ webdriver_manager
 selenium_firefox
 selenium
 g4f
-python-crontab
 moviepy
 Pillow==9.5.0
 yagmail
