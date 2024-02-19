@@ -76,7 +76,7 @@ def fetch_songs() -> None:
             return
 
         # Download songs
-        response = requests.get(get_zip_url() or "https://filebin.net/klylrens0uk2pnrg/drive-download-20240209T180019Z-001.zip")
+        response = requests.get(get_zip_url() or "https://filebin.net/bb9ewdtckolsf3sg/drive-download-20240209T180019Z-001.zip")
 
         # Save the zip file
         with open(os.path.join(files_dir, "songs.zip"), "wb") as file:
