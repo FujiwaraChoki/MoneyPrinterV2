@@ -477,7 +477,7 @@ class YouTube:
         # Burn the subtitles into the video
         subtitles = SubtitlesClip(subtitles_path, generator)
 
-        equalize_subtitles(subtitles_path)
+        equalize_subtitles(subtitles_path, 10)
 
         subtitles.set_pos(("center", "center"))
         random_song_clip = AudioFileClip(random_song).set_fps(44100)

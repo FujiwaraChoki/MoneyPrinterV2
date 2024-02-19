@@ -229,7 +229,7 @@ def get_fonts_dir() -> str:
     Returns:
         dir (str): The fonts directory
     """
-    return os.path.join(ROOT_DIR, "Fonts")
+    return os.path.join(ROOT_DIR, "fonts")
 
 def get_imagemagick_path() -> str:
     """
