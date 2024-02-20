@@ -140,7 +140,7 @@ class YouTube:
         Returns:
             topic (str): The generated topic.
         """
-        completion = self.generate_response(f"Please generate a specific video idea that takes about the following topic: {self.niche}. Make it exactly one sentence. Only return the topic, nothing else.")
+        completion = self.generate_response(f"Please generate a specific video idea that talks about the following topic: {self.niche}. Make it exactly one sentence. Only return the topic, nothing else.")
 
         if not completion:
             error("Failed to generate Topic.")
