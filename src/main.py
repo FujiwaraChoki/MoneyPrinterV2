@@ -319,7 +319,7 @@ def main():
                 # Find the account
                 account = None
                 for acc in get_accounts("twitter"):
-                    if acc["id"] == twitter_uuid:
+                    if acc["id"] == selected_product["twitter_uuid"]:
                         account = acc
 
                 afm = AffiliateMarketing(selected_product["affiliate_link"], account["firefox_profile"], account["id"], account["nickname"], account["topic"])
