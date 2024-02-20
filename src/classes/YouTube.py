@@ -346,8 +346,8 @@ class YouTube:
         """
         path = os.path.join(ROOT_DIR, ".mp", str(uuid4()) + ".wav")
 
-        # Clean script, remove every non-alphanumeric character
-        self.script = re.sub(r'\W+', ' ', self.script)
+        # Clean script, remove every character that is not a word character, a space, a period, a question mark, or an exclamation mark.
+        self.script = re.sub(r'[^\w\s.?!]', '', self.script)
 
         tts_instance.synthesize(self.script, path)
 
