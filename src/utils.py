@@ -58,7 +58,7 @@ def rem_temp_files() -> None:
 
 def fetch_songs() -> None:
     """
-    Downloads songs into songs/ directory to use with geneated videos.
+    Downloads songs into songs/ directory to use with generated videos.
 
     Returns:
         None
