@@ -474,10 +474,11 @@ class YouTube:
         
         subtitles_path = self.generate_subtitles(self.tts_path)
 
+        # Equalize srt file
+        equalize_subtitles(subtitles_path, 10)
+        
         # Burn the subtitles into the video
         subtitles = SubtitlesClip(subtitles_path, generator)
-
-        equalize_subtitles(subtitles_path, 10)
 
         subtitles.set_pos(("center", "center"))
         random_song_clip = AudioFileClip(random_song).set_fps(44100)
