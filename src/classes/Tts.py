@@ -15,7 +15,8 @@ class TTS:
         Returns:
             None
         """
-        venv_site_packages = "venv\\Lib\\site-packages"
+        import sys
+        venv_site_packages = F"{sys.prefix}\\Lib\\site-packages"
 
         # Path to the .models.json file
         models_json_path = os.path.join(
