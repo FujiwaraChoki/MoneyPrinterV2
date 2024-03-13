@@ -21,6 +21,13 @@ MPV2 (MoneyPrinter Version 2) is, as the name suggests, the second version of th
 - [x] Affiliate Marketing (Amazon + Twitter)
 - [x] Find local businesses & cold outreach
 
+## Versions
+
+MoneyPrinter has different versions for multiple languages developed by the community for the community. Here are some known versions:
+- Chinese: [MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo)
+
+If you would like to submit your own version/fork of MoneyPrinter, please open an issue describing the changes you made to the fork.
+
 ## Installation
 
 Please install [Microsoft Visual C++ build tools](https://visualstudio.microsoft.com/de/visual-cpp-build-tools/) first, so that CoquiTTS can function correctly.
