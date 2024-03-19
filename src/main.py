@@ -17,16 +17,29 @@ from classes.Outreach import Outreach
 from classes.AFM import AffiliateMarketing
 
 def main():
-    # Show user options
-    info("\n============ OPTIONS ============", False)
-
-    for idx, option in enumerate(OPTIONS):
-        print(colored(f" {idx + 1}. {option}", "cyan"))
-
-    info("=================================\n", False)
 
     # Get user input
-    user_input = int(question("Select an option: "))
+    # user_input = int(question("Select an option: "))
+    valid_input = False
+    while not valid_input:
+        try:
+    # Show user options
+            info("\n============ OPTIONS ============", False)
+
+            for idx, option in enumerate(OPTIONS):
+                print(colored(f" {idx + 1}. {option}", "cyan"))
+
+            info("=================================\n", False)
+            user_input = input("Select an option: ").strip()
+            if user_input == '':
+                print("\n" * 100)
+                raise ValueError("Empty input is not allowed.")
+            user_input = int(user_input)
+            valid_input = True
+        except ValueError as e:
+            print("\n" * 100)
+            print(f"Invalid input: {e}")
+
 
     # Start the selected option
     if user_input == 1:
