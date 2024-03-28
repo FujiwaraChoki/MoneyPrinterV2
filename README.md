@@ -37,6 +37,7 @@ Please install [Microsoft Visual C++ build tools](https://visualstudio.microsoft
 ```bash
 git clone https://github.com/FujiwaraChoki/MoneyPrinterV2.git
 
+cd MoneyPrinterV2
 # Copy Example Configuration and fill out values in config.json
 cp config.example.json config.json
 
