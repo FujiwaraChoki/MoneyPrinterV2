@@ -112,6 +112,17 @@ class YouTube:
         Returns:
             response (str): The generated AI Repsonse.
         """
+        if get_model() == "google":
+            import google.generativeai as genai
+
+            genai.configure(api_key=get_gemini_api_key())
+
+            model = genai.GenerativeModel('gemini-pro')
+
+            response: str = model.generate_content(prompt).text
+
+            return response
+
         if not model:
             return g4f.ChatCompletion.create(
                 model=parse_model(get_model()),
