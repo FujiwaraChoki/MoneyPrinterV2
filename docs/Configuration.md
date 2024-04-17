@@ -14,6 +14,7 @@ All your configurations will be in a file in the root directory, called `config.
     * `llama2_13b`
     * `llama2_70b`
     * `mixtral_8x7b`
+    *  `google`
 - `image_prompt_llm`: `string` - The Large Language Model that will be used to generate image prompts. If left empty, the default model (`gpt35_turbo`) will be used. Here are your choices:
     * `gpt4`
     * `gpt35_turbo`
@@ -45,6 +46,7 @@ All your configurations will be in a file in the root directory, called `config.
 - `scraper_timeout`: `number` - The timeout for the Google Maps scraper.
 - `outreach_message_subject`: `string` - The subject of your outreach message. `{{COMPANY_NAME}}` will be replaced with the company name.
 - `outreach_message_body_file`: `string` - The file that contains the body of your outreach message, should be HTML. `{{COMPANY_NAME}}` will be replaced with the company name.
+- `gemini_api_key`: `string` - Your Google Gemini API key. Get yours from [here](https://ai.google.dev)
 - `assembly_ai_api_key`: `string` - Your Assembly AI API key. Get yours from [here](https://www.assemblyai.com/app/).
 - `font`: `string` - The font that will be used to generate images. This should be a `.ttf` file in the `fonts/` directory.
 - `imagemagick_path`: `string` - The path to the ImageMagick binary. This is used by MoviePy to manipulate images. Install ImageMagick from [here](https://imagemagick.org/script/download.php) and set the path to the `magick.exe` on Windows, or on Linux/MacOS the path to `convert` (usually /usr/bin/convert).

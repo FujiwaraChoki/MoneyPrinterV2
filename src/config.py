@@ -186,8 +186,17 @@ def get_outreach_message_body_file() -> str:
     Returns:
         file (str): The outreach message body file
     """
-    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+    with open(os.path.join(ROOT_DIR, "confisg.json"), "r") as file:
         return json.load(file)["outreach_message_body_file"]
+def get_gemini_api_key() -> str:
+    """
+    Gets the Google Gemini API key.
+
+    Returns:
+        key (str): The Gemini API key
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file)["gemini_api_key"]
 
 def get_assemblyai_api_key() -> str:
     """
