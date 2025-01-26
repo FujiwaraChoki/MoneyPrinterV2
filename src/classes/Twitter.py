@@ -111,6 +111,64 @@ class Twitter:
 
         success("Posted to Twitter successfully!")
 
+    
+    def reply(self, text: str = None) -> None:
+        """
+        Starts the Twitter Bot.
+
+        Args:
+            text (str): The text to post
+
+        Returns:
+            None
+        """
+        bot: webdriver.Firefox = self.browser
+        verbose: bool = get_verbose()
+
+        bot.get("https://twitter.com")
+
+        time.sleep(2)
+
+        try:
+            bot.find_element(By.XPATH, "(//article[@data-testid='tweet'])[1]//div[@data-testid='reply']").click()
+        except exceptions.NoSuchElementException:
+            time.sleep(3)
+            bot.find_element(By.XPATH, "(//article[@data-testid='tweet'])[1]//button[@data-testid='reply']").click()
+
+        tweet_text: str = bot.find_element(By.XPATH, "//div[@data-testid='tweetText']").text
+
+        if len(tweet_text) < 25:
+            return self.reply()
+        
+        post_content: str = self.generate_reply(tweet_text)
+
+        print(colored(f" => Posting to Twitter:", "blue"), post_content[:30] + "...")
+
+        time.sleep(2) 
+        body = post_content if text is None else text
+
+        try:
+            bot.find_element(By.XPATH, "//div[@role='textbox']").send_keys(body)
+        except exceptions.NoSuchElementException:
+            time.sleep(2)
+            bot.find_element(By.XPATH, "//div[@role='textbox']").send_keys(body)
+
+        try:
+            time.sleep(1)
+            bot.find_element(By.CLASS_NAME, "notranslate").send_keys(keys.Keys.ENTER)
+            bot.find_element(By.XPATH, "//div[@data-testid='tweetButton']").click()
+        except exceptions.NoSuchElementException:
+            time.sleep(1)
+            bot.find_element(By.CLASS_NAME, "notranslate").send_keys(keys.Keys.ENTER)
+            bot.find_element(By.XPATH, "//button[@data-testid='tweetButton']").click()
+
+        if verbose:
+            print(colored(" => Pressed [ENTER] Button on Twitter..", "blue"))
+        time.sleep(4)
+
+
+        success("Posted to Twitter successfully!")
+
 
     def get_posts(self) -> List[dict]:
         """
@@ -167,7 +225,43 @@ class Twitter:
             with open(get_twitter_cache_path(), "w") as f:
                 f.write(json.dumps(previous_json))
             
+    
+    def generate_reply(self, text = str) -> str:
+        """
+        Generates a reply to a post on Twitter
 
+        Return:
+            reply (str) : The reply
+        """
+        
+
+        completion = g4f.ChatCompletion.create(
+            model=parse_model(get_model()),
+            messages=[
+                {
+                    "role": "user",
+                    "content": f"Write a twitter reply to: {text} in {get_twitter_language()}. The Limit is 2 sentences. The reply must feel authentic and generate interaction organically, write it as if you had posted it in the moment, witout overthinking. Use a natural tone, spontaneous expressions, possible typos and slang if applicable. You are writing as a 20 years old it should feel informal so avoid writing to well"
+                }
+            ]
+        )
+
+        if get_verbose():
+            info("Generating a post...")
+
+        if completion is None:
+            error("Failed to generate a reply. Please try again.")
+            sys.exit(1)
+
+        # Apply Regex to remove all *
+        completion = re.sub(r"\*", "", completion).replace("\"", "")
+    
+        if get_verbose():
+            info(f"Length of post: {len(completion)}")
+        if len(completion) >= 260:
+            return self.generate_post()
+
+        return completion
+    
     def generate_post(self) -> str:
         """
         Generates a post for the Twitter account based on the topic.
