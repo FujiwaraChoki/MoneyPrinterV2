@@ -16,6 +16,7 @@ OPTIONS = [
 
 TWITTER_OPTIONS = [
     "Post something",
+    "Reply to something",
     "Show all Posts",
     "Setup CRON Job",
     "Quit"
