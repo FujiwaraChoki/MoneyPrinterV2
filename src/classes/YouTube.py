@@ -72,9 +72,8 @@ class YouTube:
         if get_headless():
             self.options.add_argument("--headless")
 
-        # Set the profile path
-        self.options.add_argument("-profile")
-        self.options.add_argument(fp_profile_path)
+        profile = webdriver.FirefoxProfile(self._fp_profile_path)
+        self.options.profile = profile
 
         # Set the service
         self.service: Service = Service(GeckoDriverManager().install())
@@ -300,6 +299,29 @@ class YouTube:
         Returns:
             path (str): The path to the generated image.
         """
+        print(f"Generating Image: {prompt}")
+
+        url = f"https://floral-cherry-7e5d.drake-t.workers.dev/?prompt={prompt}&model=sdxl"
+        
+        response = requests.get(url)
+        
+        if response.headers.get('content-type') == 'image/png':
+            image_path = os.path.join(ROOT_DIR, ".mp", str(uuid4()) + ".png")
+            
+            with open(image_path, "wb") as image_file:
+                image_file.write(response.content)
+            
+            if get_verbose():
+                info(f" => Wrote Image to \"{image_path}\"\n")
+            
+            self.images.append(image_path)
+            
+            return image_path
+        else:
+            if get_verbose():
+                warning("Failed to generate image. The response was not a PNG image.")
+            return None
+        
         ok = False
         while ok == False:
             url = f"https://hercai.onrender.com/{get_image_model()}/text2image?prompt={prompt}"
