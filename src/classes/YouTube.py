@@ -301,7 +301,19 @@ class YouTube:
         """
         print(f"Generating Image: {prompt}")
 
-        url = f"https://floral-cherry-7e5d.drake-t.workers.dev/?prompt={prompt}&model=sdxl"
+        # Get worker URL from account config
+        cached_accounts = get_accounts("youtube")
+        worker_url = None
+        for account in cached_accounts:
+            if account["id"] == self._account_uuid:
+                worker_url = account["worker_url"]
+                break
+
+        if not worker_url:
+            error("Image generation worker URL not configured for this account")
+            return None
+
+        url = f"{worker_url}?prompt={prompt}&model=sdxl"
         
         response = requests.get(url)
         
@@ -321,40 +333,7 @@ class YouTube:
             if get_verbose():
                 warning("Failed to generate image. The response was not a PNG image.")
             return None
-        
-        ok = False
-        while ok == False:
-            url = f"https://hercai.onrender.com/{get_image_model()}/text2image?prompt={prompt}"
 
-            r = requests.get(url)
-            parsed = r.json()
-
-            if "url" not in parsed or not parsed.get("url"):
-                # Retry
-                if get_verbose():
-                    info(f" => Failed to generate Image for Prompt: {prompt}. Retrying...")
-                ok = False
-            else:
-                ok = True
-                image_url = parsed["url"]
-
-                if get_verbose():
-                    info(f" => Generated Image: {image_url}")
-
-                image_path = os.path.join(ROOT_DIR, ".mp", str(uuid4()) + ".png")
-                
-                with open(image_path, "wb") as image_file:
-                    # Write bytes to file
-                    image_r = requests.get(image_url)
-
-                    image_file.write(image_r.content)
-
-                if get_verbose():
-                    info(f" => Wrote Image to \"{image_path}\"\n")
-
-                self.images.append(image_path)
-                
-                return image_path
 
     def generate_script_to_speech(self, tts_instance: TTS) -> str:
         """

@@ -59,6 +59,7 @@ def main():
                 fp_profile = question(" => Enter the path to the Firefox profile: ")
                 niche = question(" => Enter the account niche: ")
                 language = question(" => Enter the account language: ")
+                worker_url = question(" => Enter your Cloudflare worker URL for image generation: ")
 
                 add_account("youtube", {
                     "id": generated_uuid,
@@ -66,8 +67,11 @@ def main():
                     "firefox_profile": fp_profile,
                     "niche": niche,
                     "language": language,
+                    "worker_url": worker_url,  # Add worker URL to account data
                     "videos": []
                 })
+
+                success("Account and image generation worker configured successfully!")
         else:
             table = PrettyTable()
             table.field_names = ["ID", "UUID", "Nickname", "Niche"]
@@ -246,10 +250,12 @@ def main():
                         info("\n============ OPTIONS ============", False)
                         for idx, cron_option in enumerate(TWITTER_CRON_OPTIONS):
                             print(colored(f" {idx + 1}. {cron_option}", "cyan"))
-
                         info("=================================\n", False)
 
-                        user_input = int(question("Select an Option: "))
+                        twitter_cron_choice = int(question("Select an Option: "))
+
+                        if twitter_cron_choice == 5:
+                            break
 
                         cron_script_path = os.path.join(ROOT_DIR, "src", "cron.py")
                         command = f"python {cron_script_path} twitter {selected_account['id']}"
@@ -257,24 +263,45 @@ def main():
                         def job():
                             subprocess.run(command)
 
-                        if user_input == 1:
+                        if twitter_cron_choice == 1:
                             # Post Once a day
                             schedule.every(1).day.do(job)
-                            success("Set up CRON Job.")
-                        elif user_input == 2:
-                            # Post twice a day
+                            success("Set up CRON Job for posting once a day.")
+                        elif twitter_cron_choice == 2:
+                            # Post Twice a day (for example, 10:00 and 16:00)
                             schedule.every().day.at("10:00").do(job)
                             schedule.every().day.at("16:00").do(job)
-                            success("Set up CRON Job.")
-                        elif user_input == 3:
-                            # Post thrice a day
+                            success("Set up CRON Job for posting twice a day.")
+                        elif twitter_cron_choice == 3:
+                            # Post Thrice a day (for example, 08:00, 12:00, and 18:00)
                             schedule.every().day.at("08:00").do(job)
                             schedule.every().day.at("12:00").do(job)
                             schedule.every().day.at("18:00").do(job)
-                            success("Set up CRON Job.")
-                        else:
-                            break
-
+                            success("Set up CRON Job for posting thrice a day.")
+                        elif twitter_cron_choice == 4:
+                            custom_tweets = int(question("Enter number of tweets per day (1-30): "))
+                            if custom_tweets < 1 or custom_tweets > 30:
+                                error("Invalid number of tweets. Choose a value between 1 and 30.", "red")
+                            else:
+                                from datetime import datetime, timedelta
+                                # Define allowed posting window: 05:00 to 23:00
+                                window_start = datetime.strptime("05:00", "%H:%M")
+                                window_end = datetime.strptime("23:00", "%H:%M")
+                                total_minutes = (window_end - window_start).seconds // 60  # 1080 minutes
+                                scheduled_times = []
+                                if custom_tweets == 1:
+                                    tweet_time = window_start.strftime("%H:%M")
+                                    schedule.every().day.at(tweet_time).do(job)
+                                    scheduled_times.append(tweet_time)
+                                else:
+                                    # Divide the window into (custom_tweets - 1) intervals
+                                    interval = total_minutes / (custom_tweets - 1)
+                                    for i in range(custom_tweets):
+                                        tweet_time_dt = window_start + timedelta(minutes=i * interval)
+                                        tweet_time = tweet_time_dt.strftime("%H:%M")
+                                        scheduled_times.append(tweet_time)
+                                        schedule.every().day.at(tweet_time).do(job)
+                                success(f"Set up CRON Job for {custom_tweets} tweets a day at times: {', '.join(scheduled_times)}")
                     elif user_input == 4:
                         if get_verbose():
                             info(" => Climbing Options Ladder...", False)
