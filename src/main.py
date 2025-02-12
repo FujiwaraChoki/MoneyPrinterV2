@@ -59,19 +59,32 @@ def main():
                 fp_profile = question(" => Enter the path to the Firefox profile: ")
                 niche = question(" => Enter the account niche: ")
                 language = question(" => Enter the account language: ")
-                worker_url = question(" => Enter your Cloudflare worker URL for image generation: ")
-
-                add_account("youtube", {
+                
+                # Add image generation options
+                info("\n============ IMAGE GENERATION ============", False)
+                print(colored(" 1. Cloudflare Worker", "cyan"))
+                print(colored(" 2. G4F (SDXL Turbo)", "cyan"))
+                info("=======================================\n", False)
+                
+                image_gen_choice = question(" => Select image generation method (1/2): ")
+                
+                account_data = {
                     "id": generated_uuid,
                     "nickname": nickname,
                     "firefox_profile": fp_profile,
                     "niche": niche,
                     "language": language,
-                    "worker_url": worker_url,  # Add worker URL to account data
+                    "use_g4f": image_gen_choice == "2",
                     "videos": []
-                })
+                }
+                
+                if image_gen_choice == "1":
+                    worker_url = question(" => Enter your Cloudflare worker URL for image generation: ")
+                    account_data["worker_url"] = worker_url
 
-                success("Account and image generation worker configured successfully!")
+                add_account("youtube", account_data)
+
+                success("Account configured successfully!")
         else:
             table = PrettyTable()
             table.field_names = ["ID", "UUID", "Nickname", "Niche"]
