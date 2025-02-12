@@ -62,8 +62,10 @@ def main():
                 
                 # Add image generation options
                 info("\n============ IMAGE GENERATION ============", False)
-                print(colored(" 1. Cloudflare Worker", "cyan"))
-                print(colored(" 2. G4F (SDXL Turbo)", "cyan"))
+                print(colored(" 1. G4F (SDXL Turbo)", "cyan"))
+                print(colored(" 2. Cloudflare Worker", "cyan"))
+                info("=======================================", False)
+                print(colored("\nRecommendation: If you're unsure, select G4F (Option 1) as there's no additional setup", "yellow"))
                 info("=======================================\n", False)
                 
                 image_gen_choice = question(" => Select image generation method (1/2): ")
@@ -74,11 +76,11 @@ def main():
                     "firefox_profile": fp_profile,
                     "niche": niche,
                     "language": language,
-                    "use_g4f": image_gen_choice == "2",
+                    "use_g4f": image_gen_choice == "1",
                     "videos": []
                 }
                 
-                if image_gen_choice == "1":
+                if image_gen_choice == "2":
                     worker_url = question(" => Enter your Cloudflare worker URL for image generation: ")
                     account_data["worker_url"] = worker_url
 
