@@ -72,9 +72,8 @@ class YouTube:
         if get_headless():
             self.options.add_argument("--headless")
 
-        # Set the profile path
-        self.options.add_argument("-profile")
-        self.options.add_argument(fp_profile_path)
+        profile = webdriver.FirefoxProfile(self._fp_profile_path)
+        self.options.profile = profile
 
         # Set the service
         self.service: Service = Service(GeckoDriverManager().install())
@@ -226,7 +225,22 @@ class YouTube:
         Returns:
             image_prompts (List[str]): Generated List of image prompts.
         """
-        n_prompts = len(self.script) / 3
+        # Check if using G4F for image generation
+        cached_accounts = get_accounts("youtube")
+        account_config = None
+        for account in cached_accounts:
+            if account["id"] == self._account_uuid:
+                account_config = account
+                break
+
+        # Calculate number of prompts based on script length
+        base_n_prompts = len(self.script) / 3
+
+        # If using G4F, limit to 25 prompts
+        if account_config and account_config.get("use_g4f", False):
+            n_prompts = min(base_n_prompts, 25)
+        else:
+            n_prompts = base_n_prompts
 
         prompt = f"""
         Generate {n_prompts} Image Prompts for AI Image Generation,
@@ -279,16 +293,103 @@ class YouTube:
                         warning("Failed to generate Image Prompts. Retrying...")
                     return self.generate_prompts()
 
-        self.image_prompts = image_prompts
+        # Limit prompts to max allowed amount
+        if account_config and account_config.get("use_g4f", False):
+            image_prompts = image_prompts[:25]
+        elif len(image_prompts) > n_prompts:
+            image_prompts = image_prompts[:int(n_prompts)]
 
-        # Check the amount of image prompts
-        # and remove if it's more than needed
-        if len(image_prompts) > n_prompts:
-            image_prompts = image_prompts[:n_prompts]
+        self.image_prompts = image_prompts
 
         success(f"Generated {len(image_prompts)} Image Prompts.")
 
         return image_prompts
+
+    def generate_image_g4f(self, prompt: str) -> str:
+        """
+        Generates an AI Image using G4F with SDXL Turbo.
+
+        Args:
+            prompt (str): Reference for image generation
+
+        Returns:
+            path (str): The path to the generated image.
+        """
+        print(f"Generating Image using G4F: {prompt}")
+        
+        try:
+            from g4f.client import Client
+            
+            client = Client()
+            response = client.images.generate(
+                model="sdxl-turbo",
+                prompt=prompt,
+                response_format="url"
+            )
+            
+            if response and response.data and len(response.data) > 0:
+                # Download image from URL
+                image_url = response.data[0].url
+                image_response = requests.get(image_url)
+                
+                if image_response.status_code == 200:
+                    image_path = os.path.join(ROOT_DIR, ".mp", str(uuid4()) + ".png")
+                    
+                    with open(image_path, "wb") as image_file:
+                        image_file.write(image_response.content)
+                    
+                    if get_verbose():
+                        info(f" => Downloaded Image from {image_url} to \"{image_path}\"\n")
+                    
+                    self.images.append(image_path)
+                    return image_path
+                else:
+                    if get_verbose():
+                        warning(f"Failed to download image from URL: {image_url}")
+                    return None
+            else:
+                if get_verbose():
+                    warning("Failed to generate image using G4F - no data in response")
+                return None
+                
+        except Exception as e:
+            if get_verbose():
+                warning(f"Failed to generate image using G4F: {str(e)}")
+            return None
+
+    def generate_image_cloudflare(self, prompt: str, worker_url: str) -> str:
+        """
+        Generates an AI Image using Cloudflare worker.
+
+        Args:
+            prompt (str): Reference for image generation
+            worker_url (str): The Cloudflare worker URL
+
+        Returns:
+            path (str): The path to the generated image.
+        """
+        print(f"Generating Image using Cloudflare: {prompt}")
+
+        url = f"{worker_url}?prompt={prompt}&model=sdxl"
+        
+        response = requests.get(url)
+        
+        if response.headers.get('content-type') == 'image/png':
+            image_path = os.path.join(ROOT_DIR, ".mp", str(uuid4()) + ".png")
+            
+            with open(image_path, "wb") as image_file:
+                image_file.write(response.content)
+            
+            if get_verbose():
+                info(f" => Wrote Image to \"{image_path}\"\n")
+            
+            self.images.append(image_path)
+            
+            return image_path
+        else:
+            if get_verbose():
+                warning("Failed to generate image. The response was not a PNG image.")
+            return None
 
     def generate_image(self, prompt: str) -> str:
         """
@@ -300,39 +401,27 @@ class YouTube:
         Returns:
             path (str): The path to the generated image.
         """
-        ok = False
-        while ok == False:
-            url = f"https://hercai.onrender.com/{get_image_model()}/text2image?prompt={prompt}"
+        # Get account config from cache
+        cached_accounts = get_accounts("youtube")
+        account_config = None
+        for account in cached_accounts:
+            if account["id"] == self._account_uuid:
+                account_config = account
+                break
 
-            r = requests.get(url)
-            parsed = r.json()
+        if not account_config:
+            error("Account configuration not found")
+            return None
 
-            if "url" not in parsed or not parsed.get("url"):
-                # Retry
-                if get_verbose():
-                    info(f" => Failed to generate Image for Prompt: {prompt}. Retrying...")
-                ok = False
-            else:
-                ok = True
-                image_url = parsed["url"]
-
-                if get_verbose():
-                    info(f" => Generated Image: {image_url}")
-
-                image_path = os.path.join(ROOT_DIR, ".mp", str(uuid4()) + ".png")
-                
-                with open(image_path, "wb") as image_file:
-                    # Write bytes to file
-                    image_r = requests.get(image_url)
-
-                    image_file.write(image_r.content)
-
-                if get_verbose():
-                    info(f" => Wrote Image to \"{image_path}\"\n")
-
-                self.images.append(image_path)
-                
-                return image_path
+        # Check if using G4F or Cloudflare
+        if account_config.get("use_g4f", False):
+            return self.generate_image_g4f(prompt)
+        else:
+            worker_url = account_config.get("worker_url")
+            if not worker_url:
+                error("Cloudflare worker URL not configured for this account")
+                return None
+            return self.generate_image_cloudflare(prompt, worker_url)
 
     def generate_script_to_speech(self, tts_instance: TTS) -> str:
         """

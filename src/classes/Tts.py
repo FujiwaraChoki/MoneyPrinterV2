@@ -1,4 +1,6 @@
 import os
+import sys
+import site
 
 from config import ROOT_DIR
 from TTS.utils.manage import ModelManager
@@ -15,15 +17,25 @@ class TTS:
         Returns:
             None
         """
-        venv_site_packages = "venv\\Lib\\site-packages"
+        # Detect virtual environment site packages
+        if hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
+            # We're in a virtual environment
+            site_packages = site.getsitepackages()[0]
+        else:
+            # We're not in a virtual environment, use the user's site packages
+            site_packages = site.getusersitepackages()
 
         # Path to the .models.json file
         models_json_path = os.path.join(
-            ROOT_DIR,
-            venv_site_packages,
+            site_packages,
             "TTS",
             ".models.json",
         )
+
+        # Create directory if it doesn't exist
+        tts_dir = os.path.dirname(models_json_path)
+        if not os.path.exists(tts_dir):
+            os.makedirs(tts_dir)
 
         # Initialize the ModelManager
         self._model_manager = ModelManager(models_json_path)
@@ -72,4 +84,4 @@ class TTS:
         self.synthesizer.save_wav(outputs, output_file)
 
         return output_file
-    
+
