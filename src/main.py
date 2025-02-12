@@ -226,6 +226,8 @@ def main():
                     if user_input == 1:
                         twitter.post()
                     elif user_input == 2:
+                        twitter.reply()
+                    elif user_input == 3:
                         posts = twitter.get_posts()
 
                         posts_table = PrettyTable()
@@ -240,7 +242,7 @@ def main():
                             ])
 
                         print(posts_table)
-                    elif user_input == 3:
+                    elif user_input == 4:
                         info("How often do you want to post?")
 
                         info("\n============ OPTIONS ============", False)
@@ -275,7 +277,7 @@ def main():
                         else:
                             break
 
-                    elif user_input == 4:
+                    elif user_input == 5:
                         if get_verbose():
                             info(" => Climbing Options Ladder...", False)
                         break
