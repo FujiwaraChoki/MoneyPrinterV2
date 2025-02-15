@@ -129,6 +129,17 @@ class Outreach:
             return items
         
     def set_email_for_website(self, index: int, website: str, output_file: str):
+        """Extracts an email address from a website and updates a CSV file with it.
+
+    This method sends a GET request to the specified website, searches for the
+    first email address in the HTML content, and appends it to the specified 
+    row in a CSV file. If no email address is found, no changes are made to 
+    the CSV file.
+
+    Args:
+        index (int): The row index in the CSV file where the email should be appended.
+        website (str): The URL of the website to extract the email address from.
+        output_file (str): The path to the CSV file to update with the extracted email."""
         # Extract and set an email for a website
         email = ""
 
