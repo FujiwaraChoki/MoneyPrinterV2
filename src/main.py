@@ -17,6 +17,27 @@ from classes.Outreach import Outreach
 from classes.AFM import AffiliateMarketing
 
 def main():
+    """Main entry point for the application, providing a menu-driven interface
+    to manage YouTube, Twitter bots, Affiliate Marketing, and Outreach tasks.
+
+    This function allows users to:
+    1. Start the YouTube Shorts Automater to manage YouTube accounts, 
+       generate and upload videos, and set up CRON jobs.
+    2. Start a Twitter Bot to manage Twitter accounts, post tweets, and 
+       schedule posts using CRON jobs.
+    3. Manage Affiliate Marketing by creating pitches and sharing them via 
+       Twitter accounts.
+    4. Initiate an Outreach process for engagement and promotion tasks.
+    5. Exit the application.
+
+    The function continuously prompts users for input, validates it, and 
+    executes the selected option until the user chooses to quit.
+
+    Args:
+        None
+
+    Returns:
+        None"""
 
     # Get user input
     # user_input = int(question("Select an option: "))
@@ -166,6 +187,16 @@ def main():
                         command = f"python {cron_script_path} youtube {selected_account['id']}"
 
                         def job():
+                            """Executes a shell command using subprocess.run.
+
+    This function runs a specified shell command using the subprocess module.
+    The command to be executed should be defined in the 'command' variable.
+
+    Args:
+        None
+
+    Returns:
+        None"""
                             subprocess.run(command)
 
                         if user_input == 1:
@@ -274,6 +305,16 @@ def main():
                         command = f"python {cron_script_path} twitter {selected_account['id']}"
 
                         def job():
+                            """Executes a shell command using subprocess.run.
+
+    This function runs a specified shell command using the subprocess module.
+    The command to be executed should be defined in the 'command' variable.
+
+    Args:
+        None
+
+    Returns:
+        None"""
                             subprocess.run(command)
 
                         if user_input == 1:
