@@ -17,6 +17,28 @@ from classes.Outreach import Outreach
 from classes.AFM import AffiliateMarketing
 
 def main():
+    """Main function to interact with various automation options.
+
+    This function provides a command-line interface for users to select and control 
+    different automation processes, including YouTube Shorts automation, Twitter bot 
+    management, affiliate marketing, and outreach campaigns. Users can create and 
+    manage accounts, generate and upload content, set up scheduled tasks, and more.
+
+    The available options are:
+    1. YouTube Shorts Automater: Manage YouTube accounts, generate and upload videos, and schedule tasks.
+    2. Twitter Bot: Manage Twitter accounts, post tweets, view history, and schedule posts.
+    3. Affiliate Marketing: Manage affiliate products, generate pitches, and share them via Twitter.
+    4. Outreach: Start outreach campaigns.
+    5. Quit: Exit the application.
+
+    The function handles user input, presents options, validates choices, and guides the 
+    user through the process of setting up and executing tasks.
+
+    Args:
+        None
+
+    Returns:
+        None"""
 
     # Get user input
     # user_input = int(question("Select an option: "))
@@ -166,6 +188,18 @@ def main():
                         command = f"python {cron_script_path} youtube {selected_account['id']}"
 
                         def job():
+                            """Executes a shell command using subprocess.
+
+    This function runs a specified shell command using the subprocess module.
+    The command is expected to be predefined and accessible within the scope
+    of the function. This function does not return any value or output from 
+    the command execution.
+
+    Args:
+        None
+
+    Returns:
+        None"""
                             subprocess.run(command)
 
                         if user_input == 1:
@@ -274,6 +308,18 @@ def main():
                         command = f"python {cron_script_path} twitter {selected_account['id']}"
 
                         def job():
+                            """Executes a shell command using subprocess.
+
+    This function runs a specified shell command using the subprocess module.
+    The command is expected to be predefined and accessible within the scope
+    of the function. This function does not return any value or output from 
+    the command execution.
+
+    Args:
+        None
+
+    Returns:
+        None"""
                             subprocess.run(command)
 
                         if user_input == 1:

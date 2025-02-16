@@ -55,6 +55,20 @@ AMAZON_PRODUCT_TITLE_ID = "productTitle"
 AMAZON_FEATURE_BULLETS_ID = "feature-bullets"
 
 def parse_model(model_name: str) -> any:
+    """Retrieves the specified model object based on the model name.
+
+    Args:
+        model_name (str): The name of the model to retrieve. Supported model names include:
+            - "gpt4"
+            - "gpt35_turbo"
+            - "llama2_7b"
+            - "llama2_13b"
+            - "llama2_70b"
+            - "mixtral_8x7b"
+
+    Returns:
+        any: The corresponding model object from the `g4f.models` module. If the model name
+        is not recognized, the default model `gpt3.5-turbo` is returned."""
     if model_name == "gpt4":
         return g4f.models.gpt_4
     elif model_name == "gpt35_turbo":

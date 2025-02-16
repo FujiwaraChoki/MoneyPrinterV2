@@ -9,6 +9,18 @@ from classes.Twitter import Twitter
 from classes.YouTube import YouTube
 
 def main():
+    """Main function to post content on social media platforms.
+
+    This function initializes and performs actions on specified social media
+    accounts based on the given purpose. It supports posting on Twitter and
+    generating and uploading videos on YouTube.
+
+    Args:
+        sys.argv[1] (str): The purpose of the action, either "twitter" or "youtube".
+        sys.argv[2] (str): The account UUID to identify which account to use.
+
+    Raises:
+        SystemExit: If the purpose is invalid or account UUID is empty."""
     purpose = str(sys.argv[1])
     account_id = str(sys.argv[2])
 
