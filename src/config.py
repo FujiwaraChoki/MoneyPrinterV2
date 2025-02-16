@@ -240,3 +240,13 @@ def get_imagemagick_path() -> str:
     """
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file)["imagemagick_path"]
+
+def get_script_sentence_length() -> int:
+    """
+    Gets the forced script's sentence length.
+
+    Returns:
+        length (int): Length of script's sentence
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file)["script_sentence_length"]
