@@ -244,9 +244,14 @@ def get_imagemagick_path() -> str:
 def get_script_sentence_length() -> int:
     """
     Gets the forced script's sentence length.
+    In case there is no sentence length in config, returns 4 when none
 
     Returns:
         length (int): Length of script's sentence
     """
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
-        return json.load(file)["script_sentence_length"]
+        config_json = json.load(file)
+        if (config_json.get("script_sentence_length") is not None):
+            return config_json["script_sentence_length"]
+        else:
+            return 4
