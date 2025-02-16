@@ -97,7 +97,7 @@ class Twitter:
 
         time.sleep(1)
         bot.find_element(By.CLASS_NAME, "notranslate").send_keys(keys.Keys.ENTER)
-        bot.find_element(By.XPATH, "//div[@data-testid='tweetButton']").click()
+        bot.find_element(By.XPATH, "//button[@data-testid='tweetButton']").click()
 
         if verbose:
             print(colored(" => Pressed [ENTER] Button on Twitter..", "blue"))
