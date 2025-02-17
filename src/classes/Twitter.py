@@ -97,7 +97,18 @@ class Twitter:
 
         time.sleep(1)
         bot.find_element(By.CLASS_NAME, "notranslate").send_keys(keys.Keys.ENTER)
-        bot.find_element(By.XPATH, "//div[@data-testid='tweetButton']").click()
+        try:
+            # Essayer d'abord avec la classe CSS spécifique
+            tweet_button = bot.find_element(By.CSS_SELECTOR, "span.css-1jxf684[role='button']")
+        except:
+            try:
+                # Si ça ne marche pas, essayer avec le texte exact
+                tweet_button = bot.find_element(By.XPATH, "//span[contains(@class, 'css-1jxf684') and text()='Poster']")
+            except:
+                # En dernier recours, chercher n'importe quel élément contenant le texte "Poster"
+                tweet_button = bot.find_element(By.XPATH, "//*[text()='Poster']")
+        
+        tweet_button.click()
 
         if verbose:
             print(colored(" => Pressed [ENTER] Button on Twitter..", "blue"))
