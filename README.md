@@ -1,6 +1,9 @@
 # MoneyPrinter V2
 
 > ♥︎ If you're interested in using a hosted version, sign up for the waitlist on [shiori.ai](https://www.shiori.ai), an AI tool that combines all other AI tools into one.
+
+---
+
 > 𝕏 Also, follow me on X: [@DevBySami](https://x.com/DevBySami).
 
 [![madewithlove](https://img.shields.io/badge/made_with-%E2%9D%A4-red?style=for-the-badge&labelColor=orange)](https://github.com/FujiwaraChoki/MoneyPrinterV2)
