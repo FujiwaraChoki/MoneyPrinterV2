@@ -58,7 +58,7 @@ def parse_model(model_name: str) -> any:
     if model_name == "gpt4":
         return g4f.models.gpt_4
     elif model_name == "gpt35_turbo":
-        return g4f.models.gpt_35_turbo
+        return g4f.models.gpt_4o_mini
     elif model_name == "llama2_7b":
         return g4f.models.llama2_7b
     elif model_name == "llama2_13b":
@@ -69,4 +69,4 @@ def parse_model(model_name: str) -> any:
         return g4f.models.mixtral_8x7b
     else:
         # Default model is gpt3.5-turbo
-        return g4f.models.gpt_35_turbo
+        return g4f.models.gpt_4o_mini
