@@ -49,8 +49,9 @@ class Twitter:
             self.options.add_argument("--headless")
 
         # Set the profile path
-        self.options.add_argument("-profile")
-        self.options.add_argument(fp_profile_path)
+        profile = webdriver.FirefoxProfile(fp_profile_path)
+        self.options.profile = profile
+
 
         # Set the service
         self.service: Service = Service(GeckoDriverManager().install())
