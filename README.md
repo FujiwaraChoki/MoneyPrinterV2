@@ -1,4 +1,4 @@
-# MoneyPrinter V2
+# MoneyPrinter V2 Adhrith
 
 > ♥︎ If you're interested in using a hosted version, sign up for the waitlist on [shiori.ai](https://www.shiori.ai), an AI tool that combines all other AI tools into one.
 
