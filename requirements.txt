@@ -8,7 +8,7 @@ selenium_firefox
 selenium
 g4f
 moviepy
-Pillow==9.5.0
+Pillow==10.3.0
 yagmail
 assemblyai
 srt_equalizer
