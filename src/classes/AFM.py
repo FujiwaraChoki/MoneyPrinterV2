@@ -137,6 +137,9 @@ class AffiliateMarketing:
             where (str): The platform where the pitch will be shared.
         """
         if where == "twitter":
+            # Kill our scraping session
+            self.quit()
+
             # Initialize the Twitter class
             twitter: Twitter = Twitter(self.account_uuid, self.account_nickname, self._fp_profile_path, self.topic)
 
@@ -149,3 +152,5 @@ class AffiliateMarketing:
         """
         # Quit the browser
         self.browser.quit()
+        # Stop the service
+        self.service.stop()
