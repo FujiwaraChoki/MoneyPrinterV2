@@ -7,7 +7,7 @@ webdriver_manager
 selenium_firefox
 selenium
 g4f
-moviepy
+moviepy==1.0.3
 Pillow==9.5.0
 yagmail
 assemblyai
