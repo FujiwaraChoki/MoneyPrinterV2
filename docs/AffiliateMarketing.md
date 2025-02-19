@@ -1,6 +1,6 @@
 # AFM
 
-This class is responsible for the Affiliate Marketing part of MPV2. It uses the `g4f` package (as all other classes) as it's way to utilize the power of LLMs, in this case, to generate tweets, based on information about an **Amazon Product**. MPV2 will scrape the page of the product, and save the **product title**, and **product features**, thus having enough information to be able to create a pitch for the product, and post it on Twitter.
+This class is responsible for the Affiliate Marketing part of MPV2. It uses the `g4f` or `google_gen_ai` package (as all other classes) as it's way to utilize the power of LLMs, in this case, to generate tweets, based on information about an **Amazon Product**. MPV2 will scrape the page of the product, and save the **product title**, and **product features**, thus having enough information to be able to create a pitch for the product, and post it on Twitter.
 
 ## Relevant Configuration
 

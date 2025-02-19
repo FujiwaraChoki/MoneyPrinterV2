@@ -175,15 +175,24 @@ class Twitter:
         Returns:
             post (str): The post
         """
-        completion = g4f.ChatCompletion.create(
-            model=parse_model(get_model()),
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"Generate a Twitter post about: {self.topic} in {get_twitter_language()}. The Limit is 2 sentences. Choose a specific sub-topic of the provided topic."
-                }
-            ]
-        )
+        if get_model() == "google":
+            import google.generativeai as genai
+
+            genai.configure(api_key=get_gemini_api_key())
+            prompt = f"Generate a Twitter post about: {self.topic} in {get_twitter_language()}. The Limit is 2 sentences. Choose a specific sub-topic of the provided topic."
+            model = genai.GenerativeModel('gemini-pro')
+
+            completion = model.generate_content(prompt).text
+        else:
+            completion = g4f.ChatCompletion.create(
+                model=parse_model(get_model()),
+                messages=[
+                    {
+                        "role": "user",
+                        "content": f"Generate a Twitter post about: {self.topic} in {get_twitter_language()}. The Limit is 2 sentences. Choose a specific sub-topic of the provided topic."
+                    }
+                ]
+            )
 
         if get_verbose():
             info("Generating a post...")
