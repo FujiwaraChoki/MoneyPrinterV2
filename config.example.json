@@ -22,5 +22,6 @@
   "outreach_message_body_file": "outreach_message.html",
   "assembly_ai_api_key": "",
   "font": "bold_font.ttf",
-  "imagemagick_path": "Path to magick.exe or on linux/macOS just /usr/bin/convert"
+  "imagemagick_path": "Path to magick.exe or on linux/macOS just /usr/bin/convert",
+  "script_sentence_length": 4
 }

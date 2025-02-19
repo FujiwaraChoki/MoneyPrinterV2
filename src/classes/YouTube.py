@@ -155,8 +155,9 @@ class YouTube:
         Returns:
             script (str): The script of the video.
         """
+        sentence_length = get_script_sentence_length()
         prompt = f"""
-        Generate a script for a video in 4 sentences, depending on the subject of the video.
+        Generate a script for a video in {sentence_length} sentences, depending on the subject of the video.
 
         The script is to be returned as a string with the specified number of paragraphs.
 
@@ -169,7 +170,7 @@ class YouTube:
 
         Obviously, the script should be related to the subject of the video.
         
-        YOU MUST NOT EXCEED THE 4 SENTENCES LIMIT. MAKE SURE THE 4 SENTENCES ARE SHORT.
+        YOU MUST NOT EXCEED THE {sentence_length} SENTENCES LIMIT. MAKE SURE THE {sentence_length} SENTENCES ARE SHORT.
         YOU MUST NOT INCLUDE ANY TYPE OF MARKDOWN OR FORMATTING IN THE SCRIPT, NEVER USE A TITLE.
         YOU MUST WRITE THE SCRIPT IN THE LANGUAGE SPECIFIED IN [LANGUAGE].
         ONLY RETURN THE RAW CONTENT OF THE SCRIPT. DO NOT INCLUDE "VOICEOVER", "NARRATOR" OR SIMILAR INDICATORS OF WHAT SHOULD BE SPOKEN AT THE BEGINNING OF EACH PARAGRAPH OR LINE. YOU MUST NOT MENTION THE PROMPT, OR ANYTHING ABOUT THE SCRIPT ITSELF. ALSO, NEVER TALK ABOUT THE AMOUNT OF PARAGRAPHS OR LINES. JUST WRITE THE SCRIPT
