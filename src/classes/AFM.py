@@ -99,6 +99,17 @@ class AffiliateMarketing:
         Returns:
             response (str): The response for the user.
         """
+        if get_model() == "google":
+            import google.generativeai as genai
+
+            genai.configure(api_key=get_gemini_api_key())
+
+            model = genai.GenerativeModel('gemini-pro')
+
+            response: str = model.generate_content(prompt).text
+
+            return response
+
         # Generate the response
         response: str = g4f.ChatCompletion.create(
             model=parse_model(get_model()),
