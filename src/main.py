@@ -184,19 +184,9 @@ def main():
                         user_input = int(question("Select an Option: "))
 
                         cron_script_path = os.path.join(ROOT_DIR, "src", "cron.py")
-                        command = f"python {cron_script_path} youtube {selected_account['id']}"
+                        command = ["python", cron_script_path, "youtube", selected_account['id']]
 
                         def job():
-                            """Executes a shell command using subprocess.run.
-
-    This function runs a specified shell command using the subprocess module.
-    The command to be executed should be defined in the 'command' variable.
-
-    Args:
-        None
-
-    Returns:
-        None"""
                             subprocess.run(command)
 
                         if user_input == 1:
@@ -302,19 +292,9 @@ def main():
                         user_input = int(question("Select an Option: "))
 
                         cron_script_path = os.path.join(ROOT_DIR, "src", "cron.py")
-                        command = f"python {cron_script_path} twitter {selected_account['id']}"
+                        command = ["python", cron_script_path, "twitter", selected_account['id']]
 
                         def job():
-                            """Executes a shell command using subprocess.run.
-
-    This function runs a specified shell command using the subprocess module.
-    The command to be executed should be defined in the 'command' variable.
-
-    Args:
-        None
-
-    Returns:
-        None"""
                             subprocess.run(command)
 
                         if user_input == 1:
