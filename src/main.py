@@ -116,8 +116,31 @@ def main():
                 table.add_row([cached_accounts.index(account) + 1, colored(account["id"], "cyan"), colored(account["nickname"], "blue"), colored(account["niche"], "green")])
 
             print(table)
+            info("Type 'd' to delete an account.", False)
 
-            user_input = question("Select an account to start: ")
+            user_input = question("Select an account to start (or 'd' to delete): ").strip()
+
+            if user_input.lower() == "d":
+                delete_input = question("Enter account number to delete: ").strip()
+                account_to_delete = None
+
+                for account in cached_accounts:
+                    if str(cached_accounts.index(account) + 1) == delete_input:
+                        account_to_delete = account
+                        break
+
+                if account_to_delete is None:
+                    error("Invalid account selected. Please try again.", "red")
+                else:
+                    confirm = question(f"Are you sure you want to delete '{account_to_delete['nickname']}'? (Yes/No): ").strip().lower()
+
+                    if confirm == "yes":
+                        remove_account("youtube", account_to_delete["id"])
+                        success("Account removed successfully!")
+                    else:
+                        warning("Account deletion canceled.", False)
+
+                return
 
             selected_account = None
 
@@ -246,8 +269,31 @@ def main():
                 table.add_row([cached_accounts.index(account) + 1, colored(account["id"], "cyan"), colored(account["nickname"], "blue"), colored(account["topic"], "green")])
 
             print(table)
+            info("Type 'd' to delete an account.", False)
 
-            user_input = question("Select an account to start: ")
+            user_input = question("Select an account to start (or 'd' to delete): ").strip()
+
+            if user_input.lower() == "d":
+                delete_input = question("Enter account number to delete: ").strip()
+                account_to_delete = None
+
+                for account in cached_accounts:
+                    if str(cached_accounts.index(account) + 1) == delete_input:
+                        account_to_delete = account
+                        break
+
+                if account_to_delete is None:
+                    error("Invalid account selected. Please try again.", "red")
+                else:
+                    confirm = question(f"Are you sure you want to delete '{account_to_delete['nickname']}'? (Yes/No): ").strip().lower()
+
+                    if confirm == "yes":
+                        remove_account("twitter", account_to_delete["id"])
+                        success("Account removed successfully!")
+                    else:
+                        warning("Account deletion canceled.", False)
+
+                return
 
             selected_account = None
 
