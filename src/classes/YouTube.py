@@ -190,7 +190,7 @@ class YouTube:
         if len(completion) > 5000:
             if get_verbose():
                 warning("Generated Script is too long. Retrying...")
-            self.generate_script()
+            return self.generate_script()
         
         self.script = completion
     
