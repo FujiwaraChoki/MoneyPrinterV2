@@ -40,6 +40,26 @@ def get_youtube_cache_path() -> str:
     """
     return os.path.join(get_cache_path(), 'youtube.json')
 
+def get_provider_cache_path(provider: str) -> str:
+    """
+    Gets the cache path for a supported account provider.
+
+    Args:
+        provider (str): The provider name ("twitter" or "youtube")
+
+    Returns:
+        path (str): The provider-specific cache path
+
+    Raises:
+        ValueError: If the provider is unsupported
+    """
+    if provider == "twitter":
+        return get_twitter_cache_path()
+    if provider == "youtube":
+        return get_youtube_cache_path()
+
+    raise ValueError(f"Unsupported provider '{provider}'. Expected 'twitter' or 'youtube'.")
+
 def get_accounts(provider: str) -> List[dict]:
     """
     Gets the accounts from the cache.
@@ -50,12 +70,7 @@ def get_accounts(provider: str) -> List[dict]:
     Returns:
         account (List[dict]): The accounts
     """
-    cache_path = ""
-
-    if provider == "twitter":
-        cache_path = get_twitter_cache_path()
-    elif provider == "youtube":
-        cache_path = get_youtube_cache_path()
+    cache_path = get_provider_cache_path(provider)
 
     if not os.path.exists(cache_path):
         # Create the cache file
@@ -81,54 +96,47 @@ def add_account(provider: str, account: dict) -> None:
     Adds an account to the cache.
 
     Args:
+        provider (str): The provider to add the account to ("twitter" or "youtube")
         account (dict): The account to add
 
     Returns:
         None
     """
-    if provider == "twitter":
-        # Get the current accounts
-        accounts = get_accounts("twitter")
+    cache_path = get_provider_cache_path(provider)
 
-        # Add the new account
-        accounts.append(account)
+    # Get the current accounts
+    accounts = get_accounts(provider)
 
-        # Write the new accounts to the cache
-        with open(get_twitter_cache_path(), 'w') as file:
-            json.dump({
-                "accounts": accounts
-            }, file, indent=4)
-    elif provider == "youtube":
-        # Get the current accounts
-        accounts = get_accounts("youtube")
+    # Add the new account
+    accounts.append(account)
 
-        # Add the new account
-        accounts.append(account)
+    # Write the new accounts to the cache
+    with open(cache_path, 'w') as file:
+        json.dump({
+            "accounts": accounts
+        }, file, indent=4)
 
-        # Write the new accounts to the cache
-        with open(get_youtube_cache_path(), 'w') as file:
-            json.dump({
-                "accounts": accounts
-            }, file, indent=4)
-
-def remove_account(account_id: str) -> None:
+def remove_account(provider: str, account_id: str) -> None:
     """
     Removes an account from the cache.
 
     Args:
+        provider (str): The provider to remove the account from ("twitter" or "youtube")
         account_id (str): The ID of the account to remove
 
     Returns:
         None
     """
     # Get the current accounts
-    accounts = get_accounts()
+    accounts = get_accounts(provider)
 
     # Remove the account
     accounts = [account for account in accounts if account['id'] != account_id]
 
     # Write the new accounts to the cache
-    with open(get_twitter_cache_path(), 'w') as file:
+    cache_path = get_provider_cache_path(provider)
+
+    with open(cache_path, 'w') as file:
         json.dump({
             "accounts": accounts
         }, file, indent=4)
