@@ -78,6 +78,36 @@ def get_model() -> str:
     """
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file)["llm"]
+    
+def get_llm_provider() -> str:
+    """
+    Gets the configured LLM provider.
+
+    Returns:
+        provider (str): The LLM provider
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("llm_provider", "local_ollama")
+
+def get_ollama_base_url() -> str:
+    """
+    Gets the Ollama base URL.
+
+    Returns:
+        url (str): The Ollama base URL
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("ollama_base_url", "http://127.0.0.1:11434")
+
+def get_ollama_model() -> str:
+    """
+    Gets the Ollama model name.
+
+    Returns:
+        model (str): The Ollama model name
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("ollama_model", "llama3.2:3b")
 
 def get_twitter_language() -> str:
     """
@@ -98,6 +128,80 @@ def get_image_model() -> str:
     """
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file)["image_model"]
+    
+def get_image_provider() -> str:
+    """
+    Gets the configured image provider.
+
+    Returns:
+        provider (str): The image provider
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("image_provider", "local_automatic1111")
+
+def get_automatic1111_base_url() -> str:
+    """
+    Gets the AUTOMATIC1111 API base URL.
+
+    Returns:
+        url (str): The AUTOMATIC1111 API base URL
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("automatic1111_base_url", "http://127.0.0.1:7860")
+
+def get_cloudflare_worker_url() -> str:
+    """
+    Gets the Cloudflare worker URL used for image generation.
+
+    Returns:
+        url (str): The Cloudflare worker URL
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("cloudflare_worker_url", "")
+
+def get_nanobanana2_api_base_url() -> str:
+    """
+    Gets the Nano Banana 2 (Gemini image) API base URL.
+
+    Returns:
+        url (str): API base URL
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get(
+            "nanobanana2_api_base_url",
+            "https://generativelanguage.googleapis.com/v1beta",
+        )
+
+def get_nanobanana2_api_key() -> str:
+    """
+    Gets the Nano Banana 2 API key.
+
+    Returns:
+        key (str): API key
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        configured = json.load(file).get("nanobanana2_api_key", "")
+        return configured or os.environ.get("GEMINI_API_KEY", "")
+
+def get_nanobanana2_model() -> str:
+    """
+    Gets the Nano Banana 2 model name.
+
+    Returns:
+        model (str): Model name
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("nanobanana2_model", "gemini-3.1-flash-image-preview")
+
+def get_nanobanana2_aspect_ratio() -> str:
+    """
+    Gets the aspect ratio for Nano Banana 2 image generation.
+
+    Returns:
+        ratio (str): Aspect ratio
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("nanobanana2_aspect_ratio", "9:16")
 
 def get_threads() -> int:
     """
@@ -198,6 +302,46 @@ def get_assemblyai_api_key() -> str:
     """
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file)["assembly_ai_api_key"]
+
+def get_stt_provider() -> str:
+    """
+    Gets the configured STT provider.
+
+    Returns:
+        provider (str): The STT provider
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("stt_provider", "local_whisper")
+
+def get_whisper_model() -> str:
+    """
+    Gets the local Whisper model name.
+
+    Returns:
+        model (str): Whisper model name
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("whisper_model", "base")
+
+def get_whisper_device() -> str:
+    """
+    Gets the target device for Whisper inference.
+
+    Returns:
+        device (str): Whisper device
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("whisper_device", "auto")
+
+def get_whisper_compute_type() -> str:
+    """
+    Gets the compute type for Whisper inference.
+
+    Returns:
+        compute_type (str): Whisper compute type
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("whisper_compute_type", "int8")
     
 def equalize_subtitles(srt_path: str, max_chars: int = 10) -> None:
     """

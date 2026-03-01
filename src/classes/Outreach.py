@@ -3,19 +3,24 @@ import io
 import re
 import csv
 import time
+import glob
+import shlex
 import zipfile
 import yagmail
 import requests
 import subprocess
+import platform
 
 from cache import *
 from status import *
 from config import *
 
+
 class Outreach:
     """
     Class that houses the methods to reach out to businesses.
     """
+
     def __init__(self) -> None:
         """
         Constructor for the Outreach class.
@@ -31,6 +36,15 @@ class Outreach:
 
         # Set email credentials
         self.email_creds = get_email_credentials()
+
+    def _find_scraper_dir(self) -> str:
+        candidates = sorted(glob.glob("google-maps-scraper-*"))
+        for candidate in candidates:
+            if os.path.isdir(candidate) and os.path.exists(
+                os.path.join(candidate, "go.mod")
+            ):
+                return candidate
+        return ""
 
     def is_go_installed(self) -> bool:
         """
@@ -56,8 +70,7 @@ class Outreach:
         Returns:
             None
         """
-        # Check if the scraper is already unzipped, if not, unzip it
-        if os.path.exists("google-maps-scraper-0.9.7"):
+        if self._find_scraper_dir():
             info("=> Scraper already unzipped. Skipping unzip.")
             return
 
@@ -72,18 +85,31 @@ class Outreach:
         Returns:
             None
         """
-        # Check if the scraper is already built, if not, build it
-        if os.path.exists("google-maps-scraper.exe"):
+        binary_name = (
+            "google-maps-scraper.exe"
+            if platform.system() == "Windows"
+            else "google-maps-scraper"
+        )
+        if os.path.exists(binary_name):
             print(colored("=> Scraper already built. Skipping build.", "blue"))
             return
 
-        os.chdir("google-maps-scraper-0.9.7")
-        os.system("go mod download")
-        os.system("go build")
-        os.system("mv google-maps-scraper ../google-maps-scraper")
-        os.chdir("..")
+        scraper_dir = self._find_scraper_dir()
+        if not scraper_dir:
+            raise FileNotFoundError(
+                "Could not locate extracted google-maps-scraper directory."
+            )
 
-    def run_scraper_with_args_for_30_seconds(self, args: str, timeout = 300) -> None:
+        subprocess.run(["go", "mod", "download"], cwd=scraper_dir, check=True)
+        subprocess.run(["go", "build"], cwd=scraper_dir, check=True)
+
+        built_binary = os.path.join(scraper_dir, binary_name)
+        if not os.path.exists(built_binary):
+            raise FileNotFoundError(f"Expected built scraper binary at: {built_binary}")
+
+        os.replace(built_binary, binary_name)
+
+    def run_scraper_with_args_for_30_seconds(self, args: str, timeout=300) -> None:
         """
         Run the scraper with the specified arguments for 30 seconds.
 
@@ -94,21 +120,23 @@ class Outreach:
         Returns:
             None
         """
-        # Run the scraper with the specified arguments
         info(" => Running scraper...")
-        command = "google-maps-scraper " + args
+        binary_name = (
+            "google-maps-scraper.exe"
+            if platform.system() == "Windows"
+            else "google-maps-scraper"
+        )
+        command = [os.path.join(os.getcwd(), binary_name)] + shlex.split(args)
         try:
-            scraper_process = subprocess.call(command.split(" "), shell=True, timeout=float(timeout))
+            scraper_process = subprocess.run(command, timeout=float(timeout))
 
-            if scraper_process == 0:
-                subprocess.call("taskkill /f /im google-maps-scraper.exe", shell=True)
+            if scraper_process.returncode == 0:
                 print(colored("=> Scraper finished successfully.", "green"))
             else:
-                subprocess.call("taskkill /f /im google-maps-scraper.exe", shell=True)
                 print(colored("=> Scraper finished with an error.", "red"))
-            
+        except subprocess.TimeoutExpired:
+            print(colored("=> Scraper timed out.", "red"))
         except Exception as e:
-            subprocess.call("taskkill /f /im google-maps-scraper.exe", shell=True)
             print(colored("An error occurred while running the scraper:", "red"))
             print(str(e))
 
@@ -127,19 +155,19 @@ class Outreach:
             items = f.readlines()
             items = [item.strip() for item in items[1:]]
             return items
-        
+
     def set_email_for_website(self, index: int, website: str, output_file: str):
         """Extracts an email address from a website and updates a CSV file with it.
 
-    This method sends a GET request to the specified website, searches for the
-    first email address in the HTML content, and appends it to the specified 
-    row in a CSV file. If no email address is found, no changes are made to 
-    the CSV file.
+        This method sends a GET request to the specified website, searches for the
+        first email address in the HTML content, and appends it to the specified
+        row in a CSV file. If no email address is found, no changes are made to
+        the CSV file.
 
-    Args:
-        index (int): The row index in the CSV file where the email should be appended.
-        website (str): The URL of the website to extract the email address from.
-        output_file (str): The path to the CSV file to update with the extracted email."""
+        Args:
+            index (int): The row index in the CSV file where the email should be appended.
+            website (str): The URL of the website to extract the email address from.
+            output_file (str): The path to the CSV file to update with the extracted email."""
         # Extract and set an email for a website
         email = ""
 
@@ -163,7 +191,7 @@ class Outreach:
             with open(output_file, "w", newline="", errors="ignore") as csvfile:
                 csvwriter = csv.writer(csvfile)
                 csvwriter.writerows(items)
-        
+
     def start(self) -> None:
         """
         Start the outreach process.
@@ -191,7 +219,16 @@ class Outreach:
         message_body = get_outreach_message_body_file()
 
         # Run
-        self.run_scraper_with_args_for_30_seconds(f"-input niche.txt -results \"{output_path}\"", timeout=get_scraper_timeout())
+        self.run_scraper_with_args_for_30_seconds(
+            f'-input niche.txt -results "{output_path}"', timeout=get_scraper_timeout()
+        )
+
+        if not os.path.exists(output_path):
+            error(
+                f" => Scraper output not found at {output_path}. Check scraper logs and configuration."
+            )
+            os.remove("niche.txt")
+            return
 
         # Get the items from the file
         items = self.get_items_from_file(output_path)
@@ -203,10 +240,15 @@ class Outreach:
         time.sleep(2)
 
         # Create a yagmail SMTP client outside the loop
-        yag = yagmail.SMTP(user=self.email_creds["username"], password=self.email_creds["password"], host=self.email_creds["smtp_server"], port=self.email_creds["smtp_port"])
+        yag = yagmail.SMTP(
+            user=self.email_creds["username"],
+            password=self.email_creds["password"],
+            host=self.email_creds["smtp_server"],
+            port=self.email_creds["smtp_port"],
+        )
 
         # Get the email for each business
-        for item in items:
+        for index, item in enumerate(items, start=1):
             try:
                 # Check if the item"s website is valid
                 website = item.split(",")
@@ -215,8 +257,8 @@ class Outreach:
                 if website != "":
                     test_r = requests.get(website)
                     if test_r.status_code == 200:
-                        self.set_email_for_website(items.index(item), website, output_path)
-                        
+                        self.set_email_for_website(index, website, output_path)
+
                         # Send emails using the existing SMTP connection
                         receiver_email = item.split(",")[-1]
 
@@ -224,11 +266,18 @@ class Outreach:
                             warning(f" => No email provided. Skipping...")
                             continue
 
-                        subject = message_subject.replace("{{COMPANY_NAME}}", item[0])
-                        body = open(message_body, "r").read().replace("{{COMPANY_NAME}}", item[0])
+                        company_name = item.split(",")[0]
+                        subject = message_subject.replace(
+                            "{{COMPANY_NAME}}", company_name
+                        )
+                        body = (
+                            open(message_body, "r")
+                            .read()
+                            .replace("{{COMPANY_NAME}}", company_name)
+                        )
 
                         info(f" => Sending email to {receiver_email}...")
-                        
+
                         yag.send(
                             to=receiver_email,
                             subject=subject,

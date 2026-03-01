@@ -11,6 +11,7 @@ moviepy
 Pillow==9.5.0
 yagmail
 assemblyai
+faster-whisper
 srt_equalizer
 undetected_chromedriver
 platformdirs
