@@ -1,4 +1,6 @@
 import g4f
+import os
+from urllib.parse import urlparse
 
 from status import *
 from config import *
@@ -11,11 +13,20 @@ from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.firefox.options import Options
 from webdriver_manager.firefox import GeckoDriverManager
 
+
 class AffiliateMarketing:
     """
-    This class will be used to handle all the affiliate marketing related operations.    
+    This class will be used to handle all the affiliate marketing related operations.
     """
-    def __init__(self, affiliate_link: str, fp_profile_path: str, twitter_account_uuid: str, account_nickname: str, topic: str) -> None:
+
+    def __init__(
+        self,
+        affiliate_link: str,
+        fp_profile_path: str,
+        twitter_account_uuid: str,
+        account_nickname: str,
+        topic: str,
+    ) -> None:
         """
         Initializes the Affiliate Marketing class.
 
@@ -38,18 +49,31 @@ class AffiliateMarketing:
         if get_headless():
             self.options.add_argument("--headless")
 
+        if not os.path.isdir(fp_profile_path):
+            raise ValueError(
+                f"Firefox profile path does not exist or is not a directory: {fp_profile_path}"
+            )
+
         # Set the profile path
         self.options.add_argument("-profile")
         self.options.add_argument(fp_profile_path)
-        
+
         # Set the service
         self.service: Service = Service(GeckoDriverManager().install())
 
         # Initialize the browser
-        self.browser: webdriver.Firefox = webdriver.Firefox(service=self.service, options=self.options)
+        self.browser: webdriver.Firefox = webdriver.Firefox(
+            service=self.service, options=self.options
+        )
 
         # Set the affiliate link
         self.affiliate_link: str = affiliate_link
+
+        parsed_link = urlparse(self.affiliate_link)
+        if parsed_link.scheme not in ["http", "https"] or not parsed_link.netloc:
+            raise ValueError(
+                f"Affiliate link is invalid. Expected a full URL, got: {self.affiliate_link}"
+            )
 
         # Set the Twitter account UUID
         self.account_uuid: str = twitter_account_uuid
@@ -72,8 +96,10 @@ class AffiliateMarketing:
         self.browser.get(self.affiliate_link)
 
         # Get the product name
-        product_title: str = self.browser.find_element(By.ID, AMAZON_PRODUCT_TITLE_ID).text
-        
+        product_title: str = self.browser.find_element(
+            By.ID, AMAZON_PRODUCT_TITLE_ID
+        ).text
+
         # Get the features of the product
         features: any = self.browser.find_elements(By.ID, AMAZON_FEATURE_BULLETS_ID)
 
@@ -82,7 +108,7 @@ class AffiliateMarketing:
 
         if get_verbose():
             info(f"Features: {features}")
-            
+
         # Set the product title
         self.product_title: str = product_title
 
@@ -102,12 +128,7 @@ class AffiliateMarketing:
         # Generate the response
         response: str = g4f.ChatCompletion.create(
             model=parse_model(get_model()),
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
+            messages=[{"role": "user", "content": prompt}],
         )
 
         # Return the response
@@ -121,13 +142,19 @@ class AffiliateMarketing:
             pitch (str): The pitch for the product.
         """
         # Generate the response
-        pitch: str = self.generate_response(f"I want to promote this product on my website. Generate a brief pitch about this product, return nothing else except the pitch. Information:\nTitle: \"{self.product_title}\"\nFeatures: \"{str(self.features)}\"") + "\nYou can buy the product here: " + self.affiliate_link
+        pitch: str = (
+            self.generate_response(
+                f'I want to promote this product on my website. Generate a brief pitch about this product, return nothing else except the pitch. Information:\nTitle: "{self.product_title}"\nFeatures: "{str(self.features)}"'
+            )
+            + "\nYou can buy the product here: "
+            + self.affiliate_link
+        )
 
         self.pitch: str = pitch
 
         # Return the response
         return pitch
-    
+
     def share_pitch(self, where: str) -> None:
         """
         This method will be used to share the pitch on the specified platform.
@@ -137,7 +164,12 @@ class AffiliateMarketing:
         """
         if where == "twitter":
             # Initialize the Twitter class
-            twitter: Twitter = Twitter(self.account_uuid, self.account_nickname, self._fp_profile_path, self.topic)
+            twitter: Twitter = Twitter(
+                self.account_uuid,
+                self.account_nickname,
+                self._fp_profile_path,
+                self.topic,
+            )
 
             # Share the pitch
             twitter.post(self.pitch)
