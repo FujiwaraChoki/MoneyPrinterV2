@@ -228,30 +228,7 @@ class YouTube:
         Returns:
             image_prompts (List[str]): Generated List of image prompts.
         """
-        image_provider = str(get_image_provider() or "local_automatic1111").lower()
-
-        # Backward-compatible lookup for legacy account-level image settings.
-        cached_accounts = get_accounts("youtube")
-        account_config = None
-        for account in cached_accounts:
-            if account["id"] == self._account_uuid:
-                account_config = account
-                break
-
-        # Calculate number of prompts based on script length
-        base_n_prompts = len(self.script) / 3
-
-        # g4f image generation can be unstable with high prompt counts.
-        using_g4f_image_provider = image_provider == "third_party_g4f" or (
-            image_provider not in ["local_automatic1111", "third_party_cloudflare"]
-            and account_config
-            and account_config.get("use_g4f", False)
-        )
-
-        if using_g4f_image_provider:
-            n_prompts = min(base_n_prompts, 25)
-        else:
-            n_prompts = base_n_prompts
+        n_prompts = len(self.script) / 3
 
         prompt = f"""
         Generate {n_prompts} Image Prompts for AI Image Generation,
@@ -266,11 +243,11 @@ class YouTube:
 
         Be emotional and use interesting adjectives to make the
         Image Prompt as detailed as possible.
-        
+
         YOU MUST ONLY RETURN THE JSON-ARRAY OF STRINGS.
-        YOU MUST NOT RETURN ANYTHING ELSE. 
+        YOU MUST NOT RETURN ANYTHING ELSE.
         YOU MUST NOT RETURN THE SCRIPT.
-        
+
         The search terms must be related to the subject of the video.
         Here is an example of a JSON-Array of strings:
         ["image prompt 1", "image prompt 2", "image prompt 3"]
@@ -280,11 +257,7 @@ class YouTube:
         """
 
         completion = (
-            str(
-                self.generate_response(
-                    prompt, model_name=get_image_prompt_llm()
-                )
-            )
+            str(self.generate_response(prompt))
             .replace("```json", "")
             .replace("```", "")
         )
@@ -301,7 +274,7 @@ class YouTube:
             except Exception:
                 if get_verbose():
                     warning(
-                        "GPT returned an unformatted response. Attempting to clean..."
+                        "LLM returned an unformatted response. Attempting to clean..."
                     )
 
                 # Get everything between [ and ], and turn it into a list
@@ -312,10 +285,7 @@ class YouTube:
                         warning("Failed to generate Image Prompts. Retrying...")
                     return self.generate_prompts()
 
-        # Limit prompts to max allowed amount
-        if using_g4f_image_provider:
-            image_prompts = image_prompts[:25]
-        elif len(image_prompts) > n_prompts:
+        if len(image_prompts) > n_prompts:
             image_prompts = image_prompts[: int(n_prompts)]
 
         self.image_prompts = image_prompts
@@ -323,47 +293,6 @@ class YouTube:
         success(f"Generated {len(image_prompts)} Image Prompts.")
 
         return image_prompts
-
-    def generate_image_g4f(self, prompt: str) -> str:
-        """
-        Generates an AI Image using G4F with SDXL Turbo.
-
-        Args:
-            prompt (str): Reference for image generation
-
-        Returns:
-            path (str): The path to the generated image.
-        """
-        print(f"Generating Image using G4F: {prompt}")
-
-        try:
-            from g4f.client import Client
-
-            client = Client()
-            response = client.images.generate(
-                model="sdxl-turbo", prompt=prompt, response_format="url"
-            )
-
-            if response and response.data and len(response.data) > 0:
-                # Download image from URL
-                image_url = response.data[0].url
-                image_response = requests.get(image_url, timeout=120)
-
-                if image_response.status_code == 200:
-                    return self._persist_image(image_response.content, f"g4f ({image_url})")
-                else:
-                    if get_verbose():
-                        warning(f"Failed to download image from URL: {image_url}")
-                    return None
-            else:
-                if get_verbose():
-                    warning("Failed to generate image using G4F - no data in response")
-                return None
-
-        except Exception as e:
-            if get_verbose():
-                warning(f"Failed to generate image using G4F: {str(e)}")
-            return None
 
     def _persist_image(self, image_bytes: bytes, provider_label: str) -> str:
         """
@@ -386,71 +315,6 @@ class YouTube:
 
         self.images.append(image_path)
         return image_path
-
-    def generate_image_cloudflare(self, prompt: str, worker_url: str) -> str:
-        """
-        Generates an AI Image using Cloudflare worker.
-
-        Args:
-            prompt (str): Reference for image generation
-            worker_url (str): The Cloudflare worker URL
-
-        Returns:
-            path (str): The path to the generated image.
-        """
-        print(f"Generating Image using Cloudflare: {prompt}")
-
-        url = f"{worker_url}?prompt={prompt}&model=sdxl"
-
-        response = requests.get(url, timeout=120)
-
-        if response.headers.get("content-type", "").startswith("image/png"):
-            return self._persist_image(response.content, "Cloudflare worker")
-        else:
-            if get_verbose():
-                warning("Failed to generate image. The response was not a PNG image.")
-            return None
-
-    def generate_image_local_automatic1111(self, prompt: str) -> str:
-        """
-        Generates an AI Image using a local AUTOMATIC1111 API server.
-
-        Args:
-            prompt (str): Prompt for image generation
-
-        Returns:
-            path (str): The path to the generated image.
-        """
-        print(f"Generating Image using local AUTOMATIC1111: {prompt}")
-
-        base_url = get_automatic1111_base_url().rstrip("/")
-        payload = {
-            "prompt": prompt,
-            "steps": 20,
-            "width": 768,
-            "height": 1344,
-            "sampler_name": "Euler a",
-        }
-
-        try:
-            response = requests.post(
-                f"{base_url}/sdapi/v1/txt2img",
-                json=payload,
-                timeout=300
-            )
-            response.raise_for_status()
-            images = response.json().get("images", [])
-            if not images:
-                if get_verbose():
-                    warning("AUTOMATIC1111 did not return any images.")
-                return None
-
-            image_bytes = base64.b64decode(images[0].split(",", 1)[-1])
-            return self._persist_image(image_bytes, "local AUTOMATIC1111")
-        except Exception as e:
-            if get_verbose():
-                warning(f"Failed to generate image with local AUTOMATIC1111: {str(e)}")
-            return None
 
     def generate_image_nanobanana2(self, prompt: str) -> str:
         """
@@ -515,7 +379,7 @@ class YouTube:
 
     def generate_image(self, prompt: str) -> str:
         """
-        Generates an AI Image based on the given prompt.
+        Generates an AI Image based on the given prompt using Nano Banana 2.
 
         Args:
             prompt (str): Reference for image generation
@@ -523,54 +387,11 @@ class YouTube:
         Returns:
             path (str): The path to the generated image.
         """
-        provider = str(get_image_provider() or "local_automatic1111").lower()
-
-        if provider == "local_automatic1111":
-            return self.generate_image_local_automatic1111(prompt)
-
-        if provider == "third_party_g4f":
-            return self.generate_image_g4f(prompt)
-
-        if provider == "third_party_cloudflare":
-            worker_url = get_cloudflare_worker_url()
-            if worker_url:
-                return self.generate_image_cloudflare(prompt, worker_url)
-
-            error(
-                "Image provider is third_party_cloudflare but cloudflare_worker_url is not configured."
-            )
-            return None
-
-        if provider == "third_party_nanobanana2":
-            return self.generate_image_nanobanana2(prompt)
-
-        # Backward-compatible fallback to legacy account-level image configuration.
-        cached_accounts = get_accounts("youtube")
-        account_config = None
-        for account in cached_accounts:
-            if account["id"] == self._account_uuid:
-                account_config = account
-                break
-
-        if not account_config:
-            error(f"Unknown image provider '{provider}' and no account configuration fallback found.")
-            return None
-
-        if account_config.get("use_g4f", False):
-            warning("Using legacy account-level image provider configuration (use_g4f).")
-            return self.generate_image_g4f(prompt)
-
-        worker_url = account_config.get("worker_url")
-        if not worker_url:
-            error("Cloudflare worker URL not configured for this account")
-            return None
-
-        warning("Using legacy account-level Cloudflare worker configuration.")
-        return self.generate_image_cloudflare(prompt, worker_url)
+        return self.generate_image_nanobanana2(prompt)
 
     def generate_script_to_speech(self, tts_instance: TTS) -> str:
         """
-        Converts the generated script into Speech using CoquiTTS and returns the path to the wav file.
+        Converts the generated script into Speech using KittenTTS and returns the path to the wav file.
 
         Args:
             tts_instance (tts): Instance of TTS Class.

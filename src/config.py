@@ -69,26 +69,6 @@ def get_headless() -> bool:
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file)["headless"]
 
-def get_model() -> str:
-    """
-    Gets the model from the config file.
-
-    Returns:
-        model (str): The model
-    """
-    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
-        return json.load(file)["llm"]
-    
-def get_llm_provider() -> str:
-    """
-    Gets the configured LLM provider.
-
-    Returns:
-        provider (str): The LLM provider
-    """
-    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
-        return json.load(file).get("llm_provider", "local_ollama")
-
 def get_ollama_base_url() -> str:
     """
     Gets the Ollama base URL.
@@ -101,13 +81,13 @@ def get_ollama_base_url() -> str:
 
 def get_ollama_model() -> str:
     """
-    Gets the Ollama model name.
+    Gets the Ollama model name from the config file.
 
     Returns:
-        model (str): The Ollama model name
+        model (str): The Ollama model name, or empty string if not set.
     """
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
-        return json.load(file).get("ollama_model", "llama3.2:3b")
+        return json.load(file).get("ollama_model", "")
 
 def get_twitter_language() -> str:
     """
@@ -118,46 +98,6 @@ def get_twitter_language() -> str:
     """
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file)["twitter_language"]
-
-def get_image_model() -> str:
-    """
-    Gets the Image MOdel from the config file.
-
-    Returns:
-        model (str): The image model
-    """
-    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
-        return json.load(file)["image_model"]
-    
-def get_image_provider() -> str:
-    """
-    Gets the configured image provider.
-
-    Returns:
-        provider (str): The image provider
-    """
-    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
-        return json.load(file).get("image_provider", "local_automatic1111")
-
-def get_automatic1111_base_url() -> str:
-    """
-    Gets the AUTOMATIC1111 API base URL.
-
-    Returns:
-        url (str): The AUTOMATIC1111 API base URL
-    """
-    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
-        return json.load(file).get("automatic1111_base_url", "http://127.0.0.1:7860")
-
-def get_cloudflare_worker_url() -> str:
-    """
-    Gets the Cloudflare worker URL used for image generation.
-
-    Returns:
-        url (str): The Cloudflare worker URL
-    """
-    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
-        return json.load(file).get("cloudflare_worker_url", "")
 
 def get_nanobanana2_api_base_url() -> str:
     """
@@ -213,16 +153,6 @@ def get_threads() -> int:
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file)["threads"]
     
-def get_image_prompt_llm() -> str:
-    """
-    Gets the image prompt for LLM from the config file.
-
-    Returns:
-        prompt (str): The image prompt
-    """
-    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
-        return json.load(file)["image_prompt_llm"]
-
 def get_zip_url() -> str:
     """
     Gets the URL to the zip file containing the songs.
@@ -292,6 +222,16 @@ def get_outreach_message_body_file() -> str:
     """
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file)["outreach_message_body_file"]
+
+def get_tts_voice() -> str:
+    """
+    Gets the TTS voice from the config file.
+
+    Returns:
+        voice (str): The TTS voice
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("tts_voice", "Jasper")
 
 def get_assemblyai_api_key() -> str:
     """

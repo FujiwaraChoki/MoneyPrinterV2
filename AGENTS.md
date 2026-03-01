@@ -15,7 +15,7 @@
 - `bash scripts/upload_video.sh`: run direct script-based upload flow from repo root.
 
 ## Coding Style & Naming Conventions
-- Target Python 3.9 (project requirement in `README.md`).
+- Target Python 3.12 (project requirement in `README.md`).
 - Use 4-space indentation and follow existing Python conventions:
   - `snake_case` for functions/variables
   - `PascalCase` for classes

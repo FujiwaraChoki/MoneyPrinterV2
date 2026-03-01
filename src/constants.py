@@ -1,7 +1,6 @@
 """
 This file contains all the constants used in the program.
 """
-import g4f
 
 TWITTER_TEXTAREA_CLASS = "public-DraftStyleDefault-block public-DraftStyleDefault-ltr"
 TWITTER_POST_BUTTON_XPATH = "/html/body/div[1]/div/div/div[2]/main/div/div/div/div[1]/div/div[3]/div/div[2]/div[1]/div/div/div/div[2]/div[2]/div[2]/div/div/div/div[3]"
@@ -53,29 +52,3 @@ YOUTUBE_DONE_BUTTON_ID = "done-button"
 # Amazon Section (AFM)$
 AMAZON_PRODUCT_TITLE_ID = "productTitle"
 AMAZON_FEATURE_BULLETS_ID = "feature-bullets"
-
-def parse_model(model_name: str) -> any:
-    """Retrieve a model object based on the provided model name.
-
-    Args:
-        model_name (str): The name of the model to retrieve. Supported names are 
-            "gpt4", "gpt35_turbo", "llama2_7b", "llama2_13b", "llama2_70b", and "mixtral_8x7b".
-
-    Returns:
-        any: The corresponding model object from the `g4f.models` module. If the 
-        model name is not recognized, defaults to returning the "gpt35_turbo" model."""
-    if model_name == "gpt4":
-        return g4f.models.gpt_4
-    elif model_name == "gpt35_turbo":
-        return g4f.models.gpt_4o_mini
-    elif model_name == "llama2_7b":
-        return g4f.models.llama2_7b
-    elif model_name == "llama2_13b":
-        return g4f.models.llama2_13b
-    elif model_name == "llama2_70b":
-        return g4f.models.llama2_70b
-    elif model_name == "mixtral_8x7b":
-        return g4f.models.mixtral_8x7b
-    else:
-        # Default model is gpt3.5-turbo
-        return g4f.models.gpt_4o_mini

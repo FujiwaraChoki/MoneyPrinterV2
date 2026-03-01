@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-MoneyPrinterV2 (MPV2) is a Python 3.9 CLI tool that automates four online workflows:
+MoneyPrinterV2 (MPV2) is a Python 3.12 CLI tool that automates four online workflows:
 1. **YouTube Shorts** — generate video (LLM script → TTS → images → MoviePy composite) and upload via Selenium
 2. **Twitter/X Bot** — generate and post tweets via Selenium
 3. **Affiliate Marketing** — scrape Amazon product info, generate pitch, share on Twitter
@@ -39,26 +39,26 @@ The app **must** be run from the project root. `python src/main.py` adds `src/` 
 - `src/cron.py` — headless runner invoked by the scheduler as a subprocess: `python src/cron.py <platform> <account_uuid>`
 
 ### Provider Pattern
-Three service categories use a string-based dispatch pattern configured in `config.json`:
+Two service categories use a string-based dispatch pattern configured in `config.json`:
 
 | Category | Config key | Options |
 |---|---|---|
-| LLM | `llm_provider` | `local_ollama`, `third_party_g4f` |
-| Image gen | `image_provider` | `local_automatic1111`, `third_party_g4f`, `third_party_cloudflare`, `third_party_nanobanana2` |
+| LLM | `ollama_model` | Ollama (via `ollama` Python SDK). If empty, user picks from available models at startup. |
+| Image gen | — | `nanobanana2` (Gemini image API) |
 | STT | `stt_provider` | `local_whisper`, `third_party_assemblyai` |
 
-New providers are added by extending the `if provider == "..."` branches in the relevant class/module.
+LLM always uses the local Ollama server. Image generation always uses Nano Banana 2.
 
 ### Key Modules
-- **`src/llm_provider.py`** — unified `generate_text(prompt)` function dispatching to Ollama or g4f
+- **`src/llm_provider.py`** — unified `generate_text(prompt)` function using the Ollama Python SDK
 - **`src/config.py`** — 30+ getter functions, each re-reads `config.json` on every call (no caching). `ROOT_DIR` = project root, computed as `os.path.dirname(sys.path[0])`
 - **`src/cache.py`** — JSON file persistence in `.mp/` directory (accounts, videos, posts, products)
-- **`src/constants.py`** — menu strings, Selenium selectors (YouTube Studio, X.com, Amazon), `parse_model()` for g4f model mapping
+- **`src/constants.py`** — menu strings, Selenium selectors (YouTube Studio, X.com, Amazon)
 - **`src/classes/YouTube.py`** — most complex class; full pipeline: topic → script → metadata → image prompts → images → TTS → subtitles → MoviePy combine → Selenium upload
 - **`src/classes/Twitter.py`** — Selenium automation against x.com
 - **`src/classes/AFM.py`** — Amazon scraping + LLM pitch generation
 - **`src/classes/Outreach.py`** — Google Maps scraper (requires Go) + email sending via yagmail
-- **`src/classes/Tts.py`** — Coqui TTS wrapper
+- **`src/classes/Tts.py`** — KittenTTS wrapper
 
 ### Data Storage
 All persistent state lives in `.mp/` at the project root as JSON files (`youtube.json`, `twitter.json`, `afm.json`). This directory also serves as scratch space for temporary WAV, PNG, SRT, and MP4 files — non-JSON files are cleaned on each run by `rem_temp_files()`.
@@ -74,8 +74,8 @@ Uses Python's `schedule` library (in-process, not OS cron). The scheduled job sp
 All config lives in `config.json` at the project root. See `config.example.json` for the full template and `docs/Configuration.md` for reference. Key external dependencies to configure:
 - **ImageMagick** — required for MoviePy subtitle rendering (`imagemagick_path`)
 - **Firefox profile** — must be pre-logged-in to target platforms (`firefox_profile`)
-- **Ollama** or **g4f** — for LLM text generation
-- **AUTOMATIC1111** or other image provider — for image generation
+- **Ollama** — for LLM text generation (via `ollama` Python SDK)
+- **Nano Banana 2** — for image generation (Gemini image API)
 - **Go** — only needed for Outreach (Google Maps scraper)
 
 ## Contributing

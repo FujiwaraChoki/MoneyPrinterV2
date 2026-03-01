@@ -41,12 +41,8 @@ def main() -> int:
 
     failures = 0
 
-    llm_provider = str(cfg.get("llm_provider", "local_ollama")).lower()
-    image_provider = str(cfg.get("image_provider", "local_automatic1111")).lower()
     stt_provider = str(cfg.get("stt_provider", "local_whisper")).lower()
 
-    ok(f"llm_provider={llm_provider}")
-    ok(f"image_provider={image_provider}")
     ok(f"stt_provider={stt_provider}")
 
     imagemagick_path = cfg.get("imagemagick_path", "")
@@ -67,61 +63,43 @@ def main() -> int:
     else:
         warn("firefox_profile is empty. Twitter/YouTube automation requires this.")
 
-    if llm_provider == "local_ollama":
-        base = str(cfg.get("ollama_base_url", "http://127.0.0.1:11434")).rstrip("/")
-        model = cfg.get("ollama_model", "")
-        reachable, detail = check_url(f"{base}/api/tags")
-        if not reachable:
-            fail(f"Ollama is not reachable at {base}: {detail}")
-            failures += 1
-        else:
-            ok(f"Ollama reachable at {base}")
-            try:
-                tags = requests.get(f"{base}/api/tags", timeout=5).json()
-                models = [m.get("name") for m in tags.get("models", [])]
-                if model in models:
-                    ok(f"Ollama model available: {model}")
-                else:
-                    warn(
-                        f"Ollama model not found: {model}. "
-                        f"Installed: {', '.join(models[:10]) or 'none'}"
-                    )
-            except Exception as exc:
-                warn(f"Could not validate Ollama model list: {exc}")
+    # Ollama (LLM)
+    base = str(cfg.get("ollama_base_url", "http://127.0.0.1:11434")).rstrip("/")
+    reachable, detail = check_url(f"{base}/api/tags")
+    if not reachable:
+        fail(f"Ollama is not reachable at {base}: {detail}")
+        failures += 1
+    else:
+        ok(f"Ollama reachable at {base}")
+        try:
+            tags = requests.get(f"{base}/api/tags", timeout=5).json()
+            models = [m.get("name") for m in tags.get("models", [])]
+            if models:
+                ok(f"Ollama models available: {', '.join(models[:10])}")
+            else:
+                warn("No models found on Ollama. Pull a model first (e.g. 'ollama pull llama3.2:3b').")
+        except Exception as exc:
+            warn(f"Could not validate Ollama model list: {exc}")
 
-    if image_provider == "local_automatic1111":
-        base = str(
-            cfg.get("automatic1111_base_url", "http://127.0.0.1:7860")
-        ).rstrip("/")
-        reachable, detail = check_url(f"{base}/sdapi/v1/sd-models")
-        if not reachable:
-            fail(
-                f"AUTOMATIC1111 API is not reachable at {base}: {detail} "
-                "(start webui with --api)"
-            )
-            failures += 1
-        else:
-            ok(f"AUTOMATIC1111 API reachable at {base}")
+    # Nano Banana 2 (image generation)
+    api_key = cfg.get("nanobanana2_api_key", "") or os.environ.get("GEMINI_API_KEY", "")
+    nb2_base = str(
+        cfg.get(
+            "nanobanana2_api_base_url",
+            "https://generativelanguage.googleapis.com/v1beta",
+        )
+    ).rstrip("/")
+    if api_key:
+        ok("nanobanana2_api_key is set")
+    else:
+        fail("nanobanana2_api_key is empty (and GEMINI_API_KEY is not set)")
+        failures += 1
 
-    if image_provider == "third_party_nanobanana2":
-        api_key = cfg.get("nanobanana2_api_key", "") or os.environ.get("GEMINI_API_KEY", "")
-        base = str(
-            cfg.get(
-                "nanobanana2_api_base_url",
-                "https://generativelanguage.googleapis.com/v1beta",
-            )
-        ).rstrip("/")
-        if api_key:
-            ok("nanobanana2_api_key is set")
-        else:
-            fail("nanobanana2_api_key is empty (and GEMINI_API_KEY is not set)")
-            failures += 1
-
-        reachable, detail = check_url(base, timeout=8)
-        if not reachable:
-            warn(f"Nano Banana 2 base URL could not be reached: {detail}")
-        else:
-            ok(f"Nano Banana 2 base URL reachable: {base}")
+    reachable, detail = check_url(nb2_base, timeout=8)
+    if not reachable:
+        warn(f"Nano Banana 2 base URL could not be reached: {detail}")
+    else:
+        ok(f"Nano Banana 2 base URL reachable: {nb2_base}")
 
     if stt_provider == "local_whisper":
         try:

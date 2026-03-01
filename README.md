@@ -17,7 +17,7 @@
 An Application that automates the process of making money online.
 MPV2 (MoneyPrinter Version 2) is, as the name suggests, the second version of the MoneyPrinter project. It is a complete rewrite of the original project, with a focus on a wider range of features and a more modular architecture.
 
-> **Note:** MPV2 needs Python 3.9 to function effectively.
+> **Note:** MPV2 needs Python 3.12 to function effectively.
 > Watch the YouTube video [here](https://youtu.be/wAZ_ZSuIqfk)
 
 ## Features
@@ -36,8 +36,6 @@ MoneyPrinter has different versions for multiple languages developed by the comm
 If you would like to submit your own version/fork of MoneyPrinter, please open an issue describing the changes you made to the fork.
 
 ## Installation
-
-Please install [Microsoft Visual C++ build tools](https://visualstudio.microsoft.com/de/visual-cpp-build-tools/) first, so that CoquiTTS can function correctly.
 
 > ⚠️ If you are planning to reach out to scraped businesses per E-Mail, please first install the [Go Programming Language](https://golang.org/).
 
@@ -92,7 +90,7 @@ MoneyPrinterV2 is licensed under `Affero General Public License v3.0`. See [LICE
 
 ## Acknowledgments
 
-- [CoquiTTS](https://github.com/coqui-ai/TTS)
+- [KittenTTS](https://github.com/KittenML/KittenTTS)
 - [gpt4free](https://github.com/xtekky/gpt4free)
 
 ## Disclaimer

@@ -1,71 +1,46 @@
-import requests
-import g4f
+import ollama
 
-from status import warning
-from config import *
-from constants import parse_model
+from config import get_ollama_base_url
+
+_selected_model: str | None = None
 
 
-def _generate_with_ollama(prompt: str, model_name: str = None) -> str:
+def _client() -> ollama.Client:
+    return ollama.Client(host=get_ollama_base_url())
+
+
+def list_models() -> list[str]:
     """
-    Generates text using a local Ollama server.
-
-    Args:
-        prompt (str): User prompt
-        model_name (str): Optional model name override
+    Lists all models available on the local Ollama server.
 
     Returns:
-        response (str): Generated text
+        models (list[str]): Sorted list of model names.
     """
-    base_url = get_ollama_base_url().rstrip("/")
-    model = model_name or get_ollama_model()
-
-    response = requests.post(
-        f"{base_url}/api/chat",
-        json={
-            "model": model,
-            "messages": [{"role": "user", "content": prompt}],
-            "stream": False
-        },
-        timeout=180
-    )
-    response.raise_for_status()
-
-    payload = response.json()
-    return payload.get("message", {}).get("content", "").strip()
+    response = _client().list()
+    return sorted(m.model for m in response.models)
 
 
-def _generate_with_g4f(prompt: str, model_name: str = None) -> str:
+def select_model(model: str) -> None:
     """
-    Generates text using g4f-backed third-party models.
+    Sets the model to use for all subsequent generate_text calls.
 
     Args:
-        prompt (str): User prompt
-        model_name (str): Optional model name override
-
-    Returns:
-        response (str): Generated text
+        model (str): An Ollama model name (must be already pulled).
     """
-    model_to_use = parse_model(model_name or get_model())
+    global _selected_model
+    _selected_model = model
 
-    return g4f.ChatCompletion.create(
-        model=model_to_use,
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
-    )
+
+def get_active_model() -> str | None:
+    """
+    Returns the currently selected model, or None if none has been selected.
+    """
+    return _selected_model
 
 
 def generate_text(prompt: str, model_name: str = None) -> str:
     """
-    Generates text using the configured provider.
-
-    Providers:
-    - local_ollama
-    - third_party_g4f
+    Generates text using the local Ollama server.
 
     Args:
         prompt (str): User prompt
@@ -74,13 +49,15 @@ def generate_text(prompt: str, model_name: str = None) -> str:
     Returns:
         response (str): Generated text
     """
-    provider = str(get_llm_provider() or "local_ollama").lower()
+    model = model_name or _selected_model
+    if not model:
+        raise RuntimeError(
+            "No Ollama model selected. Call select_model() first or pass model_name."
+        )
 
-    if provider == "local_ollama":
-        return _generate_with_ollama(prompt, model_name=None)
+    response = _client().chat(
+        model=model,
+        messages=[{"role": "user", "content": prompt}],
+    )
 
-    if provider == "third_party_g4f":
-        return _generate_with_g4f(prompt, model_name=model_name)
-
-    warning(f"Unknown llm_provider '{provider}'. Falling back to local_ollama.")
-    return _generate_with_ollama(prompt, model_name=None)
+    return response["message"]["content"].strip()
