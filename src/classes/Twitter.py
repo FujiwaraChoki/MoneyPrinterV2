@@ -85,11 +85,11 @@ class Twitter:
 
         bot.get("https://x.com/compose/post")
 
-        post_content: str = self.generate_post()
+        post_content: str = text if text is not None else self.generate_post()
         now: datetime = datetime.now()
 
         print(colored(" => Posting to Twitter:", "blue"), post_content[:30] + "...")
-        body = post_content if text is None else text
+        body = post_content
 
         text_box = None
         text_box_selectors = [
@@ -111,6 +111,7 @@ class Twitter:
             raise RuntimeError(
                 "Could not find tweet text box. Ensure you are logged into X in this Firefox profile."
             )
+
 
         post_button = None
         post_button_selectors = [
@@ -135,9 +136,7 @@ class Twitter:
         time.sleep(2)
 
         # Add the post to the cache
-        self.add_post(
-            {"content": post_content, "date": now.strftime("%m/%d/%Y, %H:%M:%S")}
-        )
+        self.add_post({"content": body, "date": now.strftime("%m/%d/%Y, %H:%M:%S")})
 
         success("Posted to Twitter successfully!")
 

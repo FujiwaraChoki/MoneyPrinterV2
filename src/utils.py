@@ -80,8 +80,14 @@ def fetch_songs() -> None:
             if get_verbose():
                 info(f" => Created directory: {files_dir}")
         else:
-            # Skip if songs are already downloaded
-            return
+            existing_audio_files = [
+                name
+                for name in os.listdir(files_dir)
+                if os.path.isfile(os.path.join(files_dir, name))
+                and name.lower().endswith((".mp3", ".wav", ".m4a", ".aac", ".ogg"))
+            ]
+            if len(existing_audio_files) > 0:
+                return
 
         configured_url = get_zip_url().strip()
         download_urls = [configured_url] if configured_url else []
@@ -144,5 +150,3 @@ def choose_random_song() -> str:
     except Exception as e:
         error(f"Error occurred while choosing random song: {str(e)}")
         raise
-
-    raise RuntimeError("Failed to choose a random song")
