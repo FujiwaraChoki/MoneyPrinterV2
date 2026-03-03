@@ -7,9 +7,7 @@ import platform
 from status import *
 from config import *
 
-DEFAULT_SONG_ARCHIVE_URLS = [
-    "https://filebin.net/bb9ewdtckolsf3sg/drive-download-20240209T180019Z-001.zip"
-]
+DEFAULT_SONG_ARCHIVE_URLS = []
 
 
 def close_running_selenium_instances() -> None:
@@ -104,8 +102,17 @@ def fetch_songs() -> None:
                 with open(archive_path, "wb") as file:
                     file.write(response.content)
 
-                with zipfile.ZipFile(archive_path, "r") as file:
-                    file.extractall(files_dir)
+                SAFE_EXTENSIONS = (".mp3", ".wav", ".m4a", ".aac", ".ogg", ".flac")
+                with zipfile.ZipFile(archive_path, "r") as zf:
+                    for member in zf.namelist():
+                        basename = os.path.basename(member)
+                        if not basename or not basename.lower().endswith(SAFE_EXTENSIONS):
+                            warning(f"Skipping non-audio file in archive: {member}")
+                            continue
+                        if ".." in member or member.startswith("/"):
+                            warning(f"Skipping suspicious path in archive: {member}")
+                            continue
+                        zf.extract(member, files_dir)
 
                 downloaded = True
                 break

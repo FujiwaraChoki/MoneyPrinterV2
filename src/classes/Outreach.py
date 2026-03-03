@@ -55,7 +55,7 @@ class Outreach:
         """
         # Check if go is installed
         try:
-            subprocess.call("go version", shell=True)
+            subprocess.call(["go", "version"])
             return True
         except Exception as e:
             return False
@@ -76,7 +76,11 @@ class Outreach:
 
         r = requests.get(zip_link)
         z = zipfile.ZipFile(io.BytesIO(r.content))
-        z.extractall()
+        for member in z.namelist():
+            if ".." in member or member.startswith("/"):
+                warning(f"Skipping suspicious path in archive: {member}")
+                continue
+            z.extract(member)
 
     def build_scraper(self) -> None:
         """
