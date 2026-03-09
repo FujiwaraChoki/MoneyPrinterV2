@@ -168,13 +168,17 @@ class Twitter:
                 f.write(json.dumps(previous_json))
             
 
-    def generate_post(self) -> str:
+    def generate_post(self, _retries: int = 0) -> str:
         """
         Generates a post for the Twitter account based on the topic.
 
         Returns:
             post (str): The post
         """
+        if _retries >= 5:
+            error("Failed to generate a valid post after 5 attempts.")
+            sys.exit(1)
+
         completion = g4f.ChatCompletion.create(
             model=parse_model(get_model()),
             messages=[
@@ -194,10 +198,10 @@ class Twitter:
 
         # Apply Regex to remove all *
         completion = re.sub(r"\*", "", completion).replace("\"", "")
-    
+
         if get_verbose():
             info(f"Length of post: {len(completion)}")
         if len(completion) >= 260:
-            return self.generate_post()
+            return self.generate_post(_retries + 1)
 
         return completion

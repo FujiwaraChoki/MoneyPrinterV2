@@ -111,27 +111,29 @@ def add_account(provider: str, account: dict) -> None:
                 "accounts": accounts
             }, file, indent=4)
 
-def remove_account(account_id: str) -> None:
+def remove_account(provider: str, account_id: str) -> None:
     """
     Removes an account from the cache.
 
     Args:
+        provider (str): The provider ("twitter" or "youtube")
         account_id (str): The ID of the account to remove
 
     Returns:
         None
     """
-    # Get the current accounts
-    accounts = get_accounts()
-
-    # Remove the account
+    accounts = get_accounts(provider)
     accounts = [account for account in accounts if account['id'] != account_id]
 
-    # Write the new accounts to the cache
-    with open(get_twitter_cache_path(), 'w') as file:
-        json.dump({
-            "accounts": accounts
-        }, file, indent=4)
+    if provider == "twitter":
+        cache_path = get_twitter_cache_path()
+    elif provider == "youtube":
+        cache_path = get_youtube_cache_path()
+    else:
+        return
+
+    with open(cache_path, 'w') as file:
+        json.dump({"accounts": accounts}, file, indent=4)
 
 def get_products() -> List[dict]:
     """

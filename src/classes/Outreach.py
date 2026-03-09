@@ -4,6 +4,7 @@ import re
 import csv
 import time
 import zipfile
+import platform
 import yagmail
 import requests
 import subprocess
@@ -11,6 +12,7 @@ import subprocess
 from cache import *
 from status import *
 from config import *
+from termcolor import colored
 
 class Outreach:
     """
@@ -83,9 +85,31 @@ class Outreach:
         os.system("mv google-maps-scraper ../google-maps-scraper")
         os.chdir("..")
 
+    def _kill_scraper(self, proc: subprocess.Popen) -> None:
+        """
+        Terminates the scraper process in a cross-platform way.
+
+        Args:
+            proc (subprocess.Popen): The scraper process to kill.
+
+        Returns:
+            None
+        """
+        try:
+            if platform.system() == "Windows":
+                subprocess.call("taskkill /f /im google-maps-scraper.exe", shell=True)
+            else:
+                proc.terminate()
+                try:
+                    proc.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+        except Exception:
+            pass
+
     def run_scraper_with_args_for_30_seconds(self, args: str, timeout = 300) -> None:
         """
-        Run the scraper with the specified arguments for 30 seconds.
+        Run the scraper with the specified arguments for the given timeout period.
 
         Args:
             args (str): The arguments to run the scraper with.
@@ -94,23 +118,27 @@ class Outreach:
         Returns:
             None
         """
-        # Run the scraper with the specified arguments
         info(" => Running scraper...")
-        command = "google-maps-scraper " + args
+        command = ["google-maps-scraper"] + args.split(" ")
+        proc = None
         try:
-            scraper_process = subprocess.call(command.split(" "), shell=True, timeout=float(timeout))
+            proc = subprocess.Popen(command)
+            proc.wait(timeout=float(timeout))
 
-            if scraper_process == 0:
-                subprocess.call("taskkill /f /im google-maps-scraper.exe", shell=True)
+            if proc.returncode == 0:
                 print(colored("=> Scraper finished successfully.", "green"))
             else:
-                subprocess.call("taskkill /f /im google-maps-scraper.exe", shell=True)
                 print(colored("=> Scraper finished with an error.", "red"))
-            
+
+        except subprocess.TimeoutExpired:
+            print(colored("=> Scraper timed out.", "yellow"))
+            if proc:
+                self._kill_scraper(proc)
         except Exception as e:
-            subprocess.call("taskkill /f /im google-maps-scraper.exe", shell=True)
             print(colored("An error occurred while running the scraper:", "red"))
             print(str(e))
+            if proc:
+                self._kill_scraper(proc)
 
     def get_items_from_file(self, file_name: str) -> list:
         """
@@ -225,7 +253,8 @@ class Outreach:
                             continue
 
                         subject = message_subject.replace("{{COMPANY_NAME}}", item[0])
-                        body = open(message_body, "r").read().replace("{{COMPANY_NAME}}", item[0])
+                        with open(message_body, "r") as msg_file:
+                            body = msg_file.read().replace("{{COMPANY_NAME}}", item[0])
 
                         info(f" => Sending email to {receiver_email}...")
                         
