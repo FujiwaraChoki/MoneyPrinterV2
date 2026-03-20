@@ -69,6 +69,37 @@ def get_headless() -> bool:
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file)["headless"]
 
+def get_llm_provider() -> str:
+    """
+    Gets the LLM provider from the config file.
+
+    Returns:
+        provider (str): The LLM provider ('ollama' or 'minimax')
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("llm_provider", "ollama")
+
+def get_minimax_api_key() -> str:
+    """
+    Gets the MiniMax API key.
+
+    Returns:
+        key (str): The MiniMax API key
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        configured = json.load(file).get("minimax_api_key", "")
+        return configured or os.environ.get("MINIMAX_API_KEY", "")
+
+def get_minimax_model() -> str:
+    """
+    Gets the MiniMax model name from the config file.
+
+    Returns:
+        model (str): The MiniMax model name
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("minimax_model", "MiniMax-M2.5")
+
 def get_ollama_base_url() -> str:
     """
     Gets the Ollama base URL.

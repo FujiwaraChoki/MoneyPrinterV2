@@ -7,8 +7,13 @@ All your configurations will be in a file in the root directory, called `config.
 - `verbose`: `boolean` - If `true`, the application will print out more information.
 - `firefox_profile`: `string` - The path to your Firefox profile. This is used to use your Social Media Accounts without having to log in every time you run the application.
 - `headless`: `boolean` - If `true`, the application will run in headless mode. This means that the browser will not be visible.
+- `llm_provider`: `string` - LLM backend to use for text generation. Options:
+    * `ollama` (default) — local Ollama server
+    * `minimax` — MiniMax cloud API
 - `ollama_base_url`: `string` - Base URL of your local Ollama server (default: `http://127.0.0.1:11434`).
 - `ollama_model`: `string` - Ollama model to use for text generation (e.g. `llama3.2:3b`). If empty, the app queries Ollama at startup and lets you pick from the available models interactively.
+- `minimax_api_key`: `string` - API key for [MiniMax](https://platform.minimaxi.com). If empty, MPV2 falls back to environment variable `MINIMAX_API_KEY`.
+- `minimax_model`: `string` - MiniMax model name (default: `MiniMax-M2.5`). Available: `MiniMax-M2.5`, `MiniMax-M2.5-highspeed`.
 - `twitter_language`: `string` - The language that will be used to generate & post tweets.
 - `nanobanana2_api_base_url`: `string` - Nano Banana 2 API base URL (default: `https://generativelanguage.googleapis.com/v1beta`).
 - `nanobanana2_api_key`: `string` - API key for Nano Banana 2 (Gemini image API). If empty, MPV2 falls back to environment variable `GEMINI_API_KEY`.
@@ -46,8 +51,11 @@ All your configurations will be in a file in the root directory, called `config.
   "verbose": true,
   "firefox_profile": "",
   "headless": false,
+  "llm_provider": "ollama",
   "ollama_base_url": "http://127.0.0.1:11434",
   "ollama_model": "",
+  "minimax_api_key": "",
+  "minimax_model": "MiniMax-M2.5",
   "twitter_language": "English",
   "nanobanana2_api_base_url": "https://generativelanguage.googleapis.com/v1beta",
   "nanobanana2_api_key": "",
@@ -82,9 +90,11 @@ All your configurations will be in a file in the root directory, called `config.
 ## Environment Variable Fallbacks
 
 - `GEMINI_API_KEY`: used when `nanobanana2_api_key` is empty.
+- `MINIMAX_API_KEY`: used when `minimax_api_key` is empty.
 
 Example:
 
 ```bash
 export GEMINI_API_KEY="your_api_key_here"
+export MINIMAX_API_KEY="your_minimax_api_key_here"
 ```

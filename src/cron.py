@@ -7,6 +7,7 @@ from config import get_verbose
 from classes.Tts import TTS
 from classes.Twitter import Twitter
 from classes.YouTube import YouTube
+from config import get_llm_provider
 from llm_provider import select_model
 
 def main():
@@ -31,8 +32,12 @@ def main():
     account_id = str(sys.argv[2])
     model = str(sys.argv[3]) if len(sys.argv) > 3 else None
 
+    provider = get_llm_provider()
     if model:
-        select_model(model)
+        select_model(model, provider=provider)
+    elif provider == "minimax":
+        from config import get_minimax_model
+        select_model(get_minimax_model(), provider="minimax")
     else:
         error("No Ollama model specified. Pass model name as third argument.")
         sys.exit(1)

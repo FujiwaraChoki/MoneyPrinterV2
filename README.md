@@ -66,6 +66,34 @@ pip install -r requirements.txt
 python src/main.py
 ```
 
+## LLM Providers
+
+MPV2 supports multiple LLM backends for text generation. Set `llm_provider` in `config.json` to choose:
+
+| Provider | `llm_provider` | Models | Requires |
+|---|---|---|---|
+| [Ollama](https://ollama.com) (default) | `"ollama"` | Any pulled model | Local Ollama server |
+| [MiniMax](https://www.minimaxi.com) | `"minimax"` | `MiniMax-M2.5`, `MiniMax-M2.5-highspeed` | API key |
+
+### Using MiniMax
+
+1. Get an API key from [MiniMax Platform](https://platform.minimaxi.com)
+2. Configure `config.json`:
+
+```json
+{
+  "llm_provider": "minimax",
+  "minimax_api_key": "your-api-key",
+  "minimax_model": "MiniMax-M2.5"
+}
+```
+
+Or use an environment variable instead of the config key:
+
+```bash
+export MINIMAX_API_KEY="your-api-key"
+```
+
 ## Documentation
 
 All relevant document can be found [here](docs/).

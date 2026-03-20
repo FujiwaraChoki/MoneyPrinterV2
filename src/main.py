@@ -15,7 +15,7 @@ from classes.YouTube import YouTube
 from prettytable import PrettyTable
 from classes.Outreach import Outreach
 from classes.AFM import AffiliateMarketing
-from llm_provider import list_models, select_model, get_active_model
+from llm_provider import list_models, select_model, get_active_model, get_provider
 
 def main():
     """Main entry point for the application, providing a menu-driven interface
@@ -444,41 +444,57 @@ if __name__ == "__main__":
     # Fetch MP3 Files
     fetch_songs()
 
-    # Select Ollama model — use config value if set, otherwise pick interactively
-    configured_model = get_ollama_model()
-    if configured_model:
-        select_model(configured_model)
-        success(f"Using configured model: {configured_model}")
+    # Select LLM provider and model
+    llm_provider = get_llm_provider()
+
+    if llm_provider == "minimax":
+        from config import get_minimax_model, get_minimax_api_key
+
+        minimax_model = get_minimax_model()
+        if not get_minimax_api_key():
+            error(
+                "MiniMax API key not configured. Set 'minimax_api_key' in config.json "
+                "or the MINIMAX_API_KEY environment variable."
+            )
+            sys.exit(1)
+        select_model(minimax_model, provider="minimax")
+        success(f"Using MiniMax model: {minimax_model}")
     else:
-        try:
-            models = list_models()
-        except Exception as e:
-            error(f"Could not connect to Ollama: {e}")
-            sys.exit(1)
-
-        if not models:
-            error("No models found on Ollama. Pull a model first (e.g. 'ollama pull llama3.2:3b').")
-            sys.exit(1)
-
-        info("\n========== OLLAMA MODELS =========", False)
-        for idx, model_name in enumerate(models):
-            print(colored(f" {idx + 1}. {model_name}", "cyan"))
-        info("==================================\n", False)
-
-        model_choice = None
-        while model_choice is None:
-            raw = input(colored("Select a model: ", "magenta")).strip()
+        # Ollama provider — use config value if set, otherwise pick interactively
+        configured_model = get_ollama_model()
+        if configured_model:
+            select_model(configured_model, provider="ollama")
+            success(f"Using configured model: {configured_model}")
+        else:
             try:
-                choice_idx = int(raw) - 1
-                if 0 <= choice_idx < len(models):
-                    model_choice = models[choice_idx]
-                else:
-                    warning("Invalid selection. Try again.")
-            except ValueError:
-                warning("Please enter a number.")
+                models = list_models()
+            except Exception as e:
+                error(f"Could not connect to Ollama: {e}")
+                sys.exit(1)
 
-        select_model(model_choice)
-        success(f"Using model: {model_choice}")
+            if not models:
+                error("No models found on Ollama. Pull a model first (e.g. 'ollama pull llama3.2:3b').")
+                sys.exit(1)
+
+            info("\n========== OLLAMA MODELS =========", False)
+            for idx, model_name in enumerate(models):
+                print(colored(f" {idx + 1}. {model_name}", "cyan"))
+            info("==================================\n", False)
+
+            model_choice = None
+            while model_choice is None:
+                raw = input(colored("Select a model: ", "magenta")).strip()
+                try:
+                    choice_idx = int(raw) - 1
+                    if 0 <= choice_idx < len(models):
+                        model_choice = models[choice_idx]
+                    else:
+                        warning("Invalid selection. Try again.")
+                except ValueError:
+                    warning("Please enter a number.")
+
+            select_model(model_choice, provider="ollama")
+            success(f"Using model: {model_choice}")
 
     while True:
         main()
