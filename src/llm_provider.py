@@ -1,8 +1,9 @@
+import time
 import requests
 
 from config import get_nanobanana2_api_key
 
-_GEMINI_MODEL = "gemini-1.5-flash"
+_GEMINI_MODEL = "gemini-2.0-flash"
 _GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{_GEMINI_MODEL}:generateContent"
 
 _selected_model: str | None = None
@@ -42,11 +43,18 @@ def generate_text(prompt: str, model_name: str = None) -> str:
     if not api_key:
         raise RuntimeError("Gemini API key not set. Add nanobanana2_api_key to config.json.")
 
-    response = requests.post(
-        _GEMINI_URL,
-        params={"key": api_key},
-        json={"contents": [{"parts": [{"text": prompt}]}]},
-        timeout=60,
-    )
+    for attempt in range(5):
+        response = requests.post(
+            _GEMINI_URL,
+            params={"key": api_key},
+            json={"contents": [{"parts": [{"text": prompt}]}]},
+            timeout=60,
+        )
+        if response.status_code == 429:
+            wait = 10 * (2 ** attempt)
+            print(f"Rate limited by Gemini API, retrying in {wait}s...")
+            time.sleep(wait)
+            continue
+        response.raise_for_status()
+        return response.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
     response.raise_for_status()
-    return response.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
