@@ -1,63 +1,52 @@
-import ollama
+import requests
 
-from config import get_ollama_base_url
+from config import get_nanobanana2_api_key
+
+_GEMINI_MODEL = "gemini-1.5-flash"
+_GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{_GEMINI_MODEL}:generateContent"
 
 _selected_model: str | None = None
 
 
-def _client() -> ollama.Client:
-    return ollama.Client(host=get_ollama_base_url())
-
-
 def list_models() -> list[str]:
     """
-    Lists all models available on the local Ollama server.
-
-    Returns:
-        models (list[str]): Sorted list of model names.
+    Returns the available Gemini model.
     """
-    response = _client().list()
-    return sorted(m.model for m in response.models)
+    return [_GEMINI_MODEL]
 
 
 def select_model(model: str) -> None:
     """
-    Sets the model to use for all subsequent generate_text calls.
-
-    Args:
-        model (str): An Ollama model name (must be already pulled).
+    No-op for Gemini — model is fixed to gemini-1.5-flash.
     """
     global _selected_model
     _selected_model = model
 
 
 def get_active_model() -> str | None:
-    """
-    Returns the currently selected model, or None if none has been selected.
-    """
-    return _selected_model
+    return _selected_model or _GEMINI_MODEL
 
 
 def generate_text(prompt: str, model_name: str = None) -> str:
     """
-    Generates text using the local Ollama server.
+    Generates text using the Google Gemini API.
 
     Args:
         prompt (str): User prompt
-        model_name (str): Optional model name override
+        model_name (str): Ignored — always uses gemini-1.5-flash
 
     Returns:
         response (str): Generated text
     """
-    model = model_name or _selected_model
-    if not model:
-        raise RuntimeError(
-            "No Ollama model selected. Call select_model() first or pass model_name."
-        )
+    api_key = get_nanobanana2_api_key()
+    if not api_key:
+        raise RuntimeError("Gemini API key not set. Add nanobanana2_api_key to config.json.")
 
-    response = _client().chat(
-        model=model,
-        messages=[{"role": "user", "content": prompt}],
+    response = requests.post(
+        _GEMINI_URL,
+        params={"key": api_key},
+        json={"contents": [{"parts": [{"text": prompt}]}]},
+        timeout=60,
     )
-
-    return response["message"]["content"].strip()
+    response.raise_for_status()
+    return response.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
