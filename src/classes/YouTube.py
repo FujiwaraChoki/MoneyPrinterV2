@@ -25,7 +25,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.firefox.options import Options
 from moviepy.video.tools.subtitles import SubtitlesClip
-from webdriver_manager.firefox import GeckoDriverManager
 from datetime import datetime
 
 # Set ImageMagick Path
@@ -79,9 +78,12 @@ class YouTube:
         # Initialize the Firefox profile
         self.options: Options = Options()
 
+        # Set Firefox binary explicitly (required on macOS)
+        self.options.binary_location = "/Applications/Firefox.app/Contents/MacOS/firefox"
+
         # Set headless state of browser
         if get_headless():
-            self.options.add_argument("--headless")
+            self.options.add_argument("-headless")
 
         if not os.path.isdir(self._fp_profile_path):
             raise ValueError(
@@ -91,8 +93,8 @@ class YouTube:
         self.options.add_argument("-profile")
         self.options.add_argument(self._fp_profile_path)
 
-        # Set the service
-        self.service: Service = Service(GeckoDriverManager().install())
+        # Use the system geckodriver installed via brew
+        self.service: Service = Service("/opt/homebrew/bin/geckodriver")
 
         # Initialize the browser
         self.browser: webdriver.Firefox = webdriver.Firefox(
