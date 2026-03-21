@@ -73,7 +73,6 @@ def get_accounts(provider: str) -> List[dict]:
     cache_path = get_provider_cache_path(provider)
 
     if not os.path.exists(cache_path):
-        # Create the cache file
         with open(cache_path, 'w') as file:
             json.dump({
                 "accounts": []
@@ -88,8 +87,23 @@ def get_accounts(provider: str) -> List[dict]:
         if 'accounts' not in parsed:
             return []
 
-        # Get accounts dictionary
         return parsed['accounts']
+
+def account_exists(provider: str, account_id: str) -> bool:
+    """
+    Checks whether an account with the given ID is already in the cache.
+
+    Useful for avoiding duplicate entries before calling add_account().
+
+    Args:
+        provider (str): The provider to check ("twitter" or "youtube")
+        account_id (str): The account ID to look for
+
+    Returns:
+        bool: True if the account exists in the cache, False otherwise
+    """
+    accounts = get_accounts(provider)
+    return any(account.get('id') == account_id for account in accounts)
 
 def add_account(provider: str, account: dict) -> None:
     """
@@ -104,13 +118,9 @@ def add_account(provider: str, account: dict) -> None:
     """
     cache_path = get_provider_cache_path(provider)
 
-    # Get the current accounts
     accounts = get_accounts(provider)
-
-    # Add the new account
     accounts.append(account)
 
-    # Write the new accounts to the cache
     with open(cache_path, 'w') as file:
         json.dump({
             "accounts": accounts
@@ -127,13 +137,9 @@ def remove_account(provider: str, account_id: str) -> None:
     Returns:
         None
     """
-    # Get the current accounts
     accounts = get_accounts(provider)
-
-    # Remove the account
     accounts = [account for account in accounts if account['id'] != account_id]
 
-    # Write the new accounts to the cache
     cache_path = get_provider_cache_path(provider)
 
     with open(cache_path, 'w') as file:
@@ -149,7 +155,6 @@ def get_products() -> List[dict]:
         products (List[dict]): The products
     """
     if not os.path.exists(get_afm_cache_path()):
-        # Create the cache file
         with open(get_afm_cache_path(), 'w') as file:
             json.dump({
                 "products": []
@@ -157,8 +162,6 @@ def get_products() -> List[dict]:
 
     with open(get_afm_cache_path(), 'r') as file:
         parsed = json.load(file)
-
-        # Get the products
         return parsed["products"]
     
 def add_product(product: dict) -> None:
@@ -171,13 +174,9 @@ def add_product(product: dict) -> None:
     Returns:
         None
     """
-    # Get the current products
     products = get_products()
-
-    # Add the new product
     products.append(product)
 
-    # Write the new products to the cache
     with open(get_afm_cache_path(), 'w') as file:
         json.dump({
             "products": products
@@ -191,3 +190,10 @@ def get_results_cache_path() -> str:
         path (str): The path to the results cache folder
     """
     return os.path.join(get_cache_path(), 'scraper_results.csv')
+```
+
+---
+
+**Commit message:**
+```
+feat(cache): add account_exists() to check for duplicate accounts
