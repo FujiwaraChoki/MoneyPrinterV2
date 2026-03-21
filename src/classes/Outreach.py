@@ -29,7 +29,9 @@ class Outreach:
             None
         """
         # Check if go is installed
-        self.go_installed = os.system("go version") == 0
+        self.go_installed = subprocess.run(
+            ["go", "version"], capture_output=True, check=False
+        ).returncode == 0
 
         # Set niche
         self.niche = get_google_maps_scraper_niche()
@@ -274,11 +276,10 @@ class Outreach:
                         subject = message_subject.replace(
                             "{{COMPANY_NAME}}", company_name
                         )
-                        body = (
-                            open(message_body, "r")
-                            .read()
-                            .replace("{{COMPANY_NAME}}", company_name)
-                        )
+                        with open(message_body, "r") as body_file:
+                            body = body_file.read().replace(
+                                "{{COMPANY_NAME}}", company_name
+                            )
 
                         info(f" => Sending email to {receiver_email}...")
 

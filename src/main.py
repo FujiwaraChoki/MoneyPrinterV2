@@ -136,7 +136,7 @@ def main():
 
             if selected_account is None:
                 error("Invalid account selected. Please try again.", "red")
-                main()
+                return
             else:
                 youtube = YouTube(
                     selected_account["id"],
@@ -279,7 +279,7 @@ def main():
 
             if selected_account is None:
                 error("Invalid account selected. Please try again.", "red")
-                main()
+                return
             else:
                 twitter = Twitter(selected_account["id"], selected_account["nickname"], selected_account["firefox_profile"], selected_account["topic"])
 
@@ -369,6 +369,10 @@ def main():
                     if acc["id"] == twitter_uuid:
                         account = acc
 
+                if account is None:
+                    error("Twitter account not found for the given UUID.")
+                    return
+
                 add_product({
                     "id": str(uuid4()),
                     "affiliate_link": affiliate_link,
@@ -398,13 +402,17 @@ def main():
 
             if selected_product is None:
                 error("Invalid product selected. Please try again.", "red")
-                main()
+                return
             else:
                 # Find the account
                 account = None
                 for acc in get_accounts("twitter"):
                     if acc["id"] == selected_product["twitter_uuid"]:
                         account = acc
+
+                if account is None:
+                    error("Twitter account not found for this product's UUID.")
+                    return
 
                 afm = AffiliateMarketing(selected_product["affiliate_link"], account["firefox_profile"], account["id"], account["nickname"], account["topic"])
 

@@ -14,5 +14,6 @@ yagmail
 assemblyai
 faster-whisper
 srt_equalizer
+python-dotenv
 undetected_chromedriver
 platformdirs
