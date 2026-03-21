@@ -446,39 +446,40 @@ if __name__ == "__main__":
 
     # Select Ollama model — use config value if set, otherwise pick interactively
     configured_model = get_ollama_model()
-    if configured_model:
+    if configured_model == "":
+        info("Ollama model not configured, skipping Ollama setup.")
+    elif configured_model:
         select_model(configured_model)
         success(f"Using configured model: {configured_model}")
     else:
         try:
             models = list_models()
         except Exception as e:
-            error(f"Could not connect to Ollama: {e}")
-            sys.exit(1)
+            warning(f"Could not connect to Ollama: {e}")
+            models = []
 
         if not models:
-            error("No models found on Ollama. Pull a model first (e.g. 'ollama pull llama3.2:3b').")
-            sys.exit(1)
+            warning("No Ollama models available. LLM features will not work.")
+        else:
+            info("\n========== OLLAMA MODELS =========", False)
+            for idx, model_name in enumerate(models):
+                print(colored(f" {idx + 1}. {model_name}", "cyan"))
+            info("==================================\n", False)
 
-        info("\n========== OLLAMA MODELS =========", False)
-        for idx, model_name in enumerate(models):
-            print(colored(f" {idx + 1}. {model_name}", "cyan"))
-        info("==================================\n", False)
+            model_choice = None
+            while model_choice is None:
+                raw = input(colored("Select a model: ", "magenta")).strip()
+                try:
+                    choice_idx = int(raw) - 1
+                    if 0 <= choice_idx < len(models):
+                        model_choice = models[choice_idx]
+                    else:
+                        warning("Invalid selection. Try again.")
+                except ValueError:
+                    warning("Please enter a number.")
 
-        model_choice = None
-        while model_choice is None:
-            raw = input(colored("Select a model: ", "magenta")).strip()
-            try:
-                choice_idx = int(raw) - 1
-                if 0 <= choice_idx < len(models):
-                    model_choice = models[choice_idx]
-                else:
-                    warning("Invalid selection. Try again.")
-            except ValueError:
-                warning("Please enter a number.")
-
-        select_model(model_choice)
-        success(f"Using model: {model_choice}")
+            select_model(model_choice)
+            success(f"Using model: {model_choice}")
 
     while True:
         main()
