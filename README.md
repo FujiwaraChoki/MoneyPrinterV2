@@ -17,7 +17,7 @@
 An Application that automates the process of making money online.
 MPV2 (MoneyPrinter Version 2) is, as the name suggests, the second version of the MoneyPrinter project. It is a complete rewrite of the original project, with a focus on a wider range of features and a more modular architecture.
 
-> **Note:** MPV2 needs Python 3.12 to function effectively.
+> **Note:** MPV2 needs Python 3.12 to function effectively. It is INCOMPATIBLE with Python 3.13 due to PyTorch dependencies.
 > Watch the YouTube video [here](https://youtu.be/wAZ_ZSuIqfk)
 
 ## Features

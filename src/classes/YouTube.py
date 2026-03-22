@@ -622,7 +622,6 @@ class YouTube:
         subtitles = None
         try:
             subtitles_path = self.generate_subtitles(self.tts_path)
-            equalize_subtitles(subtitles_path, 10)
             subtitles = SubtitlesClip(subtitles_path, generator)
             subtitles.set_pos(("center", "center"))
         except Exception as e:
