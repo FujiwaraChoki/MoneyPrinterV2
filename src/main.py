@@ -517,30 +517,100 @@ def main():
                     user_input = int(question("Select an option: "))
 
                     if user_input == 1:
+                        # Generate & Publish Products
                         count_input = question("How many products to generate? (default: 3): ").strip()
                         count = int(count_input) if count_input else 3
-                        shopify.bulk_generate(count)
+                        activate_input = question("Auto-activate products (skip draft)? (Yes/No, default: No): ").strip().lower()
+                        auto_activate = activate_input == "yes"
+                        promote_input = question("Cross-promote each product on Twitter? (Yes/No, default: No): ").strip().lower()
+                        cross_promote = promote_input == "yes"
+                        shopify.bulk_generate(
+                            count,
+                            auto_activate=auto_activate,
+                            cross_promote=cross_promote,
+                            use_research=True,
+                        )
                     elif user_input == 2:
-                        shopify.optimize_existing()
+                        # Research Trending Products
+                        count_input = question("How many ideas to research? (default: 5): ").strip()
+                        count = int(count_input) if count_input else 5
+                        ideas = shopify.research_trending_products(count)
+                        info("\n============ TRENDING PRODUCTS ============", False)
+                        for i, idea in enumerate(ideas):
+                            print(colored(f" {i + 1}. {idea}", "cyan"))
+                        info("===========================================\n", False)
+                        gen_input = question("Generate listings for these products? (Yes/No): ").strip().lower()
+                        if gen_input == "yes":
+                            activate_input = question("Auto-activate? (Yes/No, default: No): ").strip().lower()
+                            auto_activate = activate_input == "yes"
+                            for idea in ideas:
+                                try:
+                                    shopify.generate_and_publish(
+                                        product_name=idea,
+                                        auto_activate=auto_activate,
+                                    )
+                                except Exception as e:
+                                    error(f"Failed to generate {idea}: {e}")
                     elif user_input == 3:
+                        # Optimize Existing Products
+                        shopify.optimize_existing()
+                    elif user_input == 4:
+                        # Activate All Drafts
+                        confirm = question("This will make ALL draft products live. Continue? (Yes/No): ").strip().lower()
+                        if confirm == "yes":
+                            shopify.activate_all_drafts()
+                    elif user_input == 5:
+                        # Cross-Promote on Twitter
+                        products = shopify.get_products_from_cache()
+                        if not products:
+                            warning("No products to promote. Generate some first.")
+                        else:
+                            products_table = PrettyTable()
+                            products_table.field_names = ["#", "Title", "Price"]
+                            for i, p in enumerate(products):
+                                products_table.add_row([
+                                    i + 1,
+                                    colored(p.get("title", "?")[:50], "green"),
+                                    colored(f"${p.get('price', '?')}", "yellow"),
+                                ])
+                            print(products_table)
+                            promo_input = question("Enter product # to promote (or 'all'): ").strip()
+                            if promo_input.lower() == "all":
+                                for p in products:
+                                    shopify.cross_promote_on_twitter(p["title"], p.get("shopify_id", 0))
+                            else:
+                                try:
+                                    idx = int(promo_input) - 1
+                                    p = products[idx]
+                                    shopify.cross_promote_on_twitter(p["title"], p.get("shopify_id", 0))
+                                except (ValueError, IndexError):
+                                    error("Invalid selection.")
+                    elif user_input == 6:
+                        # Show Synced Products
                         products = shopify.get_products_from_cache()
 
                         if len(products) > 0:
                             products_table = PrettyTable()
-                            products_table.field_names = ["ID", "Date", "Title", "Status"]
+                            products_table.field_names = ["ID", "Date", "Title", "Price", "Status"]
 
                             for product in products:
+                                price_str = f"${product.get('price', '?')}"
+                                compare = product.get("compare_at_price", "")
+                                if compare:
+                                    price_str = f"${product.get('price', '?')} (was ${compare})"
                                 products_table.add_row([
                                     products.index(product) + 1,
                                     colored(product.get("date", "N/A"), "blue"),
-                                    colored(product.get("title", "Unknown")[:50] + "...", "green"),
-                                    colored(product.get("status", "unknown"), "yellow"),
+                                    colored(product.get("title", "Unknown")[:50], "green"),
+                                    colored(price_str, "yellow"),
+                                    colored(product.get("status", "unknown"), "magenta"),
                                 ])
 
                             print(products_table)
                         else:
                             warning(" No synced products found.")
-                    elif user_input == 4:
+                    elif user_input == 7:
+                        # Setup CRON Job
                         info("How often do you want to generate products?")
 
                         info("\n============ OPTIONS ============", False)
@@ -566,7 +636,7 @@ def main():
                             success("Set up CRON Job.")
                         else:
                             break
-                    elif user_input == 5:
+                    elif user_input == 8:
                         if get_verbose():
                             info(" => Climbing Options Ladder...", False)
                         break

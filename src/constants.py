@@ -52,7 +52,10 @@ YOUTUBE_DONE_BUTTON_ID = "done-button"
 
 SHOPIFY_OPTIONS = [
     "Generate & Publish Products",
+    "Research Trending Products",
     "Optimize Existing Products",
+    "Activate All Drafts",
+    "Cross-Promote on Twitter",
     "Show Synced Products",
     "Setup CRON Job",
     "Quit"
