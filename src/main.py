@@ -444,23 +444,29 @@ if __name__ == "__main__":
     # Fetch MP3 Files
     fetch_songs()
 
-    # Select Ollama model — use config value if set, otherwise pick interactively
-    configured_model = get_ollama_model()
+    # Select LLM model — use config value if set, otherwise pick interactively
+    provider = get_llm_provider()
+    
+    if provider == "groq":
+        configured_model = get_groq_model()
+    else:
+        configured_model = get_ollama_model()
+
     if configured_model:
         select_model(configured_model)
-        success(f"Using configured model: {configured_model}")
+        success(f"Using configured model: {configured_model} (Provider: {provider})")
     else:
         try:
             models = list_models()
         except Exception as e:
-            error(f"Could not connect to Ollama: {e}")
+            error(f"Could not connect to {provider}: {e}")
             sys.exit(1)
 
         if not models:
-            error("No models found on Ollama. Pull a model first (e.g. 'ollama pull llama3.2:3b').")
+            error(f"No models found on {provider}.")
             sys.exit(1)
 
-        info("\n========== OLLAMA MODELS =========", False)
+        info(f"\n========== {provider.upper()} MODELS =========", False)
         for idx, model_name in enumerate(models):
             print(colored(f" {idx + 1}. {model_name}", "cyan"))
         info("==================================\n", False)
@@ -478,7 +484,7 @@ if __name__ == "__main__":
                 warning("Please enter a number.")
 
         select_model(model_choice)
-        success(f"Using model: {model_choice}")
+        success(f"Using model: {model_choice} (Provider: {provider})")
 
     while True:
         main()
