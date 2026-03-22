@@ -69,6 +69,26 @@ def get_headless() -> bool:
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file)["headless"]
 
+def get_llm_provider() -> str:
+    """
+    Gets the LLM provider from the config file.
+
+    Returns:
+        provider (str): 'ollama' or 'grok'
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("llm_provider", "ollama")
+
+def get_grok_llm_model() -> str:
+    """
+    Gets the Grok LLM model name.
+
+    Returns:
+        model (str): The Grok model name
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("grok_llm_model", "grok-3-mini")
+
 def get_ollama_base_url() -> str:
     """
     Gets the Ollama base URL.

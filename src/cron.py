@@ -8,7 +8,7 @@ from classes.Tts import TTS
 from classes.Twitter import Twitter
 from classes.YouTube import YouTube
 from classes.Shopify import Shopify
-from llm_provider import select_model
+from llm_provider import select_model, set_provider
 
 def main():
     """Main function to post content to Twitter or upload videos to YouTube.
@@ -32,7 +32,14 @@ def main():
     account_id = str(sys.argv[2])
     model = str(sys.argv[3]) if len(sys.argv) > 3 else None
 
-    if model:
+    from config import get_llm_provider, get_grok_llm_model
+    llm_provider = get_llm_provider()
+
+    if llm_provider == "grok":
+        set_provider("grok")
+        select_model(model or get_grok_llm_model())
+    elif model:
+        set_provider("ollama")
         select_model(model)
     else:
         error("No Ollama model specified. Pass model name as third argument.")

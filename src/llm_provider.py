@@ -1,12 +1,30 @@
 import ollama
+from openai import OpenAI
 
-from config import get_ollama_base_url
+from config import get_ollama_base_url, get_grok_api_key
 
 _selected_model: str | None = None
+_provider: str = "ollama"  # "ollama" or "grok"
+
+
+def set_provider(provider: str) -> None:
+    global _provider
+    _provider = provider
+
+
+def get_provider() -> str:
+    return _provider
 
 
 def _client() -> ollama.Client:
     return ollama.Client(host=get_ollama_base_url())
+
+
+def _grok_client() -> OpenAI:
+    return OpenAI(
+        api_key=get_grok_api_key(),
+        base_url="https://api.x.ai/v1",
+    )
 
 
 def list_models() -> list[str]:
@@ -40,7 +58,7 @@ def get_active_model() -> str | None:
 
 def generate_text(prompt: str, model_name: str = None) -> str:
     """
-    Generates text using the local Ollama server.
+    Generates text using the configured LLM provider.
 
     Args:
         prompt (str): User prompt
@@ -49,6 +67,12 @@ def generate_text(prompt: str, model_name: str = None) -> str:
     Returns:
         response (str): Generated text
     """
+    if _provider == "grok":
+        return _generate_grok(prompt, model_name)
+    return _generate_ollama(prompt, model_name)
+
+
+def _generate_ollama(prompt: str, model_name: str = None) -> str:
     model = model_name or _selected_model
     if not model:
         raise RuntimeError(
@@ -61,3 +85,15 @@ def generate_text(prompt: str, model_name: str = None) -> str:
     )
 
     return response["message"]["content"].strip()
+
+
+def _generate_grok(prompt: str, model_name: str = None) -> str:
+    model = model_name or _selected_model or "grok-3-mini"
+    client = _grok_client()
+
+    response = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": prompt}],
+    )
+
+    return response.choices[0].message.content.strip()
