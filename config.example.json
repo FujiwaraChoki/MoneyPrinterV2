@@ -32,6 +32,9 @@
   "font": "bold_font.ttf",
   "imagemagick_path": "Path to magick.exe or on linux/macOS just /usr/bin/convert",
   "script_sentence_length": 4,
+  "image_provider": "nanobanana2",
+  "grok_api_key": "",
+  "grok_image_model": "grok-2-image",
   "shopify_access_token": "",
   "shopify_store_name": "",
   "shopify_products_per_run": 3

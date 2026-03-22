@@ -19,6 +19,9 @@ from config import (
     get_nanobanana2_api_key,
     get_nanobanana2_api_base_url,
     get_nanobanana2_model,
+    get_image_provider,
+    get_grok_api_key,
+    get_grok_image_model,
     ROOT_DIR,
 )
 from status import info, success, error, warning
@@ -228,13 +231,7 @@ class Shopify:
         }
 
     def generate_product_image(self, product_name: str) -> Optional[str]:
-        api_key = get_nanobanana2_api_key()
-        if not api_key:
-            warning("No image generation API key configured. Skipping image generation.")
-            return None
-
-        base_url = get_nanobanana2_api_base_url()
-        model = get_nanobanana2_model()
+        provider = get_image_provider()
 
         prompt = (
             f"Professional e-commerce product photo of {product_name}. "
@@ -243,6 +240,58 @@ class Shopify:
             f"High-end commercial photography style, 4K quality, sharp focus. "
             f"The product should look premium and desirable."
         )
+
+        if provider == "grok":
+            return self._generate_image_grok(prompt)
+        else:
+            return self._generate_image_nanobanana2(prompt)
+
+    def _generate_image_grok(self, prompt: str) -> Optional[str]:
+        api_key = get_grok_api_key()
+        if not api_key:
+            warning("No Grok API key configured. Skipping image generation.")
+            return None
+
+        model = get_grok_image_model()
+        url = "https://api.x.ai/v1/images/generations"
+        payload = {
+            "model": model,
+            "prompt": prompt,
+            "response_format": "b64_json",
+        }
+
+        try:
+            body = json.dumps(payload).encode("utf-8")
+            req = Request(url, data=body, method="POST")
+            req.add_header("Content-Type", "application/json")
+            req.add_header("Authorization", f"Bearer {api_key}")
+
+            with urlopen(req) as resp:
+                result = json.loads(resp.read().decode("utf-8"))
+
+            data = result.get("data", [])
+            if data:
+                img_b64 = data[0].get("b64_json", "")
+                if img_b64:
+                    img_path = os.path.join(ROOT_DIR, ".mp", f"shopify_{int(time.time())}.jpg")
+                    with open(img_path, "wb") as f:
+                        f.write(base64.b64decode(img_b64))
+                    if get_verbose():
+                        info(f"Generated image (Grok): {img_path}")
+                    return img_path
+        except Exception as e:
+            warning(f"Grok image generation failed: {e}")
+
+        return None
+
+    def _generate_image_nanobanana2(self, prompt: str) -> Optional[str]:
+        api_key = get_nanobanana2_api_key()
+        if not api_key:
+            warning("No image generation API key configured. Skipping image generation.")
+            return None
+
+        base_url = get_nanobanana2_api_base_url()
+        model = get_nanobanana2_model()
 
         url = f"{base_url}/models/{model}:generateContent?key={api_key}"
         payload = {

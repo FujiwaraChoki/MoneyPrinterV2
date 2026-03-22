@@ -143,6 +143,19 @@ def get_nanobanana2_aspect_ratio() -> str:
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file).get("nanobanana2_aspect_ratio", "9:16")
 
+def get_image_provider() -> str:
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("image_provider", "nanobanana2")
+
+def get_grok_api_key() -> str:
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        configured = json.load(file).get("grok_api_key", "")
+        return configured or os.environ.get("XAI_API_KEY", "")
+
+def get_grok_image_model() -> str:
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("grok_image_model", "grok-2-image")
+
 def get_threads() -> int:
     """
     Gets the amount of threads to use for example when writing to a file with MoviePy.
