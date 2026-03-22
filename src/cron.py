@@ -101,7 +101,11 @@ def main():
                     acc["access_token"],
                     acc["niche"],
                 )
-                shopify.bulk_generate()
+                shopify.bulk_generate(
+                    auto_activate=True,
+                    cross_promote=True,
+                    use_research=True,
+                )
                 if verbose:
                     success("Done generating Shopify products.")
                 break
