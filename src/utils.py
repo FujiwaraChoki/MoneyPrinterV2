@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import random
 import zipfile
 import requests
@@ -48,18 +49,16 @@ def build_url(youtube_video_id: str) -> str:
 def rem_temp_files() -> None:
     """
     Removes temporary files in the `.mp` directory.
-
-    Returns:
-        None
     """
     # Path to the `.mp` directory
-    mp_dir = os.path.join(ROOT_DIR, ".mp")
+    mp_dir = Path(ROOT_DIR) / ".mp"
 
-    files = os.listdir(mp_dir)
+    if not mp_dir.exists():
+        return
 
-    for file in files:
-        if not file.endswith(".json"):
-            os.remove(os.path.join(mp_dir, file))
+    for temp_file in mp_dir.iterdir():
+        if temp_file.is_file() and temp_file.suffix != ".json":
+            temp_file.unlink()
 
 
 def fetch_songs() -> None:
