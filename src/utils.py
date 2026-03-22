@@ -4,6 +4,7 @@ import zipfile
 import requests
 import platform
 
+from pathlib import Path
 from status import *
 from config import *
 
@@ -52,19 +53,19 @@ def rem_temp_files() -> None:
     Returns:
         None
     """
-    # Path to the `.mp` directory
-    mp_dir = os.path.join(ROOT_DIR, ".mp")
+    mp_dir = Path(ROOT_DIR) / ".mp"
 
-    files = os.listdir(mp_dir)
+    if not mp_dir.exists():
+        return
 
-    for file in files:
-        if not file.endswith(".json"):
-            os.remove(os.path.join(mp_dir, file))
+    for file in mp_dir.iterdir():
+        if file.is_file() and not file.suffix == ".json":
+            file.unlink()
 
 
 def fetch_songs() -> None:
     """
-    Downloads songs into songs/ directory to use with geneated videos.
+    Downloads songs into songs/ directory to use with generated videos.
 
     Returns:
         None
@@ -72,17 +73,17 @@ def fetch_songs() -> None:
     try:
         info(f" => Fetching songs...")
 
-        files_dir = os.path.join(ROOT_DIR, "Songs")
-        if not os.path.exists(files_dir):
-            os.mkdir(files_dir)
+        files_dir = Path(ROOT_DIR) / "Songs"
+        if not files_dir.exists():
+            files_dir.mkdir()
             if get_verbose():
                 info(f" => Created directory: {files_dir}")
         else:
             existing_audio_files = [
-                name
-                for name in os.listdir(files_dir)
-                if os.path.isfile(os.path.join(files_dir, name))
-                and name.lower().endswith((".mp3", ".wav", ".m4a", ".aac", ".ogg"))
+                f
+                for f in files_dir.iterdir()
+                if f.is_file()
+                and f.suffix.lower() in (".mp3", ".wav", ".m4a", ".aac", ".ogg")
             ]
             if len(existing_audio_files) > 0:
                 return
@@ -91,7 +92,7 @@ def fetch_songs() -> None:
         download_urls = [configured_url] if configured_url else []
         download_urls.extend(DEFAULT_SONG_ARCHIVE_URLS)
 
-        archive_path = os.path.join(files_dir, "songs.zip")
+        archive_path = files_dir / "songs.zip"
         downloaded = False
 
         for download_url in download_urls:
@@ -99,8 +100,7 @@ def fetch_songs() -> None:
                 response = requests.get(download_url, timeout=60)
                 response.raise_for_status()
 
-                with open(archive_path, "wb") as file:
-                    file.write(response.content)
+                archive_path.write_bytes(response.content)
 
                 SAFE_EXTENSIONS = (".mp3", ".wav", ".m4a", ".aac", ".ogg", ".flac")
                 with zipfile.ZipFile(archive_path, "r") as zf:
@@ -125,8 +125,8 @@ def fetch_songs() -> None:
             )
 
         # Remove the zip file
-        if os.path.exists(archive_path):
-            os.remove(archive_path)
+        if archive_path.exists():
+            archive_path.unlink()
 
         success(" => Downloaded Songs to ../Songs.")
 
@@ -142,18 +142,18 @@ def choose_random_song() -> str:
         str: The path to the chosen song.
     """
     try:
-        songs_dir = os.path.join(ROOT_DIR, "Songs")
+        songs_dir = Path(ROOT_DIR) / "Songs"
         songs = [
-            name
-            for name in os.listdir(songs_dir)
-            if os.path.isfile(os.path.join(songs_dir, name))
-            and name.lower().endswith((".mp3", ".wav", ".m4a", ".aac", ".ogg"))
+            f
+            for f in songs_dir.iterdir()
+            if f.is_file()
+            and f.suffix.lower() in (".mp3", ".wav", ".m4a", ".aac", ".ogg")
         ]
         if len(songs) == 0:
             raise RuntimeError("No audio files found in Songs directory")
         song = random.choice(songs)
-        success(f" => Chose song: {song}")
-        return os.path.join(ROOT_DIR, "Songs", song)
+        success(f" => Chose song: {song.name}")
+        return str(song)
     except Exception as e:
         error(f"Error occurred while choosing random song: {str(e)}")
         raise
