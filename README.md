@@ -68,7 +68,7 @@ python src/main.py
 
 ## Documentation
 
-All relevant document can be found [here](docs/).
+All relevant documents can be found [here](docs/).
 
 ## Scripts
 
