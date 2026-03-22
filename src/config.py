@@ -69,6 +69,37 @@ def get_headless() -> bool:
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file)["headless"]
 
+def get_llm_provider() -> str:
+    """
+    Gets the configured LLM provider.
+
+    Returns:
+        provider (str): "ollama" (default) or "openrouter"
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("llm_provider", "ollama")
+
+def get_openrouter_api_key() -> str:
+    """
+    Gets the OpenRouter API key from config or environment variable.
+
+    Returns:
+        key (str): The OpenRouter API key
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        configured = json.load(file).get("openrouter_api_key", "")
+        return configured or os.environ.get("OPENROUTER_API_KEY", "")
+
+def get_openrouter_model() -> str:
+    """
+    Gets the OpenRouter model name from the config file.
+
+    Returns:
+        model (str): The OpenRouter model name
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("openrouter_model", "openai/gpt-4o-mini")
+
 def get_ollama_base_url() -> str:
     """
     Gets the Ollama base URL.

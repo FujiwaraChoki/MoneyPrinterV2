@@ -60,6 +60,27 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+## LLM Providers
+
+MPV2 supports two LLM providers for text generation:
+
+| Provider | Config value | Setup |
+|----------|-------------|-------|
+| Ollama (default) | `"ollama"` | Install [Ollama](https://ollama.com), pull a model, run locally |
+| OpenRouter | `"openrouter"` | Get an API key at [openrouter.ai](https://openrouter.ai) |
+
+To use OpenRouter, update your `config.json`:
+
+```json
+{
+  "llm_provider": "openrouter",
+  "openrouter_api_key": "sk-or-...",
+  "openrouter_model": "openai/gpt-4o-mini"
+}
+```
+
+You can also set the API key via the `OPENROUTER_API_KEY` environment variable. OpenRouter gives access to 200+ models from OpenAI, Anthropic, Google, Meta, and others through a single API key. See [openrouter.ai/models](https://openrouter.ai/models) for the full list.
+
 ## Usage
 
 ```bash
