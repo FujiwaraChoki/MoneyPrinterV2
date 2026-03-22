@@ -487,15 +487,8 @@ class YouTube:
             )
 
         # Check for empty transcript text before calling export_subtitles_srt
-        # (export_subtitles_srt raises TranscriptError on empty text)
-        if not transcript.text or not transcript.text.strip():
-            raise ValueError(
-                "Transcription returned empty text. This may indicate:\n"
-                "1. The audio file is empty or corrupted\n"
-                "2. The audio contains no speech\n"
-                "3. The audio format is not supported\n"
-                f"Audio path: {audio_path}"
-            )
+        if not transcript.text.strip():
+            raise ValueError(f"Transcription returned empty text: {audio_path}")
 
         subtitles = transcript.export_subtitles_srt()
 
