@@ -1,5 +1,6 @@
 # MoneyPrinter V2
 
+> **Have an idea? Let’s build it — [reach out](https://forms.gle/bFGvhbYpDJZeoVDRA).
 > ♥︎ **Sponsor**: The Best AI Chat App: [shiori.ai](https://www.shiori.ai)
 
 ---
