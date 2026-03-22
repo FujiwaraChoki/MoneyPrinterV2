@@ -10,6 +10,7 @@ OPTIONS = [
     "Twitter Bot",
     "Affiliate Marketing",
     "Outreach",
+    "Shopify Store",
     "Quit"
 ]
 
@@ -48,6 +49,20 @@ YOUTUBE_NOT_MADE_FOR_KIDS_NAME = "VIDEO_MADE_FOR_KIDS_NOT_MFK"
 YOUTUBE_NEXT_BUTTON_ID = "next-button"
 YOUTUBE_RADIO_BUTTON_XPATH = "//*[@id=\"radioLabel\"]"
 YOUTUBE_DONE_BUTTON_ID = "done-button"
+
+SHOPIFY_OPTIONS = [
+    "Generate & Publish Products",
+    "Optimize Existing Products",
+    "Show Synced Products",
+    "Setup CRON Job",
+    "Quit"
+]
+
+SHOPIFY_CRON_OPTIONS = [
+    "Once a day",
+    "Twice a day",
+    "Quit"
+]
 
 # Amazon Section (AFM)$
 AMAZON_PRODUCT_TITLE_ID = "productTitle"

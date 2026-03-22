@@ -325,6 +325,36 @@ def get_imagemagick_path() -> str:
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file)["imagemagick_path"]
 
+def get_shopify_access_token() -> str:
+    """
+    Gets the Shopify Admin API access token.
+
+    Returns:
+        token (str): The access token
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("shopify_access_token", "")
+
+def get_shopify_store_name() -> str:
+    """
+    Gets the Shopify store name (the subdomain part of your-store.myshopify.com).
+
+    Returns:
+        name (str): The store name
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("shopify_store_name", "")
+
+def get_shopify_products_per_run() -> int:
+    """
+    Gets the number of products to generate per CRON run.
+
+    Returns:
+        count (int): Number of products per run
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("shopify_products_per_run", 3)
+
 def get_script_sentence_length() -> int:
     """
     Gets the forced script's sentence length.

@@ -40,12 +40,21 @@ def get_youtube_cache_path() -> str:
     """
     return os.path.join(get_cache_path(), 'youtube.json')
 
+def get_shopify_cache_path() -> str:
+    """
+    Gets the path to the Shopify cache file.
+
+    Returns:
+        path (str): The path to the Shopify cache file
+    """
+    return os.path.join(get_cache_path(), 'shopify.json')
+
 def get_provider_cache_path(provider: str) -> str:
     """
     Gets the cache path for a supported account provider.
 
     Args:
-        provider (str): The provider name ("twitter" or "youtube")
+        provider (str): The provider name ("twitter", "youtube", or "shopify")
 
     Returns:
         path (str): The provider-specific cache path
@@ -57,8 +66,10 @@ def get_provider_cache_path(provider: str) -> str:
         return get_twitter_cache_path()
     if provider == "youtube":
         return get_youtube_cache_path()
+    if provider == "shopify":
+        return get_shopify_cache_path()
 
-    raise ValueError(f"Unsupported provider '{provider}'. Expected 'twitter' or 'youtube'.")
+    raise ValueError(f"Unsupported provider '{provider}'. Expected 'twitter', 'youtube', or 'shopify'.")
 
 def get_accounts(provider: str) -> List[dict]:
     """

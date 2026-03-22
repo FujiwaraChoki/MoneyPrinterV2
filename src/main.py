@@ -15,6 +15,7 @@ from classes.YouTube import YouTube
 from prettytable import PrettyTable
 from classes.Outreach import Outreach
 from classes.AFM import AffiliateMarketing
+from classes.Shopify import Shopify
 from llm_provider import list_models, select_model, get_active_model
 
 def main():
@@ -418,6 +419,158 @@ def main():
 
         outreach.start()
     elif user_input == 5:
+        info("Starting Shopify Store...")
+
+        cached_accounts = get_accounts("shopify")
+
+        if len(cached_accounts) == 0:
+            warning("No Shopify stores found in cache. Create one now?")
+            user_input = question("Yes/No: ")
+
+            if user_input.lower() == "yes":
+                generated_uuid = str(uuid4())
+
+                success(f" => Generated ID: {generated_uuid}")
+                nickname = question(" => Enter a nickname for this store: ")
+                store_name = question(" => Enter Shopify store name (your-store from your-store.myshopify.com): ")
+                access_token = question(" => Enter Shopify Admin API access token: ")
+                niche = question(" => Enter the store niche: ")
+
+                account_data = {
+                    "id": generated_uuid,
+                    "nickname": nickname,
+                    "store_name": store_name,
+                    "access_token": access_token,
+                    "niche": niche,
+                    "products": [],
+                }
+
+                add_account("shopify", account_data)
+
+                success("Shopify store configured successfully!")
+        else:
+            table = PrettyTable()
+            table.field_names = ["ID", "UUID", "Nickname", "Store", "Niche"]
+
+            for account in cached_accounts:
+                table.add_row([
+                    cached_accounts.index(account) + 1,
+                    colored(account["id"], "cyan"),
+                    colored(account["nickname"], "blue"),
+                    colored(account["store_name"], "yellow"),
+                    colored(account["niche"], "green")
+                ])
+
+            print(table)
+            info("Type 'd' to delete a store.", False)
+
+            user_input = question("Select a store to start (or 'd' to delete): ").strip()
+
+            if user_input.lower() == "d":
+                delete_input = question("Enter store number to delete: ").strip()
+                account_to_delete = None
+
+                for account in cached_accounts:
+                    if str(cached_accounts.index(account) + 1) == delete_input:
+                        account_to_delete = account
+                        break
+
+                if account_to_delete is None:
+                    error("Invalid store selected. Please try again.", "red")
+                else:
+                    confirm = question(f"Are you sure you want to delete '{account_to_delete['nickname']}'? (Yes/No): ").strip().lower()
+
+                    if confirm == "yes":
+                        remove_account("shopify", account_to_delete["id"])
+                        success("Store removed successfully!")
+                    else:
+                        warning("Store deletion canceled.", False)
+
+                return
+
+            selected_account = None
+
+            for account in cached_accounts:
+                if str(cached_accounts.index(account) + 1) == user_input:
+                    selected_account = account
+
+            if selected_account is None:
+                error("Invalid store selected. Please try again.", "red")
+                main()
+            else:
+                shopify = Shopify(
+                    selected_account["id"],
+                    selected_account["nickname"],
+                    selected_account["store_name"],
+                    selected_account["access_token"],
+                    selected_account["niche"],
+                )
+
+                while True:
+                    info("\n============ OPTIONS ============", False)
+
+                    for idx, shopify_option in enumerate(SHOPIFY_OPTIONS):
+                        print(colored(f" {idx + 1}. {shopify_option}", "cyan"))
+
+                    info("=================================\n", False)
+
+                    user_input = int(question("Select an option: "))
+
+                    if user_input == 1:
+                        count_input = question("How many products to generate? (default: 3): ").strip()
+                        count = int(count_input) if count_input else 3
+                        shopify.bulk_generate(count)
+                    elif user_input == 2:
+                        shopify.optimize_existing()
+                    elif user_input == 3:
+                        products = shopify.get_products_from_cache()
+
+                        if len(products) > 0:
+                            products_table = PrettyTable()
+                            products_table.field_names = ["ID", "Date", "Title", "Status"]
+
+                            for product in products:
+                                products_table.add_row([
+                                    products.index(product) + 1,
+                                    colored(product.get("date", "N/A"), "blue"),
+                                    colored(product.get("title", "Unknown")[:50] + "...", "green"),
+                                    colored(product.get("status", "unknown"), "yellow"),
+                                ])
+
+                            print(products_table)
+                        else:
+                            warning(" No synced products found.")
+                    elif user_input == 4:
+                        info("How often do you want to generate products?")
+
+                        info("\n============ OPTIONS ============", False)
+                        for idx, cron_option in enumerate(SHOPIFY_CRON_OPTIONS):
+                            print(colored(f" {idx + 1}. {cron_option}", "cyan"))
+
+                        info("=================================\n", False)
+
+                        user_input = int(question("Select an Option: "))
+
+                        cron_script_path = os.path.join(ROOT_DIR, "src", "cron.py")
+                        command = ["python", cron_script_path, "shopify", selected_account['id'], get_active_model()]
+
+                        def job():
+                            subprocess.run(command)
+
+                        if user_input == 1:
+                            schedule.every(1).day.do(job)
+                            success("Set up CRON Job.")
+                        elif user_input == 2:
+                            schedule.every().day.at("10:00").do(job)
+                            schedule.every().day.at("16:00").do(job)
+                            success("Set up CRON Job.")
+                        else:
+                            break
+                    elif user_input == 5:
+                        if get_verbose():
+                            info(" => Climbing Options Ladder...", False)
+                        break
+    elif user_input == 6:
         if get_verbose():
             print(colored(" => Quitting...", "blue"))
         sys.exit(0)
