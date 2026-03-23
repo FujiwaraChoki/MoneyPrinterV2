@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPOTFINDER // Lead Scanner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-deep: #0a0a0f;
+  --bg-panel: #0d0d14;
+  --bg-elevated: #12121c;
+  --bg-hover: #1a1a28;
+  --border: #1e1e30;
+  --border-bright: #2a2a44;
+  --text-primary: #e0e0e8;
+  --text-secondary: #7a7a90;
+  --text-dim: #4a4a5e;
+  --green-primary: #00e676;
+  --green-dim: #00a854;
+  --green-glow: rgba(0, 230, 118, 0.15);
+  --amber: #ffab00;
+  --amber-dim: #c68400;
+  --red: #ff5252;
+  --cyan: #00e5ff;
+  --cyan-dim: #0097a7;
+  --score-high: #00e676;
+  --score-mid: #ffab00;
+  --score-low: #ff5252;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-display: 'Space Grotesk', sans-serif;
+}
+
+html { font-size: 13px; }
+
+body {
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* CRT scan-line overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+}
+
+/* === HEADER === */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logo {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: 2px;
+  color: var(--green-primary);
+  text-shadow: 0 0 20px var(--green-glow);
+}
+
+.logo span {
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.header-tag {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green-primary);
+  box-shadow: 0 0 6px var(--green-primary);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* === MAIN LAYOUT === */
+.layout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  min-height: calc(100vh - 45px);
+}
+
+/* === SIDEBAR === */
+.sidebar {
+  border-right: 1px solid var(--border);
+  background: var(--bg-panel);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-section {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-section-title {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 14px;
+}
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+}
+
+.form-input, .form-select {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus, .form-select:focus {
+  outline: none;
+  border-color: var(--green-dim);
+  box-shadow: 0 0 0 1px var(--green-glow);
+}
+
+.form-input::placeholder {
+  color: var(--text-dim);
+}
+
+.form-select option {
+  background: var(--bg-deep);
+  color: var(--text-primary);
+}
+
+.btn-scan {
+  width: 100%;
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid var(--green-primary);
+  color: var(--green-primary);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 4px;
+}
+
+.btn-scan:hover {
+  background: var(--green-glow);
+  box-shadow: 0 0 20px var(--green-glow);
+}
+
+.btn-scan:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.btn-scan.scanning {
+  border-color: var(--amber);
+  color: var(--amber);
+  animation: scanPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes scanPulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(255, 171, 0, 0); }
+  50% { box-shadow: 0 0 20px rgba(255, 171, 0, 0.2); }
+}
+
+/* Scan history */
+.scan-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.scan-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 20px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.scan-item:hover {
+  background: var(--bg-hover);
+}
+
+.scan-item.active {
+  background: var(--bg-elevated);
+  border-left: 2px solid var(--green-primary);
+}
+
+.scan-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.scan-item-niche {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.scan-item-count {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+
+.scan-item-location {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.scan-item-status {
+  display: inline-block;
+  font-size: 0.65rem;
+  padding: 1px 6px;
+  border-radius: 2px;
+  margin-left: 6px;
+  font-weight: 500;
+}
+
+.scan-item-status.completed { color: var(--green-primary); background: var(--green-glow); }
+.scan-item-status.failed { color: var(--red); background: rgba(255, 82, 82, 0.1); }
+.scan-item-status.pending,
+.scan-item-status.discovering,
+.scan-item-status.enriching,
+.scan-item-status.scoring {
+  color: var(--amber);
+  background: rgba(255, 171, 0, 0.1);
+}
+
+/* === MAIN CONTENT === */
+.main {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+  min-height: 40px;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toolbar-info {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.toolbar-info strong {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-small {
+  padding: 5px 12px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.15s;
+}
+
+.btn-small:hover {
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+/* Table */
+.table-wrapper {
+  flex: 1;
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+th {
+  background: var(--bg-elevated);
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 500;
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border-bright);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s;
+}
+
+th:hover { color: var(--text-secondary); }
+th.sorted { color: var(--green-primary); }
+th.sorted::after { content: ' \25B2'; font-size: 0.6rem; }
+th.sorted.desc::after { content: ' \25BC'; }
+
+td {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+tr {
+  transition: background 0.1s;
+}
+
+tr:hover {
+  background: var(--bg-hover);
+}
+
+tr.selected {
+  background: var(--bg-elevated);
+}
+
+/* Score cells */
+.score-cell {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.score-high { color: var(--score-high); }
+.score-mid { color: var(--score-mid); }
+.score-low { color: var(--score-low); }
+
+.rank-cell {
+  font-weight: 600;
+  color: var(--text-dim);
+  text-align: center;
+  width: 40px;
+}
+
+.rank-cell.top3 {
+  color: var(--green-primary);
+  text-shadow: 0 0 10px var(--green-glow);
+}
+
+.bool-yes { color: var(--green-primary); }
+.bool-no { color: var(--text-dim); }
+
+.rating-cell {
+  color: var(--amber);
+  font-weight: 500;
+}
+
+.phone-cell {
+  color: var(--cyan-dim);
+  font-size: 0.75rem;
+}
+
+.website-cell a {
+  color: var(--cyan);
+  text-decoration: none;
+  font-size: 0.75rem;
+}
+
+.website-cell a:hover {
+  text-decoration: underline;
+}
+
+/* Empty state */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  gap: 12px;
+}
+
+.empty-state-icon {
+  font-size: 3rem;
+  opacity: 0.3;
+}
+
+.empty-state-text {
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+}
+
+.empty-state-sub {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+/* Detail panel */
+.detail-panel {
+  position: fixed;
+  right: 0;
+  top: 45px;
+  bottom: 0;
+  width: 380px;
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border);
+  z-index: 50;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-panel.open {
+  transform: translateX(0);
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.detail-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.detail-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.detail-close:hover { color: var(--text-primary); }
+
+.detail-body {
+  padding: 16px 20px;
+  flex: 1;
+}
+
+.detail-section {
+  margin-bottom: 20px;
+}
+
+.detail-section-title {
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 0.8rem;
+}
+
+.detail-row-label { color: var(--text-secondary); }
+.detail-row-value { color: var(--text-primary); font-weight: 500; }
+
+.score-bar-container {
+  margin-top: 4px;
+}
+
+.score-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.score-bar-label {
+  width: 80px;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.score-bar-track {
+  flex: 1;
+  height: 4px;
+  background: var(--bg-deep);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.score-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.6s ease;
+}
+
+.score-bar-value {
+  width: 40px;
+  text-align: right;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.detail-rationale {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  padding: 10px;
+  background: var(--bg-deep);
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+/* Status bar */
+.statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-panel);
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  min-height: 26px;
+}
+
+.statusbar-left, .statusbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Loading animation */
+.scan-progress {
+  display: none;
+  padding: 20px;
+}
+
+.scan-progress.active { display: block; }
+
+.scan-progress-line {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  opacity: 0;
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.scan-progress-line.current {
+  color: var(--amber);
+}
+
+.scan-progress-line.done {
+  color: var(--green-dim);
+}
+
+.scan-progress-line::before {
+  content: '> ';
+  color: var(--text-dim);
+}
+
+.scan-progress-line.current::before {
+  content: '> ';
+  color: var(--amber);
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-deep); }
+::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <div class="logo">SPOTFINDER <span>// LEAD SCANNER</span></div>
+    <div class="header-tag">v1.0</div>
+  </div>
+  <div class="header-right">
+    <span class="status-dot"></span>
+    <span id="clock"></span>
+  </div>
+</header>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">New Scan</div>
+      <div class="form-group">
+        <label class="form-label">Location</label>
+        <input class="form-input" id="input-location" type="text" placeholder="Crystal, Minnesota" autofocus>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Industry</label>
+        <select class="form-select" id="input-niche">
+          <option value="">Loading...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Country</label>
+        <input class="form-input" id="input-country" type="text" value="US" maxlength="2" style="width: 60px; text-transform: uppercase;">
+      </div>
+      <button class="btn-scan" id="btn-scan" onclick="startScan()">
+        SCAN TARGET AREA
+      </button>
+    </div>
+
+    <div class="sidebar-section" style="padding-bottom: 8px;">
+      <div class="sidebar-section-title">Scan History</div>
+    </div>
+    <div class="scan-list" id="scan-list"></div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="toolbar" id="toolbar">
+      <div class="toolbar-left">
+        <span class="toolbar-info" id="toolbar-info">No scan selected</span>
+      </div>
+      <div class="toolbar-right">
+        <button class="btn-small" onclick="exportCSV()">EXPORT CSV</button>
+      </div>
+    </div>
+
+    <div id="scan-progress" class="scan-progress"></div>
+
+    <div class="table-wrapper" id="table-wrapper">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-state-icon">&#9678;</div>
+        <div class="empty-state-text">NO ACTIVE SCAN</div>
+        <div class="empty-state-sub">Enter a location and industry to begin scanning</div>
+      </div>
+      <table id="results-table" style="display: none;">
+        <thead>
+          <tr>
+            <th data-col="rank" class="sorted">#</th>
+            <th data-col="name">Name</th>
+            <th data-col="category">Category</th>
+            <th data-col="google_rating">Rating</th>
+            <th data-col="google_review_count">Reviews</th>
+            <th data-col="has_website">Web</th>
+            <th data-col="phone">Phone</th>
+            <th data-col="digital_gap_score">Gap</th>
+            <th data-col="revenue_potential_score">Revenue</th>
+            <th data-col="accessibility_score">Access</th>
+            <th data-col="opportunity_score">Score</th>
+          </tr>
+        </thead>
+        <tbody id="results-body"></tbody>
+      </table>
+    </div>
+
+    <div class="statusbar">
+      <div class="statusbar-left">
+        <span id="status-text">READY</span>
+      </div>
+      <div class="statusbar-right">
+        <span id="status-count">0 results</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- DETAIL PANEL -->
+<div class="detail-panel" id="detail-panel">
+  <div class="detail-header">
+    <div class="detail-title" id="detail-name"></div>
+    <button class="detail-close" onclick="closeDetail()">&times;</button>
+  </div>
+  <div class="detail-body" id="detail-body"></div>
+</div>
+
+<script>
+let currentResults = [];
+let currentScanId = null;
+let pollInterval = null;
+let sortCol = 'rank';
+let sortDesc = false;
+
+// Clock
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('en-US', { hour12: false }) + ' UTC' + (now.getTimezoneOffset() > 0 ? '-' : '+') + Math.abs(now.getTimezoneOffset() / 60);
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Load industries
+async function loadIndustries() {
+  const resp = await fetch('/api/industries');
+  const { data } = await resp.json();
+  const sel = document.getElementById('input-niche');
+  sel.innerHTML = data.map(i =>
+    `<option value="${i.slug}">${i.name_en} — T${i.tier} — $${(i.avg_revenue_usd/1000).toFixed(0)}K avg</option>`
+  ).join('');
+}
+
+// Load scan history
+async function loadScans() {
+  const resp = await fetch('/api/scans');
+  const { data } = await resp.json();
+  const list = document.getElementById('scan-list');
+  list.innerHTML = data.map(s => `
+    <button class="scan-item ${s.id === currentScanId ? 'active' : ''}"
+            onclick="loadScan('${s.id}')">
+      <div class="scan-item-top">
+        <span class="scan-item-niche">${s.niche}</span>
+        <span class="scan-item-count">${s.business_count} leads</span>
+      </div>
+      <div class="scan-item-location">
+        ${s.location} (${s.country})
+        <span class="scan-item-status ${s.status}">${s.status.toUpperCase()}</span>
+      </div>
+    </button>
+  `).join('');
+}
+
+// Start scan
+async function startScan() {
+  const location = document.getElementById('input-location').value.trim();
+  const niche = document.getElementById('input-niche').value;
+  const country = document.getElementById('input-country').value.trim().toUpperCase();
+
+  if (!location) { document.getElementById('input-location').focus(); return; }
+
+  const btn = document.getElementById('btn-scan');
+  btn.disabled = true;
+  btn.classList.add('scanning');
+  btn.textContent = 'SCANNING...';
+  document.getElementById('status-text').textContent = 'SCANNING: ' + location;
+
+  // Show progress
+  const prog = document.getElementById('scan-progress');
+  prog.classList.add('active');
+  prog.innerHTML = '<div class="scan-progress-line current" style="animation-delay:0s">Initiating scan for ' + niche + ' in ' + location + '...</div>';
+
+  const resp = await fetch('/api/scan', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ location, niche, country }),
+  });
+  const { data } = await resp.json();
+  currentScanId = data.scan_id;
+
+  // Poll for completion
+  pollScan(data.scan_id);
+}
+
+function pollScan(scanId) {
+  if (pollInterval) clearInterval(pollInterval);
+  const prog = document.getElementById('scan-progress');
+  let lastStatus = '';
+
+  pollInterval = setInterval(async () => {
+    const resp = await fetch(`/api/scan/${scanId}`);
+    const { data } = await resp.json();
+
+    if (data.status !== lastStatus) {
+      lastStatus = data.status;
+      // Update progress lines
+      const lines = prog.querySelectorAll('.scan-progress-line');
+      lines.forEach(l => { l.classList.remove('current'); l.classList.add('done'); });
+
+      const msgs = {
+        discovering: 'Discovering businesses via Google Maps...',
+        enriching: `Found ${data.business_count} businesses. Enriching digital presence...`,
+        scoring: 'Scoring opportunity for each business...',
+        completed: `Scan complete. ${data.business_count} businesses scored.`,
+        failed: 'Scan failed: ' + (data.error_message || 'Unknown error'),
+      };
+
+      if (msgs[data.status]) {
+        const line = document.createElement('div');
+        line.className = 'scan-progress-line ' + (data.status === 'completed' || data.status === 'failed' ? 'done' : 'current');
+        line.style.animationDelay = '0s';
+        line.textContent = msgs[data.status];
+        prog.appendChild(line);
+      }
+    }
+
+    if (data.status === 'completed' || data.status === 'failed') {
+      clearInterval(pollInterval);
+      pollInterval = null;
+
+      const btn = document.getElementById('btn-scan');
+      btn.disabled = false;
+      btn.classList.remove('scanning');
+      btn.textContent = 'SCAN TARGET AREA';
+
+      if (data.status === 'completed') {
+        setTimeout(() => {
+          prog.classList.remove('active');
+          prog.innerHTML = '';
+          loadScan(scanId);
+        }, 1000);
+      }
+
+      loadScans();
+    }
+  }, 2000);
+}
+
+// Load scan results
+async function loadScan(scanId) {
+  currentScanId = scanId;
+  document.getElementById('status-text').textContent = 'LOADING RESULTS...';
+
+  const resp = await fetch(`/api/scan/${scanId}/results`);
+  const { data, meta } = await resp.json();
+
+  currentResults = data;
+  document.getElementById('toolbar-info').innerHTML =
+    `<strong>${meta.niche}</strong> in <strong>${meta.location}</strong> &mdash; ${meta.total} leads`;
+  document.getElementById('status-text').textContent =
+    meta.status === 'completed' ? 'SCAN COMPLETE' : meta.status.toUpperCase();
+  document.getElementById('status-count').textContent = meta.total + ' results';
+
+  renderTable(data);
+  loadScans();
+}
+
+// Render table
+function renderTable(data) {
+  const table = document.getElementById('results-table');
+  const empty = document.getElementById('empty-state');
+  const body = document.getElementById('results-body');
+
+  if (!data || data.length === 0) {
+    table.style.display = 'none';
+    empty.style.display = 'flex';
+    return;
+  }
+
+  table.style.display = 'table';
+  empty.style.display = 'none';
+
+  // Sort
+  const sorted = [...data].sort((a, b) => {
+    let va = a[sortCol], vb = b[sortCol];
+    if (va == null) va = -Infinity;
+    if (vb == null) vb = -Infinity;
+    if (typeof va === 'string') { va = va.toLowerCase(); vb = (vb || '').toLowerCase(); }
+    if (va < vb) return sortDesc ? 1 : -1;
+    if (va > vb) return sortDesc ? -1 : 1;
+    return 0;
+  });
+
+  body.innerHTML = sorted.map((r, i) => `
+    <tr onclick="showDetail(${i})" style="animation: fadeIn 0.2s ease forwards; animation-delay: ${Math.min(i * 20, 400)}ms; opacity: 0;">
+      <td class="rank-cell ${r.rank <= 3 ? 'top3' : ''}">${r.rank}</td>
+      <td title="${esc(r.name)}">${esc(r.name)}</td>
+      <td style="color: var(--text-secondary)">${esc(r.category || '-')}</td>
+      <td class="rating-cell">${r.google_rating != null ? r.google_rating.toFixed(1) : '-'}</td>
+      <td style="font-variant-numeric: tabular-nums">${r.google_review_count != null ? r.google_review_count : '-'}</td>
+      <td class="${r.has_website ? 'bool-yes' : 'bool-no'}">${r.has_website ? 'YES' : 'NO'}</td>
+      <td class="phone-cell">${r.phone || '-'}</td>
+      <td class="score-cell ${scoreClass(r.digital_gap_score)}">${r.digital_gap_score.toFixed(2)}</td>
+      <td class="score-cell ${scoreClass(r.revenue_potential_score)}">${r.revenue_potential_score.toFixed(2)}</td>
+      <td class="score-cell ${scoreClass(r.accessibility_score)}">${r.accessibility_score.toFixed(2)}</td>
+      <td class="score-cell ${scoreClass(r.opportunity_score)}" style="font-size: 0.9rem;">${r.opportunity_score.toFixed(2)}</td>
+    </tr>
+  `).join('');
+
+  // Update th sort indicators
+  document.querySelectorAll('th[data-col]').forEach(th => {
+    th.classList.remove('sorted', 'desc');
+    if (th.dataset.col === sortCol) {
+      th.classList.add('sorted');
+      if (sortDesc) th.classList.add('desc');
+    }
+  });
+}
+
+function scoreClass(v) {
+  if (v >= 0.7) return 'score-high';
+  if (v >= 0.4) return 'score-mid';
+  return 'score-low';
+}
+
+function scoreColor(v) {
+  if (v >= 0.7) return 'var(--score-high)';
+  if (v >= 0.4) return 'var(--score-mid)';
+  return 'var(--score-low)';
+}
+
+function esc(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Column sorting
+document.querySelectorAll('th[data-col]').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.col;
+    if (sortCol === col) { sortDesc = !sortDesc; }
+    else { sortCol = col; sortDesc = col !== 'rank' && col !== 'name'; }
+    renderTable(currentResults);
+  });
+});
+
+// Detail panel
+function showDetail(idx) {
+  const sorted = [...currentResults].sort((a, b) => {
+    let va = a[sortCol], vb = b[sortCol];
+    if (va == null) va = -Infinity;
+    if (vb == null) vb = -Infinity;
+    if (typeof va === 'string') { va = va.toLowerCase(); vb = (vb || '').toLowerCase(); }
+    if (va < vb) return sortDesc ? 1 : -1;
+    if (va > vb) return sortDesc ? -1 : 1;
+    return 0;
+  });
+  const r = sorted[idx];
+  if (!r) return;
+
+  document.getElementById('detail-name').textContent = r.name;
+  document.getElementById('detail-body').innerHTML = `
+    <div class="detail-section">
+      <div class="detail-section-title">Business Info</div>
+      <div class="detail-row"><span class="detail-row-label">Category</span><span class="detail-row-value">${esc(r.category || '-')}</span></div>
+      <div class="detail-row"><span class="detail-row-label">Address</span><span class="detail-row-value">${esc(r.address || '-')}</span></div>
+      <div class="detail-row"><span class="detail-row-label">Phone</span><span class="detail-row-value">${r.phone || '-'}</span></div>
+      <div class="detail-row"><span class="detail-row-label">Email</span><span class="detail-row-value">${r.email || '-'}</span></div>
+      <div class="detail-row"><span class="detail-row-label">Rating</span><span class="detail-row-value rating-cell">${r.google_rating != null ? r.google_rating.toFixed(1) + ' / 5.0' : '-'}</span></div>
+      <div class="detail-row"><span class="detail-row-label">Reviews</span><span class="detail-row-value">${r.google_review_count != null ? r.google_review_count : '-'}</span></div>
+      ${r.website_url ? `<div class="detail-row"><span class="detail-row-label">Website</span><span class="detail-row-value"><a href="${esc(r.website_url)}" target="_blank" style="color:var(--cyan)">${esc(r.website_url)}</a></span></div>` : ''}
+      ${r.google_maps_url ? `<div class="detail-row"><span class="detail-row-label">Maps</span><span class="detail-row-value"><a href="${esc(r.google_maps_url)}" target="_blank" style="color:var(--cyan)">Open in Maps</a></span></div>` : ''}
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-title">Digital Presence</div>
+      <div class="detail-row"><span class="detail-row-label">Website</span><span class="detail-row-value ${r.has_website ? 'bool-yes' : 'bool-no'}">${r.has_website ? 'YES' : 'NO'}</span></div>
+      <div class="detail-row"><span class="detail-row-label">SSL</span><span class="detail-row-value ${r.has_ssl ? 'bool-yes' : 'bool-no'}">${r.has_ssl ? 'YES' : 'NO'}</span></div>
+      <div class="detail-row"><span class="detail-row-label">Facebook</span><span class="detail-row-value ${r.has_facebook ? 'bool-yes' : 'bool-no'}">${r.has_facebook ? 'YES' : 'NO'}</span></div>
+      <div class="detail-row"><span class="detail-row-label">Instagram</span><span class="detail-row-value ${r.has_instagram ? 'bool-yes' : 'bool-no'}">${r.has_instagram ? 'YES' : 'NO'}</span></div>
+      <div class="detail-row"><span class="detail-row-label">WhatsApp</span><span class="detail-row-value ${r.has_whatsapp ? 'bool-yes' : 'bool-no'}">${r.has_whatsapp ? 'YES' : 'NO'}</span></div>
+      <div class="detail-row"><span class="detail-row-label">Booking</span><span class="detail-row-value ${r.has_online_booking ? 'bool-yes' : 'bool-no'}">${r.has_online_booking ? 'YES' : 'NO'}</span></div>
+      ${r.website_technology ? `<div class="detail-row"><span class="detail-row-label">CMS</span><span class="detail-row-value">${esc(r.website_technology)}</span></div>` : ''}
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-title">Opportunity Score</div>
+      <div class="score-bar-container">
+        <div class="score-bar-row">
+          <span class="score-bar-label">Digital Gap</span>
+          <div class="score-bar-track"><div class="score-bar-fill" style="width:${r.digital_gap_score*100}%;background:${scoreColor(r.digital_gap_score)}"></div></div>
+          <span class="score-bar-value" style="color:${scoreColor(r.digital_gap_score)}">${r.digital_gap_score.toFixed(2)}</span>
+        </div>
+        <div class="score-bar-row">
+          <span class="score-bar-label">Revenue</span>
+          <div class="score-bar-track"><div class="score-bar-fill" style="width:${r.revenue_potential_score*100}%;background:${scoreColor(r.revenue_potential_score)}"></div></div>
+          <span class="score-bar-value" style="color:${scoreColor(r.revenue_potential_score)}">${r.revenue_potential_score.toFixed(2)}</span>
+        </div>
+        <div class="score-bar-row">
+          <span class="score-bar-label">Access</span>
+          <div class="score-bar-track"><div class="score-bar-fill" style="width:${r.accessibility_score*100}%;background:${scoreColor(r.accessibility_score)}"></div></div>
+          <span class="score-bar-value" style="color:${scoreColor(r.accessibility_score)}">${r.accessibility_score.toFixed(2)}</span>
+        </div>
+        <div class="score-bar-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+          <span class="score-bar-label" style="font-weight:600">TOTAL</span>
+          <div class="score-bar-track" style="height:6px"><div class="score-bar-fill" style="width:${r.opportunity_score*100}%;background:${scoreColor(r.opportunity_score)}"></div></div>
+          <span class="score-bar-value" style="color:${scoreColor(r.opportunity_score)};font-size:0.85rem">${r.opportunity_score.toFixed(2)}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-title">Analysis</div>
+      <div class="detail-rationale">${esc(r.rationale)}</div>
+    </div>
+  `;
+
+  document.getElementById('detail-panel').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detail-panel').classList.remove('open');
+}
+
+// Export CSV
+function exportCSV() {
+  if (!currentResults.length) return;
+  const cols = ['rank','name','category','address','phone','email','website_url',
+    'google_rating','google_review_count','has_website','has_ssl',
+    'has_facebook','has_instagram','has_whatsapp',
+    'digital_gap_score','revenue_potential_score','accessibility_score','opportunity_score','rationale'];
+  const header = cols.join(',');
+  const rows = currentResults.map(r =>
+    cols.map(c => {
+      let v = r[c];
+      if (v == null) v = '';
+      if (typeof v === 'string' && (v.includes(',') || v.includes('"')))
+        v = '"' + v.replace(/"/g, '""') + '"';
+      return v;
+    }).join(',')
+  );
+  const csv = header + '\n' + rows.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `spotfinder_${currentScanId || 'export'}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Keyboard shortcut: Escape closes detail
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeDetail();
+});
+
+// Init
+loadIndustries();
+loadScans();
+</script>
+</body>
+</html>
