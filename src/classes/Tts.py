@@ -12,7 +12,9 @@ class TTS:
         self._model = KittenModel(KITTEN_MODEL)
         self._voice = get_tts_voice()
 
-    def synthesize(self, text, output_file=os.path.join(ROOT_DIR, ".mp", "audio.wav")):
+    def synthesize(self, text, output_file=None):
+        if output_file is None:
+            output_file = os.path.join(ROOT_DIR, ".mp", "audio.wav")
         audio = self._model.generate(text, voice=self._voice)
         sf.write(output_file, audio, KITTEN_SAMPLE_RATE)
         return output_file

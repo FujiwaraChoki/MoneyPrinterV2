@@ -1,5 +1,6 @@
 import os
 import random
+import subprocess
 import zipfile
 import requests
 import platform
@@ -22,9 +23,11 @@ def close_running_selenium_instances() -> None:
 
         # Kill all running Firefox instances
         if platform.system() == "Windows":
-            os.system("taskkill /f /im firefox.exe")
+            subprocess.run(["taskkill", "/f", "/im", "firefox.exe"],
+                           capture_output=True, check=False)
         else:
-            os.system("pkill firefox")
+            subprocess.run(["pkill", "firefox"],
+                           capture_output=True, check=False)
 
         success(" => Closed running Selenium instances.")
 
@@ -54,6 +57,9 @@ def rem_temp_files() -> None:
     """
     # Path to the `.mp` directory
     mp_dir = os.path.join(ROOT_DIR, ".mp")
+
+    if not os.path.isdir(mp_dir):
+        return
 
     files = os.listdir(mp_dir)
 

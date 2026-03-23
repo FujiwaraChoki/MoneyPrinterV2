@@ -149,13 +149,14 @@ class YouTube:
 
         return completion
 
-    def generate_script(self) -> str:
+    def generate_script(self, _retries: int = 0) -> str:
         """
         Generate a script for a video, depending on the subject of the video, the number of paragraphs, and the AI model.
 
         Returns:
             script (str): The script of the video.
         """
+        MAX_RETRIES = 3
         sentence_length = get_script_sentence_length()
         prompt = f"""
         Generate a script for a video in {sentence_length} sentences, depending on the subject of the video.
@@ -189,29 +190,37 @@ class YouTube:
             return
 
         if len(completion) > 5000:
+            if _retries >= MAX_RETRIES:
+                error("Generated script is too long after maximum retries.")
+                return completion[:5000]
             if get_verbose():
-                warning("Generated Script is too long. Retrying...")
-            return self.generate_script()
+                warning(f"Generated Script is too long. Retrying ({_retries + 1}/{MAX_RETRIES})...")
+            return self.generate_script(_retries=_retries + 1)
 
         self.script = completion
 
         return completion
 
-    def generate_metadata(self) -> dict:
+    def generate_metadata(self, _retries: int = 0) -> dict:
         """
         Generates Video metadata for the to-be-uploaded YouTube Short (Title, Description).
 
         Returns:
             metadata (dict): The generated metadata.
         """
+        MAX_RETRIES = 3
         title = self.generate_response(
             f"Please generate a YouTube Video Title for the following subject, including hashtags: {self.subject}. Only return the title, nothing else. Limit the title under 100 characters."
         )
 
         if len(title) > 100:
-            if get_verbose():
-                warning("Generated Title is too long. Retrying...")
-            return self.generate_metadata()
+            if _retries >= MAX_RETRIES:
+                error("Generated title is too long after maximum retries. Truncating.")
+                title = title[:97] + "..."
+            else:
+                if get_verbose():
+                    warning(f"Generated Title is too long. Retrying ({_retries + 1}/{MAX_RETRIES})...")
+                return self.generate_metadata(_retries=_retries + 1)
 
         description = self.generate_response(
             f"Please generate a YouTube Video Description for the following script: {self.script}. Only return the description, nothing else."
@@ -221,13 +230,14 @@ class YouTube:
 
         return self.metadata
 
-    def generate_prompts(self) -> List[str]:
+    def generate_prompts(self, _retries: int = 0) -> List[str]:
         """
         Generates AI Image Prompts based on the provided Video Script.
 
         Returns:
             image_prompts (List[str]): Generated List of image prompts.
         """
+        MAX_RETRIES = 3
         n_prompts = len(self.script) / 3
 
         prompt = f"""
@@ -281,9 +291,12 @@ class YouTube:
                 r = re.compile(r"\[.*\]")
                 image_prompts = r.findall(completion)
                 if len(image_prompts) == 0:
+                    if _retries >= MAX_RETRIES:
+                        error("Failed to generate Image Prompts after maximum retries.")
+                        return []
                     if get_verbose():
-                        warning("Failed to generate Image Prompts. Retrying...")
-                    return self.generate_prompts()
+                        warning(f"Failed to generate Image Prompts. Retrying ({_retries + 1}/{MAX_RETRIES})...")
+                    return self.generate_prompts(_retries=_retries + 1)
 
         if len(image_prompts) > n_prompts:
             image_prompts = image_prompts[: int(n_prompts)]
@@ -370,11 +383,11 @@ class YouTube:
                         return self._persist_image(image_bytes, "Nano Banana 2 API")
 
             if get_verbose():
-                warning(f"Nano Banana 2 did not return an image payload. Response: {body}")
+                warning(f"Nano Banana 2 did not return an image payload. Status: {response.status_code}")
             return None
         except Exception as e:
             if get_verbose():
-                warning(f"Failed to generate image with Nano Banana 2 API: {str(e)}")
+                warning(f"Failed to generate image with Nano Banana 2 API: {type(e).__name__}: {str(e)}")
             return None
 
     def generate_image(self, prompt: str) -> str:
@@ -423,23 +436,20 @@ class YouTube:
         Returns:
             None
         """
-        videos = self.get_videos()
-        videos.append(video)
-
         cache = get_youtube_cache_path()
 
         with open(cache, "r") as file:
             previous_json = json.loads(file.read())
 
-            # Find our account
-            accounts = previous_json["accounts"]
-            for account in accounts:
-                if account["id"] == self._account_uuid:
-                    account["videos"].append(video)
+        # Find our account and append the video
+        accounts = previous_json["accounts"]
+        for account in accounts:
+            if account["id"] == self._account_uuid:
+                account["videos"].append(video)
 
-            # Commit changes
-            with open(cache, "w") as f:
-                f.write(json.dumps(previous_json))
+        # Commit changes
+        with open(cache, "w") as f:
+            f.write(json.dumps(previous_json, indent=4))
 
     def generate_subtitles(self, audio_path: str) -> str:
         """
@@ -848,7 +858,8 @@ class YouTube:
             driver.quit()
 
             return True
-        except:
+        except Exception as e:
+            error(f"Upload failed: {type(e).__name__}: {str(e)}")
             self.browser.quit()
             return False
 

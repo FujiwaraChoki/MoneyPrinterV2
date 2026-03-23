@@ -179,21 +179,18 @@ class Twitter:
         Returns:
             None
         """
-        posts = self.get_posts()
-        posts.append(post)
-
         with open(get_twitter_cache_path(), "r") as file:
             previous_json = json.loads(file.read())
 
-            # Find our account
-            accounts = previous_json["accounts"]
-            for account in accounts:
-                if account["id"] == self.account_uuid:
-                    account["posts"].append(post)
+        # Find our account and append the post
+        accounts = previous_json["accounts"]
+        for account in accounts:
+            if account["id"] == self.account_uuid:
+                account["posts"].append(post)
 
-            # Commit changes
-            with open(get_twitter_cache_path(), "w") as f:
-                f.write(json.dumps(previous_json))
+        # Commit changes
+        with open(get_twitter_cache_path(), "w") as f:
+            f.write(json.dumps(previous_json, indent=4))
 
     def generate_post(self) -> str:
         """
