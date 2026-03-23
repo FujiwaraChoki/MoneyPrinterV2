@@ -86,7 +86,7 @@ Please read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for details on our code of 
 
 ## License
 
-MoneyPrinterV2 is licensed under `Affero General Public License v3.0`. See [LICENSE](LICENSE) for more information.
+MoneyPrinterV2 is licensed under `GNU Affero General Public License v3.0`. See [LICENSE](LICENSE) for more information.
 
 ## Acknowledgments
 
