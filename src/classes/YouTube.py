@@ -617,16 +617,31 @@ class YouTube:
 
         final_clip = concatenate_videoclips(clips)
         final_clip = final_clip.set_fps(30)
+
+        
         random_song = choose_random_song()
 
         subtitles = None
+        # try:
+        #     subtitles_path = self.generate_subtitles(self.tts_path)
+        #     equalize_subtitles(subtitles_path, 10)
+        #     subtitles = SubtitlesClip(subtitles_path, generator)
+        #     subtitles.set_pos(("center", "center"))
+        # except Exception as e:
+        #     warning(f"Failed to generate subtitles, continuing without subtitles: {e}")
+
         try:
-            subtitles_path = self.generate_subtitles(self.tts_path)
-            equalize_subtitles(subtitles_path, 10)
-            subtitles = SubtitlesClip(subtitles_path, generator)
-            subtitles.set_pos(("center", "center"))
+            from classes.Subtitles import Subtitles # 
+            
+            info("[+] Transcribing audio with Whisper...")
+            sub_gen = Subtitles(model_name="base")
+            srt_path = sub_gen.create_srt(self.tts_path) 
+            
+            subtitles = SubtitlesClip(srt_path, generator)
+            subtitles = subtitles.set_position(("center", "center"))
+            success("[+] Subtitles generated successfully!")
         except Exception as e:
-            warning(f"Failed to generate subtitles, continuing without subtitles: {e}")
+            warning(f"[-] Subtitle generation failed: {e}")
 
         random_song_clip = AudioFileClip(random_song).set_fps(44100)
 
