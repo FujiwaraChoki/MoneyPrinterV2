@@ -25,7 +25,7 @@ _DIGITAL_DEDUCTIONS: list[tuple[str, float]] = [
     ("has_email", 0.05),
 ]
 
-_TIER_SCORES: dict[int, float] = {1: 1.0, 2: 0.7, 3: 0.4}
+_TIER_SCORES: dict[int, float] = {1: 1.0, 2: 0.7}
 
 
 def compute_digital_gap(presence: DigitalPresence) -> float:

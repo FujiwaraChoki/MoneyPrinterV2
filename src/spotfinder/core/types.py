@@ -185,10 +185,10 @@ class IndustryProfile:
     avg_revenue_usd: int
     gross_margin_pct: float
     website_adoption_pct: float
-    tier: Literal[1, 2, 3]
+    tier: Literal[1, 2]
 
 
-# --- 15 Target Industries ---
+# --- 12 Target Industries ---
 
 INDUSTRIES: dict[str, IndustryProfile] = {
     "hvac": IndustryProfile(
@@ -279,17 +279,6 @@ INDUSTRIES: dict[str, IndustryProfile] = {
         website_adoption_pct=0.40,
         tier=2,
     ),
-    "medical": IndustryProfile(
-        slug="medical",
-        name_en="Medical Clinics",
-        name_es="Clínicas Médicas",
-        search_terms_en=["medical clinic", "doctor", "family medicine"],
-        search_terms_es=["clínica médica", "consultorio médico", "médico general"],
-        avg_revenue_usd=800_000,
-        gross_margin_pct=0.35,
-        website_adoption_pct=0.55,
-        tier=2,
-    ),
     "landscaping": IndustryProfile(
         slug="landscaping",
         name_en="Landscaping",
@@ -333,27 +322,5 @@ INDUSTRIES: dict[str, IndustryProfile] = {
         gross_margin_pct=0.60,
         website_adoption_pct=0.50,
         tier=2,
-    ),
-    "real_estate": IndustryProfile(
-        slug="real_estate",
-        name_en="Real Estate Agencies",
-        name_es="Inmobiliarias",
-        search_terms_en=["real estate agency", "realtor", "property management"],
-        search_terms_es=["inmobiliaria", "agencia inmobiliaria", "bienes raíces"],
-        avg_revenue_usd=500_000,
-        gross_margin_pct=0.30,
-        website_adoption_pct=0.65,
-        tier=3,
-    ),
-    "restaurants": IndustryProfile(
-        slug="restaurants",
-        name_en="Restaurants",
-        name_es="Restaurantes",
-        search_terms_en=["restaurant", "dining", "food"],
-        search_terms_es=["restaurante", "gastronomía", "comida"],
-        avg_revenue_usd=500_000,
-        gross_margin_pct=0.10,
-        website_adoption_pct=0.55,
-        tier=3,
     ),
 }
