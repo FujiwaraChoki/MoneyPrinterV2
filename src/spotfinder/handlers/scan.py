@@ -24,6 +24,7 @@ def handle_scan(args: argparse.Namespace) -> None:
     ))
 
     db = Database()
+    db.initialize()
     scraper = GoogleMapsScraper()
     http_client = HttpClient()
     pipeline = Pipeline(db, scraper, http_client)
@@ -68,8 +69,8 @@ def _validate_inputs(args: argparse.Namespace) -> None:
 
 
 def _print_summary(db: Database, scan_id: str) -> None:
-    scores = db.get_scores_by_scan(scan_id)
-    businesses = db.get_businesses_by_scan(scan_id)
+    scores = db.get_scores(scan_id)
+    businesses = db.get_businesses(scan_id)
     biz_by_id = {b.id: b for b in businesses}
 
     count = len(scores)

@@ -40,15 +40,16 @@ class EnrichmentService:
         scan.advance_status(ScanStatus.ENRICHING)
         self._db.update_scan(scan)
 
-        enriched_ids = self._db.get_enriched_business_ids(scan.id)
-        unenriched = [b for b in businesses if b.id not in enriched_ids]
+        unenriched_ids = set(self._db.get_unenriched_business_ids(scan.id))
+        unenriched = [b for b in businesses if b.id in unenriched_ids]
+        already_done = len(businesses) - len(unenriched)
         total = len(businesses)
         results: list[DigitalPresence] = []
 
-        for idx, biz in enumerate(unenriched, start=len(enriched_ids) + 1):
+        for idx, biz in enumerate(unenriched, start=already_done + 1):
             print(f"  Enriqueciendo [{idx}/{total}] {biz.name}...")
             presence = self._enrich_one(biz)
-            self._db.insert_digital_presence(presence)
+            self._db.insert_presence(presence)
             results.append(presence)
 
         already = self._db.get_digital_presences_by_scan(scan.id)
@@ -64,7 +65,7 @@ class EnrichmentService:
         check = self._checker.check(biz.website_url)
 
         html = _fetch_html(self._http, biz.website_url)
-        socials = self._social.find(html, biz.website_url) if html else {}
+        socials = self._social.find(html, biz.website_url) if html else None
         email = self._email.extract(html) if html else None
 
         presence = _build_presence(biz.id, check, socials, email)
@@ -87,24 +88,30 @@ def _minimal_presence(business_id: str) -> DigitalPresence:
 
 def _build_presence(
     business_id: str,
-    check: dict[str, object],
-    socials: dict[str, str | None],
+    check: object,
+    socials: object | None,
     email: str | None,
 ) -> DigitalPresence:
+    fb = getattr(socials, "facebook_url", None) if socials else None
+    ig = getattr(socials, "instagram_url", None) if socials else None
+    wa = getattr(socials, "whatsapp_url", None) if socials else None
+    booking = getattr(socials, "has_online_booking", False) if socials else False
+
     presence = DigitalPresence(
         business_id=business_id,
         has_website=True,
-        website_status_code=check.get("status_code"),
-        website_load_time_ms=check.get("load_time_ms"),
-        website_is_mobile_friendly=check.get("is_mobile_friendly"),
-        website_has_ssl=check.get("has_ssl"),
-        website_technology=check.get("cms"),
-        has_facebook=socials.get("facebook_url") is not None,
-        facebook_url=socials.get("facebook_url"),
-        has_instagram=socials.get("instagram_url") is not None,
-        instagram_url=socials.get("instagram_url"),
-        has_whatsapp=socials.get("whatsapp_url") is not None,
-        whatsapp_url=socials.get("whatsapp_url"),
+        website_status_code=getattr(check, "status_code", None),
+        website_load_time_ms=getattr(check, "load_time_ms", None),
+        website_is_mobile_friendly=getattr(check, "is_mobile_friendly", None),
+        website_has_ssl=getattr(check, "has_ssl", None),
+        website_technology=getattr(check, "technology", None),
+        has_facebook=fb is not None,
+        facebook_url=fb,
+        has_instagram=ig is not None,
+        instagram_url=ig,
+        has_whatsapp=wa is not None,
+        whatsapp_url=wa,
+        has_online_booking=booking,
         has_email=email is not None,
     )
     presence.compute_social_count()

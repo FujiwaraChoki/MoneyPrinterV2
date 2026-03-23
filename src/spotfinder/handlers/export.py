@@ -23,6 +23,7 @@ _CSV_COLUMNS = [
 def handle_export(args: argparse.Namespace) -> None:
     """Maneja el comando 'export' del CLI."""
     db = Database()
+    db.initialize()
     scan = db.get_scan(args.scan_id)
     if scan is None:
         print(colored("  Escaneo no encontrado.", "red"))
@@ -44,8 +45,8 @@ def handle_export(args: argparse.Namespace) -> None:
 
 
 def _collect_rows(db: Database, scan_id: str) -> list[dict[str, object]]:
-    scores = db.get_scores_by_scan(scan_id)
-    businesses = db.get_businesses_by_scan(scan_id)
+    scores = db.get_scores(scan_id)
+    businesses = db.get_businesses(scan_id)
     presences = db.get_digital_presences_by_scan(scan_id)
 
     biz_by_id = {b.id: b for b in businesses}

@@ -14,6 +14,7 @@ from spotfinder.core.types import ScanRequest
 def handle_results(args: argparse.Namespace) -> None:
     """Maneja el comando 'results' del CLI."""
     db = Database()
+    db.initialize()
     scan = _resolve_scan(db, args)
     if scan is None:
         print(colored("  No se encontraron escaneos.", "yellow"))
@@ -36,8 +37,8 @@ def _get_limit(args: argparse.Namespace) -> int:
 
 
 def _print_results(db: Database, scan: ScanRequest, limit: int) -> None:
-    scores = db.get_scores_by_scan(scan.id)
-    businesses = db.get_businesses_by_scan(scan.id)
+    scores = db.get_scores(scan.id)
+    businesses = db.get_businesses(scan.id)
     presences = db.get_digital_presences_by_scan(scan.id)
 
     biz_by_id = {b.id: b for b in businesses}

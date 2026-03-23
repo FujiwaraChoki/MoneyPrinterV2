@@ -71,7 +71,7 @@ def _score_all(
 ) -> list[OpportunityScore]:
     scores: list[OpportunityScore] = []
     for biz in businesses:
-        presence = db.get_digital_presence(biz.id)
+        presence = db.get_presence(biz.id)
         score = compute_opportunity_score(biz, presence, tier, weights)
         scores.append(score)
     return scores

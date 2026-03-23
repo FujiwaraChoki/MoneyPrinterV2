@@ -10,7 +10,7 @@ from spotfinder.adapters.db_mappers import (
     row_to_business,
     row_to_presence,
     row_to_scan,
-    row_to_score_and_business,
+    row_to_score,
 )
 from spotfinder.adapters.db_schema import SCHEMA_SQL, SCHEMA_VERSION
 from spotfinder.core.errors import StorageError
@@ -169,15 +169,35 @@ class Database:
             "insert score",
         )
 
-    def get_scores(self, scan_id: str, limit: int = 50) -> list[tuple[OpportunityScore, Business]]:
+    def get_scores(self, scan_id: str, limit: int = 50) -> list[OpportunityScore]:
         rows = self._fetch_all(
-            """SELECT os.*, b.* FROM opportunity_scores os
+            """SELECT os.* FROM opportunity_scores os
                JOIN businesses b ON os.business_id=b.id
-               WHERE b.scan_id=? AND os.deleted_at IS NULL AND b.deleted_at IS NULL
+               WHERE b.scan_id=? AND b.deleted_at IS NULL
                ORDER BY os.opportunity_score DESC LIMIT ?""",
             (scan_id, limit), "get scores",
         )
-        return [row_to_score_and_business(r) for r in rows]
+        return [row_to_score(r) for r in rows]
+
+    # --- ScanRequest extras ---
+
+    def get_latest_scan(self) -> ScanRequest | None:
+        row = self._fetch_one(
+            "SELECT * FROM scan_requests WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 1",
+            (), "get latest scan",
+        )
+        return row_to_scan(row) if row else None
+
+    # --- DigitalPresence extras ---
+
+    def get_digital_presences_by_scan(self, scan_id: str) -> list[DigitalPresence]:
+        rows = self._fetch_all(
+            """SELECT dp.* FROM digital_presences dp
+               JOIN businesses b ON dp.business_id=b.id
+               WHERE b.scan_id=? AND b.deleted_at IS NULL AND dp.deleted_at IS NULL""",
+            (scan_id,), "get presences by scan",
+        )
+        return [row_to_presence(r) for r in rows]
 
     # --- Internal helpers ---
 

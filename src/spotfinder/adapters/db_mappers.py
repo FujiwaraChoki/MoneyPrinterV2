@@ -63,6 +63,18 @@ def row_to_presence(row: sqlite3.Row) -> DigitalPresence:
     )
 
 
+def row_to_score(row: sqlite3.Row) -> OpportunityScore:
+    return OpportunityScore(
+        id=row["id"], business_id=row["business_id"],
+        digital_gap_score=row["digital_gap_score"],
+        revenue_potential_score=row["revenue_potential_score"],
+        accessibility_score=row["accessibility_score"],
+        opportunity_score=row["opportunity_score"],
+        scoring_rationale=row["scoring_rationale"],
+        rank=row["rank"], scored_at=row["scored_at"],
+    )
+
+
 def row_to_score_and_business(
     row: sqlite3.Row,
 ) -> tuple[OpportunityScore, Business]:

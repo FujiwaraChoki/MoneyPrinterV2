@@ -26,12 +26,9 @@ class DiscoveryService:
         self._db.update_scan(scan)
 
         query = _build_query(scan)
-        raw_businesses = self._scraper.discover(query)
+        raw_businesses = self._scraper.discover(scan.id, query)
         unique = _deduplicate(raw_businesses)
-
-        for biz in unique:
-            biz.scan_id = scan.id
-            self._db.insert_business(biz)
+        self._db.insert_businesses(unique)
 
         scan.business_count = len(unique)
         self._db.update_scan(scan)
