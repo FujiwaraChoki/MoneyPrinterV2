@@ -1,5 +1,7 @@
 import schedule
 import subprocess
+import os
+import sys
 
 from art import *
 from cache import *
@@ -163,7 +165,24 @@ def main():
                         youtube.generate_video(tts)
                         upload_to_yt = question("Do you want to upload this video to YouTube? (Yes/No): ")
                         if upload_to_yt.lower() == "yes":
-                            youtube.upload_video()
+                            # Get available channels
+                            channels = youtube.detect_available_channels()
+                            
+                            if len(channels) > 1:
+                                info("\n============ CHANNELS ============", False)
+                                for idx, channel in enumerate(channels):
+                                    default_indicator = " [DEFAULT]" if channel.get("is_default") else ""
+                                    print(colored(f" {idx + 1}. {channel['title']} ({channel['id']}){default_indicator}", "cyan"))
+                                info("=================================\n", False)
+                                
+                                try:
+                                    channel_choice = int(question("Select a channel (or press Enter for default): ") or "1") - 1
+                                    selected_channel = channels[channel_choice]["id"] if 0 <= channel_choice < len(channels) else None
+                                    youtube.upload_video(channel_id=selected_channel)
+                                except (ValueError, IndexError):
+                                    youtube.upload_video()
+                            else:
+                                youtube.upload_video()
                     elif user_input == 2:
                         videos = youtube.get_videos()
 

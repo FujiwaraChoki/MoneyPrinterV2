@@ -75,6 +75,8 @@ class YouTube:
         self._language: str = language
 
         self.images = []
+        self.channel_id = None
+        self.selected_channel_id = None
 
         # Initialize the Firefox profile
         self.options: Options = Options()
@@ -685,6 +687,59 @@ class YouTube:
 
         return path
 
+    def detect_available_channels(self) -> List[dict]:
+        """
+        Detects all available channels in the YouTube account.
+        
+        Returns:
+            channels (List[dict]): List of available channels with metadata
+        """
+        try:
+            driver = self.browser
+            driver.get("https://studio.youtube.com/")
+            time.sleep(3)
+            
+            channels = []
+            
+            # Get default channel first
+            default_channel_id = self.get_channel_id()
+            channels.append({
+                "id": default_channel_id,
+                "title": "Default Channel",
+                "is_default": True
+            })
+            
+            if get_verbose():
+                info(f" => Detected default channel: {default_channel_id}")
+            
+            return channels
+        except Exception as e:
+            if get_verbose():
+                warning(f"Error detecting channels: {e}")
+            return []
+
+    def select_channel(self, channel_id: str = None) -> bool:
+        """
+        Selects a specific channel for upload.
+        
+        Args:
+            channel_id (str): Channel ID to select. If None, uses default.
+            
+        Returns:
+            success (bool): Whether channel selection was successful
+        """
+        if not channel_id:
+            return True
+        
+        try:
+            self.selected_channel_id = channel_id
+            if get_verbose():
+                info(f" => Selected channel: {channel_id}")
+            return True
+        except Exception as e:
+            error(f"Error selecting channel: {e}")
+            return False
+
     def get_channel_id(self) -> str:
         """
         Gets the Channel ID of the YouTube Account.
@@ -700,14 +755,21 @@ class YouTube:
 
         return channel_id
 
-    def upload_video(self) -> bool:
+    def upload_video(self, channel_id: str = None) -> bool:
         """
-        Uploads the video to YouTube.
-
+        Uploads the video to YouTube (possibly to a specific channel).
+        
+        Args:
+            channel_id (str): Optional channel ID to upload to
+            
         Returns:
             success (bool): Whether the upload was successful or not.
         """
         try:
+            # Select channel if specified
+            if channel_id:
+                self.select_channel(channel_id)
+            
             self.get_channel_id()
 
             driver = self.browser
@@ -848,7 +910,9 @@ class YouTube:
             driver.quit()
 
             return True
-        except:
+        except Exception as e:
+            if get_verbose():
+                error(f"Upload failed: {e}")
             self.browser.quit()
             return False
 

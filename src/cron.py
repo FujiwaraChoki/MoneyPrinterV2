@@ -19,6 +19,8 @@ def main():
     Command-line arguments:
         sys.argv[1]: A string indicating the purpose, either "twitter" or "youtube".
         sys.argv[2]: A string representing the account UUID.
+        sys.argv[3]: A string representing the model name.
+        sys.argv[4]: Optional string representing the channel ID.
 
     The function also handles verbose output based on user settings and reports success or errors as appropriate.
 
@@ -30,6 +32,7 @@ def main():
     purpose = str(sys.argv[1])
     account_id = str(sys.argv[2])
     model = str(sys.argv[3]) if len(sys.argv) > 3 else None
+    channel_id = str(sys.argv[4]) if len(sys.argv) > 4 else None
 
     if model:
         select_model(model)
@@ -79,7 +82,7 @@ def main():
                     acc["language"]
                 )
                 youtube.generate_video(tts)
-                youtube.upload_video()
+                youtube.upload_video(channel_id=channel_id)  # Pass channel_id
                 if verbose:
                     success("Uploaded Short.")
                 break
