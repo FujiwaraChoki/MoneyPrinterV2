@@ -1,34 +1,34 @@
 #!/bin/bash
 
-# Script to generate & Upload a video to YT Shorts
+# Script para generar y subir un video a YT Shorts
 
-# Check which interpreter to use (python)
+# Verificar qué intérprete usar (python)
 if [ -x "$(command -v python3)" ]; then
   PYTHON=python3
 else
   PYTHON=python
 fi
 
-# Read .mp/youtube.json file, loop through accounts array, get each id and print every id
+# Leer .mp/youtube.json, recorrer el array de cuentas, obtener cada id e imprimir todos los ids
 youtube_ids=$($PYTHON -c "import json; print('\n'.join([account['id'] for account in json.load(open('.mp/youtube.json'))['accounts']]))")
 
-echo "What account do you want to upload the video to?"
+echo "¿A qué cuenta querés subir el video?"
 
-# Print the ids
+# Imprimir los ids
 for id in $youtube_ids; do
   echo $id
 done
 
-# Ask for the id
-read -p "Enter the id: " id
+# Pedir el id
+read -p "Ingresá el id: " id
 
-# Check if the id is in the list
+# Verificar si el id está en la lista
 if [[ " ${youtube_ids[@]} " =~ " ${id} " ]]; then
-  echo "ID found"
+  echo "ID encontrado"
 else
-  echo "ID not found"
+  echo "ID no encontrado"
   exit 1
 fi
 
-# Run python script
+# Ejecutar script de python
 $PYTHON src/cron.py youtube $id

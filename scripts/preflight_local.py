@@ -33,7 +33,7 @@ def check_url(url: str, timeout: int = 3) -> Tuple[bool, str]:
 
 def main() -> int:
     if not os.path.exists(CONFIG_PATH):
-        fail(f"Missing config file: {CONFIG_PATH}")
+        fail(f"Falta el archivo de configuración: {CONFIG_PATH}")
         return 1
 
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
@@ -47,39 +47,39 @@ def main() -> int:
 
     imagemagick_path = cfg.get("imagemagick_path", "")
     if imagemagick_path and os.path.exists(imagemagick_path):
-        ok(f"imagemagick_path exists: {imagemagick_path}")
+        ok(f"imagemagick_path existe: {imagemagick_path}")
     else:
         warn(
-            "imagemagick_path is not set to a valid executable path. "
-            "MoviePy subtitle rendering may fail."
+            "imagemagick_path no apunta a un ejecutable válido. "
+            "El renderizado de subtítulos de MoviePy puede fallar."
         )
 
     firefox_profile = cfg.get("firefox_profile", "")
     if firefox_profile:
         if os.path.isdir(firefox_profile):
-            ok(f"firefox_profile exists: {firefox_profile}")
+            ok(f"firefox_profile existe: {firefox_profile}")
         else:
-            warn(f"firefox_profile does not exist: {firefox_profile}")
+            warn(f"firefox_profile no existe: {firefox_profile}")
     else:
-        warn("firefox_profile is empty. Twitter/YouTube automation requires this.")
+        warn("firefox_profile está vacío. La automatización de Twitter/YouTube lo necesita.")
 
     # Ollama (LLM)
     base = str(cfg.get("ollama_base_url", "http://127.0.0.1:11434")).rstrip("/")
     reachable, detail = check_url(f"{base}/api/tags")
     if not reachable:
-        fail(f"Ollama is not reachable at {base}: {detail}")
+        fail(f"Ollama no es alcanzable en {base}: {detail}")
         failures += 1
     else:
-        ok(f"Ollama reachable at {base}")
+        ok(f"Ollama alcanzable en {base}")
         try:
             tags = requests.get(f"{base}/api/tags", timeout=5).json()
             models = [m.get("name") for m in tags.get("models", [])]
             if models:
-                ok(f"Ollama models available: {', '.join(models[:10])}")
+                ok(f"Modelos de Ollama disponibles: {', '.join(models[:10])}")
             else:
-                warn("No models found on Ollama. Pull a model first (e.g. 'ollama pull llama3.2:3b').")
+                warn("No se encontraron modelos en Ollama. Descargá uno primero (ej. 'ollama pull llama3.2:3b').")
         except Exception as exc:
-            warn(f"Could not validate Ollama model list: {exc}")
+            warn(f"No se pudo validar la lista de modelos de Ollama: {exc}")
 
     # Nano Banana 2 (image generation)
     api_key = cfg.get("nanobanana2_api_key", "") or os.environ.get("GEMINI_API_KEY", "")
@@ -90,33 +90,33 @@ def main() -> int:
         )
     ).rstrip("/")
     if api_key:
-        ok("nanobanana2_api_key is set")
+        ok("nanobanana2_api_key está configurada")
     else:
-        fail("nanobanana2_api_key is empty (and GEMINI_API_KEY is not set)")
+        fail("nanobanana2_api_key está vacía (y GEMINI_API_KEY no está configurada)")
         failures += 1
 
     reachable, detail = check_url(nb2_base, timeout=8)
     if not reachable:
-        warn(f"Nano Banana 2 base URL could not be reached: {detail}")
+        warn(f"No se pudo alcanzar la URL base de Nano Banana 2: {detail}")
     else:
-        ok(f"Nano Banana 2 base URL reachable: {nb2_base}")
+        ok(f"URL base de Nano Banana 2 alcanzable: {nb2_base}")
 
     if stt_provider == "local_whisper":
         try:
             import faster_whisper  # noqa: F401
 
-            ok("faster-whisper is installed")
+            ok("faster-whisper está instalado")
         except Exception as exc:
-            fail(f"faster-whisper is not importable: {exc}")
+            fail(f"faster-whisper no se puede importar: {exc}")
             failures += 1
 
     if failures:
         print("")
-        print(f"Preflight completed with {failures} blocking issue(s).")
+        print(f"Verificación previa completada con {failures} problema(s) bloqueante(s).")
         return 1
 
     print("")
-    print("Preflight passed. Local setup looks ready.")
+    print("Verificación previa exitosa. La configuración local está lista.")
     return 0
 
 

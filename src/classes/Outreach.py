@@ -71,14 +71,14 @@ class Outreach:
             None
         """
         if self._find_scraper_dir():
-            info("=> Scraper already unzipped. Skipping unzip.")
+            info("=> Scraper ya descomprimido. Omitiendo descompresión.")
             return
 
         r = requests.get(zip_link)
         z = zipfile.ZipFile(io.BytesIO(r.content))
         for member in z.namelist():
             if ".." in member or member.startswith("/"):
-                warning(f"Skipping suspicious path in archive: {member}")
+                warning(f"Omitiendo ruta sospechosa en el archivo: {member}")
                 continue
             z.extract(member)
 
@@ -95,13 +95,13 @@ class Outreach:
             else "google-maps-scraper"
         )
         if os.path.exists(binary_name):
-            print(colored("=> Scraper already built. Skipping build.", "blue"))
+            print(colored("=> Scraper ya compilado. Omitiendo compilación.", "blue"))
             return
 
         scraper_dir = self._find_scraper_dir()
         if not scraper_dir:
             raise FileNotFoundError(
-                "Could not locate extracted google-maps-scraper directory."
+                "No se pudo encontrar el directorio extraído de google-maps-scraper."
             )
 
         subprocess.run(["go", "mod", "download"], cwd=scraper_dir, check=True)
@@ -109,7 +109,7 @@ class Outreach:
 
         built_binary = os.path.join(scraper_dir, binary_name)
         if not os.path.exists(built_binary):
-            raise FileNotFoundError(f"Expected built scraper binary at: {built_binary}")
+            raise FileNotFoundError(f"Se esperaba el binario del scraper compilado en: {built_binary}")
 
         os.replace(built_binary, binary_name)
 
@@ -124,7 +124,7 @@ class Outreach:
         Returns:
             None
         """
-        info(" => Running scraper...")
+        info(" => Ejecutando scraper...")
         binary_name = (
             "google-maps-scraper.exe"
             if platform.system() == "Windows"
@@ -135,13 +135,13 @@ class Outreach:
             scraper_process = subprocess.run(command, timeout=float(timeout))
 
             if scraper_process.returncode == 0:
-                print(colored("=> Scraper finished successfully.", "green"))
+                print(colored("=> Scraper finalizado exitosamente.", "green"))
             else:
-                print(colored("=> Scraper finished with an error.", "red"))
+                print(colored("=> Scraper finalizó con un error.", "red"))
         except subprocess.TimeoutExpired:
-            print(colored("=> Scraper timed out.", "red"))
+            print(colored("=> Scraper agotó el tiempo de espera.", "red"))
         except Exception as e:
-            print(colored("An error occurred while running the scraper:", "red"))
+            print(colored("Ocurrió un error al ejecutar el scraper:", "red"))
             print(str(e))
 
     def get_items_from_file(self, file_name: str) -> list:
@@ -186,7 +186,7 @@ class Outreach:
             email = email_addresses[0] if len(email_addresses) > 0 else ""
 
         if email:
-            print(f"=> Setting email {email} for website {website}")
+            print(f"=> Configurando email {email} para el sitio web {website}")
             with open(output_file, "r", newline="", errors="ignore") as csvfile:
                 csvreader = csv.reader(csvfile)
                 items = list(csvreader)
@@ -205,7 +205,7 @@ class Outreach:
         """
         # Check if go is installed
         if not self.is_go_installed():
-            error("Go is not installed. Please install go and try again.")
+            error("Go no está instalado. Por favor, instalá Go e intentá de nuevo.")
             return
 
         # Unzip the scraper
@@ -229,14 +229,14 @@ class Outreach:
 
         if not os.path.exists(output_path):
             error(
-                f" => Scraper output not found at {output_path}. Check scraper logs and configuration."
+                f" => No se encontró la salida del scraper en {output_path}. Revisá los logs y la configuración del scraper."
             )
             os.remove("niche.txt")
             return
 
         # Get the items from the file
         items = self.get_items_from_file(output_path)
-        success(f" => Scraped {len(items)} items.")
+        success(f" => Se extrajeron {len(items)} elementos.")
 
         # Remove the niche file
         os.remove("niche.txt")
@@ -267,7 +267,7 @@ class Outreach:
                         receiver_email = item.split(",")[-1]
 
                         if "@" not in receiver_email:
-                            warning(f" => No email provided. Skipping...")
+                            warning(f" => No se proporcionó email. Omitiendo...")
                             continue
 
                         company_name = item.split(",")[0]
@@ -280,7 +280,7 @@ class Outreach:
                             .replace("{{COMPANY_NAME}}", company_name)
                         )
 
-                        info(f" => Sending email to {receiver_email}...")
+                        info(f" => Enviando email a {receiver_email}...")
 
                         yag.send(
                             to=receiver_email,
@@ -288,9 +288,9 @@ class Outreach:
                             contents=body,
                         )
 
-                        success(f" => Sent email to {receiver_email}")
+                        success(f" => Email enviado a {receiver_email}")
                     else:
-                        warning(f" => Website {website} is invalid. Skipping...")
+                        warning(f" => El sitio web {website} es inválido. Omitiendo...")
             except Exception as err:
                 error(f" => Error: {err}...")
                 continue

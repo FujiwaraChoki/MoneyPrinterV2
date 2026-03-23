@@ -46,41 +46,41 @@ def main():
     while not valid_input:
         try:
     # Show user options
-            info("\n============ OPTIONS ============", False)
+            info("\n============ OPCIONES ===========", False)
 
             for idx, option in enumerate(OPTIONS):
                 print(colored(f" {idx + 1}. {option}", "cyan"))
 
             info("=================================\n", False)
-            user_input = input("Select an option: ").strip()
+            user_input = input("Seleccioná una opción: ").strip()
             if user_input == '':
                 print("\n" * 100)
-                raise ValueError("Empty input is not allowed.")
+                raise ValueError("No se permite una entrada vacía.")
             user_input = int(user_input)
             valid_input = True
         except ValueError as e:
             print("\n" * 100)
-            print(f"Invalid input: {e}")
+            print(f"Entrada inválida: {e}")
 
 
     # Start the selected option
     if user_input == 1:
-        info("Starting YT Shorts Automater...")
+        info("Iniciando automatización de YT Shorts...")
 
         cached_accounts = get_accounts("youtube")
 
         if len(cached_accounts) == 0:
-            warning("No accounts found in cache. Create one now?")
-            user_input = question("Yes/No: ")
+            warning("No se encontraron cuentas en caché. ¿Querés crear una ahora?")
+            user_input = question("Sí/No: ")
 
-            if user_input.lower() == "yes":
+            if user_input.lower() in ("sí", "si", "yes"):
                 generated_uuid = str(uuid4())
 
-                success(f" => Generated ID: {generated_uuid}")
-                nickname = question(" => Enter a nickname for this account: ")
-                fp_profile = question(" => Enter the path to the Firefox profile: ")
-                niche = question(" => Enter the account niche: ")
-                language = question(" => Enter the account language: ")
+                success(f" => ID generado: {generated_uuid}")
+                nickname = question(" => Ingresá un apodo para esta cuenta: ")
+                fp_profile = question(" => Ingresá la ruta al perfil de Firefox: ")
+                niche = question(" => Ingresá el nicho de la cuenta: ")
+                language = question(" => Ingresá el idioma de la cuenta: ")
 
                 account_data = {
                     "id": generated_uuid,
@@ -93,21 +93,21 @@ def main():
 
                 add_account("youtube", account_data)
 
-                success("Account configured successfully!")
+                success("¡Cuenta configurada exitosamente!")
         else:
             table = PrettyTable()
-            table.field_names = ["ID", "UUID", "Nickname", "Niche"]
+            table.field_names = ["ID", "UUID", "Apodo", "Nicho"]
 
             for account in cached_accounts:
                 table.add_row([cached_accounts.index(account) + 1, colored(account["id"], "cyan"), colored(account["nickname"], "blue"), colored(account["niche"], "green")])
 
             print(table)
-            info("Type 'd' to delete an account.", False)
+            info("Escribí 'd' para eliminar una cuenta.", False)
 
-            user_input = question("Select an account to start (or 'd' to delete): ").strip()
+            user_input = question("Seleccioná una cuenta para iniciar (o 'd' para eliminar): ").strip()
 
             if user_input.lower() == "d":
-                delete_input = question("Enter account number to delete: ").strip()
+                delete_input = question("Ingresá el número de cuenta a eliminar: ").strip()
                 account_to_delete = None
 
                 for account in cached_accounts:
@@ -116,15 +116,15 @@ def main():
                         break
 
                 if account_to_delete is None:
-                    error("Invalid account selected. Please try again.", "red")
+                    error("Cuenta seleccionada inválida. Intentá de nuevo.", "red")
                 else:
-                    confirm = question(f"Are you sure you want to delete '{account_to_delete['nickname']}'? (Yes/No): ").strip().lower()
+                    confirm = question(f"¿Estás seguro de que querés eliminar '{account_to_delete['nickname']}'? (Sí/No): ").strip().lower()
 
-                    if confirm == "yes":
+                    if confirm in ("sí", "si", "yes"):
                         remove_account("youtube", account_to_delete["id"])
-                        success("Account removed successfully!")
+                        success("¡Cuenta eliminada exitosamente!")
                     else:
-                        warning("Account deletion canceled.", False)
+                        warning("Eliminación de cuenta cancelada.", False)
 
                 return
 
@@ -135,7 +135,7 @@ def main():
                     selected_account = account
 
             if selected_account is None:
-                error("Invalid account selected. Please try again.", "red")
+                error("Cuenta seleccionada inválida. Intentá de nuevo.", "red")
                 main()
             else:
                 youtube = YouTube(
@@ -148,7 +148,7 @@ def main():
 
                 while True:
                     rem_temp_files()
-                    info("\n============ OPTIONS ============", False)
+                    info("\n============ OPCIONES ===========", False)
 
                     for idx, youtube_option in enumerate(YOUTUBE_OPTIONS):
                         print(colored(f" {idx + 1}. {youtube_option}", "cyan"))
@@ -156,20 +156,20 @@ def main():
                     info("=================================\n", False)
 
                     # Get user input
-                    user_input = int(question("Select an option: "))
+                    user_input = int(question("Seleccioná una opción: "))
                     tts = TTS()
 
                     if user_input == 1:
                         youtube.generate_video(tts)
-                        upload_to_yt = question("Do you want to upload this video to YouTube? (Yes/No): ")
-                        if upload_to_yt.lower() == "yes":
+                        upload_to_yt = question("¿Querés subir este video a YouTube? (Sí/No): ")
+                        if upload_to_yt.lower() in ("sí", "si", "yes"):
                             youtube.upload_video()
                     elif user_input == 2:
                         videos = youtube.get_videos()
 
                         if len(videos) > 0:
                             videos_table = PrettyTable()
-                            videos_table.field_names = ["ID", "Date", "Title"]
+                            videos_table.field_names = ["ID", "Fecha", "Título"]
 
                             for video in videos:
                                 videos_table.add_row([
@@ -180,17 +180,17 @@ def main():
 
                             print(videos_table)
                         else:
-                            warning(" No videos found.")
+                            warning(" No se encontraron videos.")
                     elif user_input == 3:
-                        info("How often do you want to upload?")
+                        info("¿Con qué frecuencia querés subir?")
 
-                        info("\n============ OPTIONS ============", False)
+                        info("\n============ OPCIONES ===========", False)
                         for idx, cron_option in enumerate(YOUTUBE_CRON_OPTIONS):
                             print(colored(f" {idx + 1}. {cron_option}", "cyan"))
 
                         info("=================================\n", False)
 
-                        user_input = int(question("Select an Option: "))
+                        user_input = int(question("Seleccioná una opción: "))
 
                         cron_script_path = os.path.join(ROOT_DIR, "src", "cron.py")
                         command = ["python", cron_script_path, "youtube", selected_account['id'], get_active_model()]
@@ -201,34 +201,34 @@ def main():
                         if user_input == 1:
                             # Upload Once
                             schedule.every(1).day.do(job)
-                            success("Set up CRON Job.")
+                            success("Tarea CRON configurada.")
                         elif user_input == 2:
                             # Upload Twice a day
                             schedule.every().day.at("10:00").do(job)
                             schedule.every().day.at("16:00").do(job)
-                            success("Set up CRON Job.")
+                            success("Tarea CRON configurada.")
                         else:
                             break
                     elif user_input == 4:
                         if get_verbose():
-                            info(" => Climbing Options Ladder...", False)
+                            info(" => Volviendo al menú anterior...", False)
                         break
     elif user_input == 2:
-        info("Starting Twitter Bot...")
+        info("Iniciando Bot de Twitter...")
 
         cached_accounts = get_accounts("twitter")
 
         if len(cached_accounts) == 0:
-            warning("No accounts found in cache. Create one now?")
-            user_input = question("Yes/No: ")
+            warning("No se encontraron cuentas en caché. ¿Querés crear una ahora?")
+            user_input = question("Sí/No: ")
 
-            if user_input.lower() == "yes":
+            if user_input.lower() in ("sí", "si", "yes"):
                 generated_uuid = str(uuid4())
 
-                success(f" => Generated ID: {generated_uuid}")
-                nickname = question(" => Enter a nickname for this account: ")
-                fp_profile = question(" => Enter the path to the Firefox profile: ")
-                topic = question(" => Enter the account topic: ")
+                success(f" => ID generado: {generated_uuid}")
+                nickname = question(" => Ingresá un apodo para esta cuenta: ")
+                fp_profile = question(" => Ingresá la ruta al perfil de Firefox: ")
+                topic = question(" => Ingresá el tema de la cuenta: ")
 
                 add_account("twitter", {
                     "id": generated_uuid,
@@ -239,18 +239,18 @@ def main():
                 })
         else:
             table = PrettyTable()
-            table.field_names = ["ID", "UUID", "Nickname", "Account Topic"]
+            table.field_names = ["ID", "UUID", "Apodo", "Tema de la cuenta"]
 
             for account in cached_accounts:
                 table.add_row([cached_accounts.index(account) + 1, colored(account["id"], "cyan"), colored(account["nickname"], "blue"), colored(account["topic"], "green")])
 
             print(table)
-            info("Type 'd' to delete an account.", False)
+            info("Escribí 'd' para eliminar una cuenta.", False)
 
-            user_input = question("Select an account to start (or 'd' to delete): ").strip()
+            user_input = question("Seleccioná una cuenta para iniciar (o 'd' para eliminar): ").strip()
 
             if user_input.lower() == "d":
-                delete_input = question("Enter account number to delete: ").strip()
+                delete_input = question("Ingresá el número de cuenta a eliminar: ").strip()
                 account_to_delete = None
 
                 for account in cached_accounts:
@@ -259,15 +259,15 @@ def main():
                         break
 
                 if account_to_delete is None:
-                    error("Invalid account selected. Please try again.", "red")
+                    error("Cuenta seleccionada inválida. Intentá de nuevo.", "red")
                 else:
-                    confirm = question(f"Are you sure you want to delete '{account_to_delete['nickname']}'? (Yes/No): ").strip().lower()
+                    confirm = question(f"¿Estás seguro de que querés eliminar '{account_to_delete['nickname']}'? (Sí/No): ").strip().lower()
 
-                    if confirm == "yes":
+                    if confirm in ("sí", "si", "yes"):
                         remove_account("twitter", account_to_delete["id"])
-                        success("Account removed successfully!")
+                        success("¡Cuenta eliminada exitosamente!")
                     else:
-                        warning("Account deletion canceled.", False)
+                        warning("Eliminación de cuenta cancelada.", False)
 
                 return
 
@@ -278,14 +278,14 @@ def main():
                     selected_account = account
 
             if selected_account is None:
-                error("Invalid account selected. Please try again.", "red")
+                error("Cuenta seleccionada inválida. Intentá de nuevo.", "red")
                 main()
             else:
                 twitter = Twitter(selected_account["id"], selected_account["nickname"], selected_account["firefox_profile"], selected_account["topic"])
 
                 while True:
                     
-                    info("\n============ OPTIONS ============", False)
+                    info("\n============ OPCIONES ===========", False)
 
                     for idx, twitter_option in enumerate(TWITTER_OPTIONS):
                         print(colored(f" {idx + 1}. {twitter_option}", "cyan"))
@@ -293,7 +293,7 @@ def main():
                     info("=================================\n", False)
 
                     # Get user input
-                    user_input = int(question("Select an option: "))
+                    user_input = int(question("Seleccioná una opción: "))
 
                     if user_input == 1:
                         twitter.post()
@@ -302,7 +302,7 @@ def main():
 
                         posts_table = PrettyTable()
 
-                        posts_table.field_names = ["ID", "Date", "Content"]
+                        posts_table.field_names = ["ID", "Fecha", "Contenido"]
 
                         for post in posts:
                             posts_table.add_row([
@@ -313,15 +313,15 @@ def main():
 
                         print(posts_table)
                     elif user_input == 3:
-                        info("How often do you want to post?")
+                        info("¿Con qué frecuencia querés publicar?")
 
-                        info("\n============ OPTIONS ============", False)
+                        info("\n============ OPCIONES ===========", False)
                         for idx, cron_option in enumerate(TWITTER_CRON_OPTIONS):
                             print(colored(f" {idx + 1}. {cron_option}", "cyan"))
 
                         info("=================================\n", False)
 
-                        user_input = int(question("Select an Option: "))
+                        user_input = int(question("Seleccioná una opción: "))
 
                         cron_script_path = os.path.join(ROOT_DIR, "src", "cron.py")
                         command = ["python", cron_script_path, "twitter", selected_account['id'], get_active_model()]
@@ -332,36 +332,36 @@ def main():
                         if user_input == 1:
                             # Post Once a day
                             schedule.every(1).day.do(job)
-                            success("Set up CRON Job.")
+                            success("Tarea CRON configurada.")
                         elif user_input == 2:
                             # Post twice a day
                             schedule.every().day.at("10:00").do(job)
                             schedule.every().day.at("16:00").do(job)
-                            success("Set up CRON Job.")
+                            success("Tarea CRON configurada.")
                         elif user_input == 3:
                             # Post thrice a day
                             schedule.every().day.at("08:00").do(job)
                             schedule.every().day.at("12:00").do(job)
                             schedule.every().day.at("18:00").do(job)
-                            success("Set up CRON Job.")
+                            success("Tarea CRON configurada.")
                         else:
                             break
                     elif user_input == 4:
                         if get_verbose():
-                            info(" => Climbing Options Ladder...", False)
+                            info(" => Volviendo al menú anterior...", False)
                         break
     elif user_input == 3:
-        info("Starting Affiliate Marketing...")
+        info("Iniciando Marketing de Afiliados...")
 
         cached_products = get_products()
 
         if len(cached_products) == 0:
-            warning("No products found in cache. Create one now?")
-            user_input = question("Yes/No: ")
+            warning("No se encontraron productos en caché. ¿Querés crear uno ahora?")
+            user_input = question("Sí/No: ")
 
-            if user_input.lower() == "yes":
-                affiliate_link = question(" => Enter the affiliate link: ")
-                twitter_uuid = question(" => Enter the Twitter Account UUID: ")
+            if user_input.lower() in ("sí", "si", "yes"):
+                affiliate_link = question(" => Ingresá el enlace de afiliado: ")
+                twitter_uuid = question(" => Ingresá el UUID de la cuenta de Twitter: ")
 
                 # Find the account
                 account = None
@@ -381,14 +381,14 @@ def main():
                 afm.share_pitch("twitter")
         else:
             table = PrettyTable()
-            table.field_names = ["ID", "Affiliate Link", "Twitter Account UUID"]
+            table.field_names = ["ID", "Enlace de afiliado", "UUID cuenta Twitter"]
 
             for product in cached_products:
                 table.add_row([cached_products.index(product) + 1, colored(product["affiliate_link"], "cyan"), colored(product["twitter_uuid"], "blue")])
 
             print(table)
 
-            user_input = question("Select a product to start: ")
+            user_input = question("Seleccioná un producto para iniciar: ")
 
             selected_product = None
 
@@ -397,7 +397,7 @@ def main():
                     selected_product = product
 
             if selected_product is None:
-                error("Invalid product selected. Please try again.", "red")
+                error("Producto seleccionado inválido. Intentá de nuevo.", "red")
                 main()
             else:
                 # Find the account
@@ -412,17 +412,17 @@ def main():
                 afm.share_pitch("twitter")
 
     elif user_input == 4:
-        info("Starting Outreach...")
+        info("Iniciando Outreach...")
 
         outreach = Outreach()
 
         outreach.start()
     elif user_input == 5:
         if get_verbose():
-            print(colored(" => Quitting...", "blue"))
+            print(colored(" => Saliendo...", "blue"))
         sys.exit(0)
     else:
-        error("Invalid option selected. Please try again.", "red")
+        error("Opción seleccionada inválida. Intentá de nuevo.", "red")
         main()
     
 
@@ -433,7 +433,7 @@ if __name__ == "__main__":
     first_time = get_first_time_running()
 
     if first_time:
-        print(colored("Hey! It looks like you're running MoneyPrinter V2 for the first time. Let's get you setup first!", "yellow"))
+        print(colored("¡Hola! Parece que estás ejecutando MoneyPrinter V2 por primera vez. ¡Vamos a configurarlo primero!", "yellow"))
 
     # Setup file tree
     assert_folder_structure()
@@ -448,37 +448,37 @@ if __name__ == "__main__":
     configured_model = get_ollama_model()
     if configured_model:
         select_model(configured_model)
-        success(f"Using configured model: {configured_model}")
+        success(f"Usando modelo configurado: {configured_model}")
     else:
         try:
             models = list_models()
         except Exception as e:
-            error(f"Could not connect to Ollama: {e}")
+            error(f"No se pudo conectar a Ollama: {e}")
             sys.exit(1)
 
         if not models:
-            error("No models found on Ollama. Pull a model first (e.g. 'ollama pull llama3.2:3b').")
+            error("No se encontraron modelos en Ollama. Descargá uno primero (ej: 'ollama pull llama3.2:3b').")
             sys.exit(1)
 
-        info("\n========== OLLAMA MODELS =========", False)
+        info("\n======== MODELOS DE OLLAMA =======", False)
         for idx, model_name in enumerate(models):
             print(colored(f" {idx + 1}. {model_name}", "cyan"))
         info("==================================\n", False)
 
         model_choice = None
         while model_choice is None:
-            raw = input(colored("Select a model: ", "magenta")).strip()
+            raw = input(colored("Seleccioná un modelo: ", "magenta")).strip()
             try:
                 choice_idx = int(raw) - 1
                 if 0 <= choice_idx < len(models):
                     model_choice = models[choice_idx]
                 else:
-                    warning("Invalid selection. Try again.")
+                    warning("Selección inválida. Intentá de nuevo.")
             except ValueError:
-                warning("Please enter a number.")
+                warning("Por favor ingresá un número.")
 
         select_model(model_choice)
-        success(f"Using model: {model_choice}")
+        success(f"Usando modelo: {model_choice}")
 
     while True:
         main()

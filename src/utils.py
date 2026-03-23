@@ -18,7 +18,7 @@ def close_running_selenium_instances() -> None:
         None
     """
     try:
-        info(" => Closing running Selenium instances...")
+        info(" => Cerrando instancias de Selenium en ejecución...")
 
         # Kill all running Firefox instances
         if platform.system() == "Windows":
@@ -26,10 +26,10 @@ def close_running_selenium_instances() -> None:
         else:
             os.system("pkill firefox")
 
-        success(" => Closed running Selenium instances.")
+        success(" => Instancias de Selenium cerradas.")
 
     except Exception as e:
-        error(f"Error occurred while closing running Selenium instances: {str(e)}")
+        error(f"Error al cerrar instancias de Selenium en ejecución: {str(e)}")
 
 
 def build_url(youtube_video_id: str) -> str:
@@ -70,13 +70,13 @@ def fetch_songs() -> None:
         None
     """
     try:
-        info(f" => Fetching songs...")
+        info(f" => Descargando canciones...")
 
         files_dir = os.path.join(ROOT_DIR, "Songs")
         if not os.path.exists(files_dir):
             os.mkdir(files_dir)
             if get_verbose():
-                info(f" => Created directory: {files_dir}")
+                info(f" => Directorio creado: {files_dir}")
         else:
             existing_audio_files = [
                 name
@@ -107,31 +107,31 @@ def fetch_songs() -> None:
                     for member in zf.namelist():
                         basename = os.path.basename(member)
                         if not basename or not basename.lower().endswith(SAFE_EXTENSIONS):
-                            warning(f"Skipping non-audio file in archive: {member}")
+                            warning(f"Omitiendo archivo no-audio en el paquete: {member}")
                             continue
                         if ".." in member or member.startswith("/"):
-                            warning(f"Skipping suspicious path in archive: {member}")
+                            warning(f"Omitiendo ruta sospechosa en el paquete: {member}")
                             continue
                         zf.extract(member, files_dir)
 
                 downloaded = True
                 break
             except Exception as err:
-                warning(f"Failed to fetch songs from {download_url}: {err}")
+                warning(f"Error al descargar canciones desde {download_url}: {err}")
 
         if not downloaded:
             raise RuntimeError(
-                "Could not download a valid songs archive from any configured URL"
+                "No se pudo descargar un paquete válido de canciones desde ninguna URL configurada"
             )
 
         # Remove the zip file
         if os.path.exists(archive_path):
             os.remove(archive_path)
 
-        success(" => Downloaded Songs to ../Songs.")
+        success(" => Canciones descargadas en ../Songs.")
 
     except Exception as e:
-        error(f"Error occurred while fetching songs: {str(e)}")
+        error(f"Error al descargar canciones: {str(e)}")
 
 
 def choose_random_song() -> str:
@@ -150,10 +150,10 @@ def choose_random_song() -> str:
             and name.lower().endswith((".mp3", ".wav", ".m4a", ".aac", ".ogg"))
         ]
         if len(songs) == 0:
-            raise RuntimeError("No audio files found in Songs directory")
+            raise RuntimeError("No se encontraron archivos de audio en el directorio Songs")
         song = random.choice(songs)
-        success(f" => Chose song: {song}")
+        success(f" => Canción elegida: {song}")
         return os.path.join(ROOT_DIR, "Songs", song)
     except Exception as e:
-        error(f"Error occurred while choosing random song: {str(e)}")
+        error(f"Error al elegir canción aleatoria: {str(e)}")
         raise

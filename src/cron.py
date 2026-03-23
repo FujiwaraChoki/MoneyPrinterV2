@@ -34,7 +34,7 @@ def main():
     if model:
         select_model(model)
     else:
-        error("No Ollama model specified. Pass model name as third argument.")
+        error("No se especificó modelo de Ollama. Pasá el nombre del modelo como tercer argumento.")
         sys.exit(1)
 
     verbose = get_verbose()
@@ -43,12 +43,12 @@ def main():
         accounts = get_accounts("twitter")
 
         if not account_id:
-            error("Account UUID cannot be empty.")
+            error("El UUID de la cuenta no puede estar vacío.")
 
         for acc in accounts:
             if acc["id"] == account_id:
                 if verbose:
-                    info("Initializing Twitter...")
+                    info("Inicializando Twitter...")
                 twitter = Twitter(
                     acc["id"],
                     acc["nickname"],
@@ -57,7 +57,7 @@ def main():
                 )
                 twitter.post()
                 if verbose:
-                    success("Done posting.")
+                    success("Publicación realizada.")
                 break
     elif purpose == "youtube":
         tts = TTS()
@@ -65,12 +65,12 @@ def main():
         accounts = get_accounts("youtube")
 
         if not account_id:
-            error("Account UUID cannot be empty.")
+            error("El UUID de la cuenta no puede estar vacío.")
 
         for acc in accounts:
             if acc["id"] == account_id:
                 if verbose:
-                    info("Initializing YouTube...")
+                    info("Inicializando YouTube...")
                 youtube = YouTube(
                     acc["id"],
                     acc["nickname"],
@@ -81,10 +81,10 @@ def main():
                 youtube.generate_video(tts)
                 youtube.upload_video()
                 if verbose:
-                    success("Uploaded Short.")
+                    success("Short subido.")
                 break
     else:
-        error("Invalid Purpose, exiting...")
+        error("Propósito inválido, saliendo...")
         sys.exit(1)
 
 if __name__ == "__main__":

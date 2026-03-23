@@ -4,17 +4,17 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-echo "[setup] Root: $ROOT_DIR"
+echo "[setup] Raíz: $ROOT_DIR"
 
 if [[ ! -f "config.json" ]]; then
   cp config.example.json config.json
-  echo "[setup] Created config.json from config.example.json"
+  echo "[setup] Se creó config.json a partir de config.example.json"
 fi
 
 PYTHON_BIN="${ROOT_DIR}/venv/bin/python"
 if [[ ! -x "$PYTHON_BIN" ]]; then
   python3 -m venv venv
-  echo "[setup] Created virtual environment at venv/"
+  echo "[setup] Se creó el entorno virtual en venv/"
 fi
 
 "$PYTHON_BIN" -m ensurepip --upgrade >/dev/null 2>&1 || true
@@ -105,15 +105,15 @@ with open(cfg_path, "w", encoding="utf-8") as f:
     json.dump(cfg, f, indent=2)
     f.write("\n")
 
-print(f"[setup] Updated {cfg_path}")
+print(f"[setup] Se actualizó {cfg_path}")
 print(f"[setup] llm_provider={cfg.get('llm_provider')} model={cfg.get('ollama_model')}")
 print(f"[setup] image_provider={cfg.get('image_provider')}")
 print(f"[setup] stt_provider={cfg.get('stt_provider')}")
 PY
 
-echo "[setup] Running local preflight..."
+echo "[setup] Ejecutando verificación previa local..."
 "$PYTHON_BIN" scripts/preflight_local.py || true
 
 echo ""
-echo "[setup] Done."
-echo "[setup] Start app with: source venv/bin/activate && python3 src/main.py"
+echo "[setup] Listo."
+echo "[setup] Iniciá la app con: source venv/bin/activate && python3 src/main.py"

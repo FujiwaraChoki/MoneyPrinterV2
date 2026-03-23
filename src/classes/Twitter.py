@@ -54,7 +54,7 @@ class Twitter:
 
         if not os.path.isdir(fp_profile_path):
             raise ValueError(
-                f"Firefox profile path does not exist or is not a directory: {fp_profile_path}"
+                f"La ruta del perfil de Firefox no existe o no es un directorio: {fp_profile_path}"
             )
 
         # Set the profile path
@@ -88,7 +88,7 @@ class Twitter:
         post_content: str = text if text is not None else self.generate_post()
         now: datetime = datetime.now()
 
-        print(colored(" => Posting to Twitter:", "blue"), post_content[:30] + "...")
+        print(colored(" => Publicando en Twitter:", "blue"), post_content[:30] + "...")
         body = post_content
 
         text_box = None
@@ -109,7 +109,7 @@ class Twitter:
 
         if text_box is None:
             raise RuntimeError(
-                "Could not find tweet text box. Ensure you are logged into X in this Firefox profile."
+                "No se encontró el campo de texto del tweet. Asegurate de haber iniciado sesión en X en este perfil de Firefox."
             )
 
 
@@ -129,16 +129,16 @@ class Twitter:
                 continue
 
         if post_button is None:
-            raise RuntimeError("Could not find the Post button on X compose screen.")
+            raise RuntimeError("No se encontró el botón de publicar en la pantalla de redacción de X.")
 
         if verbose:
-            print(colored(" => Pressed [ENTER] Button on Twitter..", "blue"))
+            print(colored(" => Se presionó el botón [ENTER] en Twitter..", "blue"))
         time.sleep(2)
 
         # Add the post to the cache
         self.add_post({"content": body, "date": now.strftime("%m/%d/%Y, %H:%M:%S")})
 
-        success("Posted to Twitter successfully!")
+        success("¡Publicado en Twitter exitosamente!")
 
     def get_posts(self) -> List[dict]:
         """
@@ -208,17 +208,17 @@ class Twitter:
         )
 
         if get_verbose():
-            info("Generating a post...")
+            info("Generando una publicación...")
 
         if completion is None:
-            error("Failed to generate a post. Please try again.")
+            error("No se pudo generar la publicación. Por favor, intentá de nuevo.")
             sys.exit(1)
 
         # Apply Regex to remove all *
         completion = re.sub(r"\*", "", completion).replace('"', "")
 
         if get_verbose():
-            info(f"Length of post: {len(completion)}")
+            info(f"Longitud de la publicación: {len(completion)}")
         if len(completion) >= 260:
             return completion[:257].rsplit(" ", 1)[0] + "..."
 

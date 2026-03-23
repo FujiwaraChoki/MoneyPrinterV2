@@ -1,26 +1,26 @@
-# YouTube Shorts Automater
+# Automatizador de YouTube Shorts
 
-MPV2 uses a similar implementation of V1 (see [MPV1](https://github.com/FujiwaraChoki/MoneyPrinter)), to generate Video-Files and upload them to YouTube Shorts.
+MPV2 usa una implementación similar a la de V1 (ver [MPV1](https://github.com/FujiwaraChoki/MoneyPrinter)), para generar archivos de video y subirlos a YouTube Shorts.
 
-In contrast to V1, V2 uses AI generated images as the visuals for the video, instead of using stock footage. This makes the videos more unique and less likely to be flagged by YouTube. V2 also supports music right from the get-go.
+A diferencia de V1, V2 usa imágenes generadas por IA como los visuales del video, en lugar de usar material de archivo de stock. Esto hace que los videos sean más únicos y menos propensos a ser marcados por YouTube. V2 también soporta música desde el inicio.
 
-## Relevant Configuration
+## Configuración Relevante
 
-In your `config.json`, you need the following attributes filled out, so that the bot can function correctly.
+En tu `config.json`, necesitás tener los siguientes atributos completados para que el bot funcione correctamente.
 
 ```json
 {
-  "firefox_profile": "The path to your Firefox profile (used to log in to YouTube)",
+  "firefox_profile": "La ruta a tu perfil de Firefox (usado para iniciar sesión en YouTube)",
   "headless": true,
-  "llm": "The Large Language Model you want to use to generate the video script.",
-  "image_model": "What AI Model you want to use to generate images.",
+  "llm": "El modelo de lenguaje grande que querés usar para generar el guion del video.",
+  "image_model": "Qué modelo de IA querés usar para generar imágenes.",
   "threads": 4,
   "is_for_kids": true
 }
 ```
 
-## Roadmap
+## Hoja de Ruta
 
-Here are some features that are planned for the future:
+Acá hay algunas funcionalidades planeadas para el futuro:
 
-- [ ] Subtitles (using either AssemblyAI or locally assembling them)
+- [ ] Subtítulos (usando AssemblyAI o ensamblándolos localmente)

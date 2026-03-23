@@ -85,7 +85,7 @@ class YouTube:
 
         if not os.path.isdir(self._fp_profile_path):
             raise ValueError(
-                f"Firefox profile path does not exist or is not a directory: {self._fp_profile_path}"
+                f"La ruta del perfil de Firefox no existe o no es un directorio: {self._fp_profile_path}"
             )
 
         self.options.add_argument("-profile")
@@ -143,7 +143,7 @@ class YouTube:
         )
 
         if not completion:
-            error("Failed to generate Topic.")
+            error("No se pudo generar el tema.")
 
         self.subject = completion
 
@@ -185,12 +185,12 @@ class YouTube:
         completion = re.sub(r"\*", "", completion)
 
         if not completion:
-            error("The generated script is empty.")
+            error("El guión generado está vacío.")
             return
 
         if len(completion) > 5000:
             if get_verbose():
-                warning("Generated Script is too long. Retrying...")
+                warning("El guión generado es demasiado largo. Reintentando...")
             return self.generate_script()
 
         self.script = completion
@@ -210,7 +210,7 @@ class YouTube:
 
         if len(title) > 100:
             if get_verbose():
-                warning("Generated Title is too long. Retrying...")
+                warning("El título generado es demasiado largo. Reintentando...")
             return self.generate_metadata()
 
         description = self.generate_response(
@@ -270,11 +270,11 @@ class YouTube:
             try:
                 image_prompts = json.loads(completion)
                 if get_verbose():
-                    info(f" => Generated Image Prompts: {image_prompts}")
+                    info(f" => Prompts de imagen generados: {image_prompts}")
             except Exception:
                 if get_verbose():
                     warning(
-                        "LLM returned an unformatted response. Attempting to clean..."
+                        "El LLM devolvió una respuesta sin formato. Intentando limpiar..."
                     )
 
                 # Get everything between [ and ], and turn it into a list
@@ -282,7 +282,7 @@ class YouTube:
                 image_prompts = r.findall(completion)
                 if len(image_prompts) == 0:
                     if get_verbose():
-                        warning("Failed to generate Image Prompts. Retrying...")
+                        warning("No se pudieron generar los prompts de imagen. Reintentando...")
                     return self.generate_prompts()
 
         if len(image_prompts) > n_prompts:
@@ -290,7 +290,7 @@ class YouTube:
 
         self.image_prompts = image_prompts
 
-        success(f"Generated {len(image_prompts)} Image Prompts.")
+        success(f"Se generaron {len(image_prompts)} prompts de imagen.")
 
         return image_prompts
 
@@ -311,7 +311,7 @@ class YouTube:
             image_file.write(image_bytes)
 
         if get_verbose():
-            info(f' => Wrote image from {provider_label} to "{image_path}"')
+            info(f' => Imagen de {provider_label} guardada en "{image_path}"')
 
         self.images.append(image_path)
         return image_path
@@ -326,11 +326,11 @@ class YouTube:
         Returns:
             path (str): The path to the generated image.
         """
-        print(f"Generating Image using Nano Banana 2 API: {prompt}")
+        print(f"Generando imagen con Nano Banana 2 API: {prompt}")
 
         api_key = get_nanobanana2_api_key()
         if not api_key:
-            error("nanobanana2_api_key is not configured.")
+            error("nanobanana2_api_key no está configurada.")
             return None
 
         base_url = get_nanobanana2_api_base_url().rstrip("/")
@@ -370,11 +370,11 @@ class YouTube:
                         return self._persist_image(image_bytes, "Nano Banana 2 API")
 
             if get_verbose():
-                warning(f"Nano Banana 2 did not return an image payload. Response: {body}")
+                warning(f"Nano Banana 2 no devolvió una imagen. Respuesta: {body}")
             return None
         except Exception as e:
             if get_verbose():
-                warning(f"Failed to generate image with Nano Banana 2 API: {str(e)}")
+                warning(f"No se pudo generar la imagen con Nano Banana 2 API: {str(e)}")
             return None
 
     def generate_image(self, prompt: str) -> str:
@@ -409,7 +409,7 @@ class YouTube:
         self.tts_path = path
 
         if get_verbose():
-            info(f' => Wrote TTS to "{path}"')
+            info(f' => TTS guardado en "{path}"')
 
         return path
 
@@ -459,7 +459,7 @@ class YouTube:
         if provider == "third_party_assemblyai":
             return self.generate_subtitles_assemblyai(audio_path)
 
-        warning(f"Unknown stt_provider '{provider}'. Falling back to local_whisper.")
+        warning(f"stt_provider desconocido: '{provider}'. Usando local_whisper por defecto.")
         return self.generate_subtitles_local_whisper(audio_path)
 
     def generate_subtitles_assemblyai(self, audio_path: str) -> str:
@@ -516,8 +516,8 @@ class YouTube:
             from faster_whisper import WhisperModel
         except ImportError:
             error(
-                "Local STT selected but 'faster-whisper' is not installed. "
-                "Install it or switch stt_provider to third_party_assemblyai."
+                "STT local seleccionado pero 'faster-whisper' no está instalado. "
+                "Instalalo o cambiá stt_provider a third_party_assemblyai."
             )
             raise
 
@@ -574,7 +574,7 @@ class YouTube:
             method="caption",
         )
 
-        print(colored("[+] Combining images...", "blue"))
+        print(colored("[+] Combinando imágenes...", "blue"))
 
         clips = []
         tot_dur = 0
@@ -589,7 +589,7 @@ class YouTube:
                 # so we need to resize them
                 if round((clip.w / clip.h), 4) < 0.5625:
                     if get_verbose():
-                        info(f" => Resizing Image: {image_path} to 1080x1920")
+                        info(f" => Redimensionando imagen: {image_path} a 1080x1920")
                     clip = crop(
                         clip,
                         width=clip.w,
@@ -599,7 +599,7 @@ class YouTube:
                     )
                 else:
                     if get_verbose():
-                        info(f" => Resizing Image: {image_path} to 1920x1080")
+                        info(f" => Redimensionando imagen: {image_path} a 1920x1080")
                     clip = crop(
                         clip,
                         width=round(0.5625 * clip.h),
@@ -626,7 +626,7 @@ class YouTube:
             subtitles = SubtitlesClip(subtitles_path, generator)
             subtitles.set_pos(("center", "center"))
         except Exception as e:
-            warning(f"Failed to generate subtitles, continuing without subtitles: {e}")
+            warning(f"No se pudieron generar los subtítulos, continuando sin subtítulos: {e}")
 
         random_song_clip = AudioFileClip(random_song).set_fps(44100)
 
@@ -642,7 +642,7 @@ class YouTube:
 
         final_clip.write_videofile(combined_image_path, threads=threads)
 
-        success(f'Wrote Video to "{combined_image_path}"')
+        success(f'Video guardado en "{combined_image_path}"')
 
         return combined_image_path
 
@@ -679,7 +679,7 @@ class YouTube:
         path = self.combine()
 
         if get_verbose():
-            info(f" => Generated Video: {path}")
+            info(f" => Video generado: {path}")
 
         self.video_path = os.path.abspath(path)
 
@@ -733,7 +733,7 @@ class YouTube:
             description_el = textboxes[-1]
 
             if verbose:
-                info("\t=> Setting title...")
+                info("\t=> Configurando título...")
 
             title_el.click()
             time.sleep(1)
@@ -741,7 +741,7 @@ class YouTube:
             title_el.send_keys(self.metadata["title"])
 
             if verbose:
-                info("\t=> Setting description...")
+                info("\t=> Configurando descripción...")
 
             # Set description
             time.sleep(10)
@@ -754,7 +754,7 @@ class YouTube:
 
             # Set `made for kids` option
             if verbose:
-                info("\t=> Setting `made for kids` option...")
+                info("\t=> Configurando opción `made for kids`...")
 
             is_for_kids_checkbox = driver.find_element(
                 By.NAME, YOUTUBE_MADE_FOR_KIDS_NAME
@@ -772,14 +772,14 @@ class YouTube:
 
             # Click next
             if verbose:
-                info("\t=> Clicking next...")
+                info("\t=> Haciendo clic en siguiente...")
 
             next_button = driver.find_element(By.ID, YOUTUBE_NEXT_BUTTON_ID)
             next_button.click()
 
             # Click next again
             if verbose:
-                info("\t=> Clicking next again...")
+                info("\t=> Haciendo clic en siguiente de nuevo...")
             next_button = driver.find_element(By.ID, YOUTUBE_NEXT_BUTTON_ID)
             next_button.click()
 
@@ -788,19 +788,19 @@ class YouTube:
 
             # Click next again
             if verbose:
-                info("\t=> Clicking next again...")
+                info("\t=> Haciendo clic en siguiente de nuevo...")
             next_button = driver.find_element(By.ID, YOUTUBE_NEXT_BUTTON_ID)
             next_button.click()
 
             # Set as unlisted
             if verbose:
-                info("\t=> Setting as unlisted...")
+                info("\t=> Configurando como no listado...")
 
             radio_button = driver.find_elements(By.XPATH, YOUTUBE_RADIO_BUTTON_XPATH)
             radio_button[2].click()
 
             if verbose:
-                info("\t=> Clicking done button...")
+                info("\t=> Haciendo clic en botón listo...")
 
             # Click done button
             done_button = driver.find_element(By.ID, YOUTUBE_DONE_BUTTON_ID)
@@ -811,7 +811,7 @@ class YouTube:
 
             # Get latest video
             if verbose:
-                info("\t=> Getting video URL...")
+                info("\t=> Obteniendo URL del video...")
 
             # Get the latest uploaded video URL
             driver.get(
@@ -823,7 +823,7 @@ class YouTube:
             anchor_tag = first_video.find_element(By.TAG_NAME, "a")
             href = anchor_tag.get_attribute("href")
             if verbose:
-                info(f"\t=> Extracting video ID from URL: {href}")
+                info(f"\t=> Extrayendo ID del video de la URL: {href}")
             video_id = href.split("/")[-2]
 
             # Build URL
@@ -832,7 +832,7 @@ class YouTube:
             self.uploaded_video_url = url
 
             if verbose:
-                success(f" => Uploaded Video: {url}")
+                success(f" => Video subido: {url}")
 
             # Add video to cache
             self.add_video(

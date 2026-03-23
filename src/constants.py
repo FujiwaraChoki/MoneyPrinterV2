@@ -6,39 +6,39 @@ TWITTER_TEXTAREA_CLASS = "public-DraftStyleDefault-block public-DraftStyleDefaul
 TWITTER_POST_BUTTON_XPATH = "/html/body/div[1]/div/div/div[2]/main/div/div/div/div[1]/div/div[3]/div/div[2]/div[1]/div/div/div/div[2]/div[2]/div[2]/div/div/div/div[3]"
 
 OPTIONS = [
-    "YouTube Shorts Automation",
-    "Twitter Bot",
-    "Affiliate Marketing",
+    "Automatización de YouTube Shorts",
+    "Bot de Twitter",
+    "Marketing de Afiliados",
     "Outreach",
-    "Quit"
+    "Salir"
 ]
 
 TWITTER_OPTIONS = [
-    "Post something",
-    "Show all Posts",
-    "Setup CRON Job",
-    "Quit"
+    "Publicar algo",
+    "Mostrar todas las publicaciones",
+    "Configurar tarea CRON",
+    "Salir"
 ]
 
 TWITTER_CRON_OPTIONS = [
-    "Once a day",
-    "Twice a day",
-    "Thrice a day",
-    "Quit"
+    "Una vez al día",
+    "Dos veces al día",
+    "Tres veces al día",
+    "Salir"
 ]
 
 YOUTUBE_OPTIONS = [
-    "Upload Short",
-    "Show all Shorts",
-    "Setup CRON Job",
-    "Quit"
+    "Subir Short",
+    "Mostrar todos los Shorts",
+    "Configurar tarea CRON",
+    "Salir"
 ]
 
 YOUTUBE_CRON_OPTIONS = [
-    "Once a day",
-    "Twice a day",
-    "Thrice a day",
-    "Quit"
+    "Una vez al día",
+    "Dos veces al día",
+    "Tres veces al día",
+    "Salir"
 ]
 
 # YouTube Section

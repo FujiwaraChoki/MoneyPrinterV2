@@ -52,7 +52,7 @@ class AffiliateMarketing:
 
         if not os.path.isdir(fp_profile_path):
             raise ValueError(
-                f"Firefox profile path does not exist or is not a directory: {fp_profile_path}"
+                f"La ruta del perfil de Firefox no existe o no es un directorio: {fp_profile_path}"
             )
 
         # Set the profile path
@@ -73,7 +73,7 @@ class AffiliateMarketing:
         parsed_link = urlparse(self.affiliate_link)
         if parsed_link.scheme not in ["http", "https"] or not parsed_link.netloc:
             raise ValueError(
-                f"Affiliate link is invalid. Expected a full URL, got: {self.affiliate_link}"
+                f"El enlace de afiliado es inválido. Se esperaba una URL completa, se recibió: {self.affiliate_link}"
             )
 
         # Set the Twitter account UUID
@@ -105,10 +105,10 @@ class AffiliateMarketing:
         features: Any = self.browser.find_elements(By.ID, AMAZON_FEATURE_BULLETS_ID)
 
         if get_verbose():
-            info(f"Product Title: {product_title}")
+            info(f"Título del producto: {product_title}")
 
         if get_verbose():
-            info(f"Features: {features}")
+            info(f"Características: {features}")
 
         # Set the product title
         self.product_title: str = product_title
@@ -140,7 +140,7 @@ class AffiliateMarketing:
             self.generate_response(
                 f'I want to promote this product on my website. Generate a brief pitch about this product, return nothing else except the pitch. Information:\nTitle: "{self.product_title}"\nFeatures: "{str(self.features)}"'
             )
-            + "\nYou can buy the product here: "
+            + "\nPodés comprar el producto acá: "
             + self.affiliate_link
         )
 

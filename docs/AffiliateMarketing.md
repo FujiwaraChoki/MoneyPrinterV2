@@ -1,24 +1,24 @@
 # AFM
 
-This class is responsible for the Affiliate Marketing part of MPV2. It uses Ollama (as all other classes) as its way to utilize the power of LLMs, in this case, to generate tweets, based on information about an **Amazon Product**. MPV2 will scrape the page of the product, and save the **product title**, and **product features**, thus having enough information to be able to create a pitch for the product, and post it on Twitter.
+Esta clase es responsable de la parte de Marketing de Afiliados de MPV2. Usa Ollama (como todas las demás clases) como su forma de aprovechar el poder de los LLMs, en este caso, para generar tweets basados en información sobre un **Producto de Amazon**. MPV2 hará scraping de la página del producto y guardará el **título del producto** y las **características del producto**, teniendo así suficiente información para poder crear un pitch del producto y publicarlo en Twitter.
 
-## Relevant Configuration
+## Configuración Relevante
 
-In your `config.json`, you need the following attributes filled out, so that the bot can function correctly.
+En tu `config.json`, necesitás tener los siguientes atributos completados para que el bot funcione correctamente.
 
 ```json
 {
-  "firefox_profile": "The path to your Firefox profile (used to log in to Twitter)",
+  "firefox_profile": "La ruta a tu perfil de Firefox (usado para iniciar sesión en Twitter)",
   "headless": true,
   "ollama_base_url": "http://127.0.0.1:11434",
   "threads": 4
 }
 ```
 
-## Roadmap
+## Hoja de Ruta
 
-Here are some features that are planned for the future:
+Acá hay algunas funcionalidades planeadas para el futuro:
 
-- [ ] Scrape more information about the product, to be able to create a more detailed pitch.
-- [ ] Join online communities related to the product, and post a pitch (with a link to the product) there.
-- [ ] Reply to tweets that are related to the product, with a pitch for the product.
+- [ ] Hacer scraping de más información sobre el producto, para poder crear un pitch más detallado.
+- [ ] Unirse a comunidades online relacionadas con el producto y publicar un pitch (con un link al producto) ahí.
+- [ ] Responder a tweets relacionados con el producto, con un pitch del producto.

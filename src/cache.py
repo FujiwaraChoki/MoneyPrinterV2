@@ -58,7 +58,7 @@ def get_provider_cache_path(provider: str) -> str:
     if provider == "youtube":
         return get_youtube_cache_path()
 
-    raise ValueError(f"Unsupported provider '{provider}'. Expected 'twitter' or 'youtube'.")
+    raise ValueError(f"Proveedor no soportado '{provider}'. Se esperaba 'twitter' o 'youtube'.")
 
 def get_accounts(provider: str) -> List[dict]:
     """

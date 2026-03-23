@@ -52,7 +52,7 @@ def generate_text(prompt: str, model_name: str = None) -> str:
     model = model_name or _selected_model
     if not model:
         raise RuntimeError(
-            "No Ollama model selected. Call select_model() first or pass model_name."
+            "No se seleccionó un modelo de Ollama. Llamá a select_model() primero o pasá model_name."
         )
 
     response = _client().chat(

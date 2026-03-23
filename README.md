@@ -1,98 +1,99 @@
 # MoneyPrinter V2
- 
-> ♥︎ **Sponsor**: The Best AI Chat App: [shiori.ai](https://www.shiori.ai). Use code **MPV2** for 20% off.
+
+> ♥︎ **Sponsor**: La Mejor App de Chat con IA: [shiori.ai](https://www.shiori.ai). Usá el código **MPV2** para un 20% de descuento.
 
 ---
 
-> 𝕏 Also, follow me on X: [@DevBySami](https://x.com/DevBySami).
+> 𝕏 Seguime en X: [@DevBySami](https://x.com/DevBySami).
 
 [![madewithlove](https://img.shields.io/badge/made_with-%E2%9D%A4-red?style=for-the-badge&labelColor=orange)](https://github.com/FujiwaraChoki/MoneyPrinterV2)
 
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Donate-brightgreen?logo=buymeacoffee)](https://www.buymeacoffee.com/fujicodes)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Donar-brightgreen?logo=buymeacoffee)](https://www.buymeacoffee.com/fujicodes)
 [![GitHub license](https://img.shields.io/github/license/FujiwaraChoki/MoneyPrinterV2?style=for-the-badge)](https://github.com/FujiwaraChoki/MoneyPrinterV2/blob/main/LICENSE)
 [![GitHub issues](https://img.shields.io/github/issues/FujiwaraChoki/MoneyPrinterV2?style=for-the-badge)](https://github.com/FujiwaraChoki/MoneyPrinterV2/issues)
 [![GitHub stars](https://img.shields.io/github/stars/FujiwaraChoki/MoneyPrinterV2?style=for-the-badge)](https://github.com/FujiwaraChoki/MoneyPrinterV2/stargazers)
 [![Discord](https://img.shields.io/discord/1134848537704804432?style=for-the-badge)](https://dsc.gg/fuji-community)
 
-An Application that automates the process of making money online.
-MPV2 (MoneyPrinter Version 2) is, as the name suggests, the second version of the MoneyPrinter project. It is a complete rewrite of the original project, with a focus on a wider range of features and a more modular architecture.
+Una aplicación que automatiza el proceso de generar dinero en línea.
+MPV2 (MoneyPrinter Versión 2) es, como su nombre indica, la segunda versión del proyecto MoneyPrinter. Es una reescritura completa del proyecto original, con enfoque en una mayor variedad de funcionalidades y una arquitectura más modular.
 
-> **Note:** MPV2 needs Python 3.12 to function effectively.
-> Watch the YouTube video [here](https://youtu.be/wAZ_ZSuIqfk)
+> **Nota:** MPV2 necesita Python 3.12 para funcionar correctamente.
+> Mirá el video de YouTube [acá](https://youtu.be/wAZ_ZSuIqfk)
 
-## Features
+## Funcionalidades
 
-- [x] Twitter Bot (with CRON Jobs => `scheduler`)
-- [x] YouTube Shorts Automater (with CRON Jobs => `scheduler`)
-- [x] Affiliate Marketing (Amazon + Twitter)
-- [x] Find local businesses & cold outreach
+- [x] Bot de Twitter (con tareas CRON => `scheduler`)
+- [x] Automatización de YouTube Shorts (con tareas CRON => `scheduler`)
+- [x] Marketing de Afiliados (Amazon + Twitter)
+- [x] Búsqueda de negocios locales y contacto en frío
 
-## Versions
+## Versiones
 
-MoneyPrinter has different versions for multiple languages developed by the community for the community. Here are some known versions:
+MoneyPrinter tiene diferentes versiones en varios idiomas, desarrolladas por la comunidad para la comunidad. Estas son algunas versiones conocidas:
 
-- Chinese: [MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo)
+- Chino: [MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo)
+- Español: [MoneyPrinterV2 (Español)](https://github.com/fdfretes/MoneyPrinterV2)
 
-If you would like to submit your own version/fork of MoneyPrinter, please open an issue describing the changes you made to the fork.
+Si querés enviar tu propia versión/fork de MoneyPrinter, por favor abrí un issue describiendo los cambios que hiciste en el fork.
 
-## Installation
+## Instalación
 
-> ⚠️ If you are planning to reach out to scraped businesses per E-Mail, please first install the [Go Programming Language](https://golang.org/).
+> ⚠️ Si planeás contactar negocios por correo electrónico, primero instalá el [Lenguaje de Programación Go](https://golang.org/).
 
 ```bash
-git clone https://github.com/FujiwaraChoki/MoneyPrinterV2.git
+git clone https://github.com/fdfretes/MoneyPrinterV2.git
 
 cd MoneyPrinterV2
-# Copy Example Configuration and fill out values in config.json
+# Copiar la configuración de ejemplo y completar los valores en config.json
 cp config.example.json config.json
 
-# Create a virtual environment
+# Crear un entorno virtual
 python -m venv venv
 
-# Activate the virtual environment - Windows
+# Activar el entorno virtual - Windows
 .\venv\Scripts\activate
 
-# Activate the virtual environment - Unix
+# Activar el entorno virtual - Unix
 source venv/bin/activate
 
-# Install the requirements
+# Instalar las dependencias
 pip install -r requirements.txt
 ```
 
-## Usage
+## Uso
 
 ```bash
-# Run the application
+# Ejecutar la aplicación
 python src/main.py
 ```
 
-## Documentation
+## Documentación
 
-All relevant document can be found [here](docs/).
+Toda la documentación relevante se encuentra [acá](docs/).
 
 ## Scripts
 
-For easier usage, there are some scripts in the `scripts` directory, that can be used to directly access the core functionality of MPV2, without the need of user interaction.
+Para un uso más sencillo, hay algunos scripts en el directorio `scripts` que se pueden usar para acceder directamente a la funcionalidad principal de MPV2, sin necesidad de interacción del usuario.
 
-All scripts need to be run from the root directory of the project, e.g. `bash scripts/upload_video.sh`.
+Todos los scripts deben ejecutarse desde el directorio raíz del proyecto, por ejemplo: `bash scripts/upload_video.sh`.
 
-## Contributing
+## Contribuir
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us. Check out [docs/Roadmap.md](docs/Roadmap.md) for a list of features that need to be implemented.
+Por favor leé [CONTRIBUTING.md](CONTRIBUTING.md) para más detalles sobre nuestro código de conducta y el proceso para enviar pull requests. Consultá [docs/Roadmap.md](docs/Roadmap.md) para una lista de funcionalidades pendientes de implementar.
 
-## Code of Conduct
+## Código de Conducta
 
-Please read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for details on our code of conduct, and the process for submitting pull requests to us.
+Por favor leé [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) para más detalles sobre nuestro código de conducta y el proceso para enviar pull requests.
 
-## License
+## Licencia
 
-MoneyPrinterV2 is licensed under `Affero General Public License v3.0`. See [LICENSE](LICENSE) for more information.
+MoneyPrinterV2 está licenciado bajo `Affero General Public License v3.0`. Consultá [LICENSE](LICENSE) para más información.
 
-## Acknowledgments
+## Agradecimientos
 
 - [KittenTTS](https://github.com/KittenML/KittenTTS)
 - [gpt4free](https://github.com/xtekky/gpt4free)
 
-## Disclaimer
+## Aviso Legal
 
-This project is for educational purposes only. The author will not be responsible for any misuse of the information provided. All the information on this website is published in good faith and for general information purpose only. The author does not make any warranties about the completeness, reliability, and accuracy of this information. Any action you take upon the information you find on this website (FujiwaraChoki/MoneyPrinterV2), is strictly at your own risk. The author will not be liable for any losses and/or damages in connection with the use of our website.
+Este proyecto es solo con fines educativos. El autor no se hace responsable por ningún uso indebido de la información proporcionada. Toda la información en este sitio web se publica de buena fe y con fines informativos generales. El autor no ofrece garantías sobre la integridad, confiabilidad y exactitud de esta información. Cualquier acción que tomes basándote en la información que encontrás en este sitio web (FujiwaraChoki/MoneyPrinterV2) es estrictamente bajo tu propio riesgo. El autor no será responsable por ninguna pérdida y/o daño en conexión con el uso de nuestro sitio web.
