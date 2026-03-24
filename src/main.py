@@ -15,7 +15,54 @@ from classes.YouTube import YouTube
 from prettytable import PrettyTable
 from classes.Outreach import Outreach
 from classes.AFM import AffiliateMarketing
+from classes.UploadPost import UploadPost
 from llm_provider import list_models, select_model, get_active_model
+
+
+def offer_crosspost(video_path: str, title: str) -> None:
+    """
+    Offers to cross-post the video to TikTok/Instagram after YouTube upload.
+    
+    Args:
+        video_path (str): Path to the generated video
+        title (str): Video title/caption
+    """
+    if not get_upload_post_enabled():
+        return
+    
+    api_key = get_upload_post_api_key()
+    username = get_upload_post_username()
+    
+    if not api_key or not username:
+        if get_verbose():
+            warning("Upload-Post is enabled but API key or username is missing.")
+        return
+    
+    # Check if auto cross-post is enabled
+    if get_upload_post_auto_crosspost():
+        do_crosspost = True
+    else:
+        # Ask user
+        info("\n📱 Cross-post to TikTok/Instagram via Upload-Post?")
+        user_input = question("Yes/No: ").strip().lower()
+        do_crosspost = user_input in ["yes", "y"]
+    
+    if do_crosspost:
+        platforms = get_upload_post_platforms()
+        info(f"Cross-posting to: {', '.join(platforms)}")
+        
+        upload_post = UploadPost(api_key, username)
+        result = upload_post.upload_video(
+            video_path=video_path,
+            title=title,
+            platforms=platforms
+        )
+        
+        if result:
+            success(f"✅ Cross-posted to {', '.join(platforms)}!")
+            success(f"   Request ID: {result.get('request_id')}")
+        else:
+            warning("Cross-post failed. Video was uploaded to YouTube successfully.")
 
 def main():
     """Main entry point for the application, providing a menu-driven interface
@@ -164,6 +211,11 @@ def main():
                         upload_to_yt = question("Do you want to upload this video to YouTube? (Yes/No): ")
                         if upload_to_yt.lower() == "yes":
                             youtube.upload_video()
+                            # Offer cross-posting to TikTok/Instagram
+                            offer_crosspost(
+                                video_path=youtube.video_path,
+                                title=youtube.metadata.get("title", "")
+                            )
                     elif user_input == 2:
                         videos = youtube.get_videos()
 

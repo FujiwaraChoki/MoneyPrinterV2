@@ -339,3 +339,62 @@ def get_script_sentence_length() -> int:
             return config_json["script_sentence_length"]
         else:
             return 4
+
+
+# ============================================
+# Upload-Post Integration
+# ============================================
+
+def get_upload_post_enabled() -> bool:
+    """
+    Returns whether Upload-Post integration is enabled.
+
+    Returns:
+        enabled (bool): Whether Upload-Post is enabled
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("upload_post", {}).get("enabled", False)
+
+
+def get_upload_post_api_key() -> str:
+    """
+    Returns the Upload-Post API key.
+
+    Returns:
+        key (str): The Upload-Post API key
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("upload_post", {}).get("api_key", "")
+
+
+def get_upload_post_username() -> str:
+    """
+    Returns the Upload-Post username.
+
+    Returns:
+        username (str): The Upload-Post username
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("upload_post", {}).get("username", "")
+
+
+def get_upload_post_platforms() -> list:
+    """
+    Returns the platforms to cross-post to.
+
+    Returns:
+        platforms (list): List of platforms (e.g., ["tiktok", "instagram"])
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("upload_post", {}).get("platforms", ["tiktok", "instagram"])
+
+
+def get_upload_post_auto_crosspost() -> bool:
+    """
+    Returns whether to automatically cross-post after YouTube upload.
+
+    Returns:
+        auto (bool): Whether to auto cross-post
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("upload_post", {}).get("auto_crosspost", False)
