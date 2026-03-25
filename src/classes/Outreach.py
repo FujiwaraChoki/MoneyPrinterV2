@@ -95,7 +95,7 @@ class Outreach:
             else "google-maps-scraper"
         )
         if os.path.exists(binary_name):
-            print(colored("=> Scraper already built. Skipping build.", "blue"))
+            info("=> Scraper already built. Skipping build.")
             return
 
         scraper_dir = self._find_scraper_dir()
@@ -135,14 +135,13 @@ class Outreach:
             scraper_process = subprocess.run(command, timeout=float(timeout))
 
             if scraper_process.returncode == 0:
-                print(colored("=> Scraper finished successfully.", "green"))
+                success("=> Scraper finished successfully.")
             else:
-                print(colored("=> Scraper finished with an error.", "red"))
+                error("=> Scraper finished with an error.")
         except subprocess.TimeoutExpired:
-            print(colored("=> Scraper timed out.", "red"))
+            error("=> Scraper timed out.")
         except Exception as e:
-            print(colored("An error occurred while running the scraper:", "red"))
-            print(str(e))
+            error(f"An error occurred while running the scraper: {e}")
 
     def get_items_from_file(self, file_name: str) -> list:
         """
@@ -186,7 +185,7 @@ class Outreach:
             email = email_addresses[0] if len(email_addresses) > 0 else ""
 
         if email:
-            print(f"=> Setting email {email} for website {website}")
+            info(f"=> Setting email {email} for website {website}")
             with open(output_file, "r", newline="", errors="ignore") as csvfile:
                 csvreader = csv.reader(csvfile)
                 items = list(csvreader)
