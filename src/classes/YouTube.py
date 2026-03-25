@@ -583,7 +583,7 @@ class YouTube:
             for image_path in self.images:
                 clip = ImageClip(image_path)
                 clip.duration = req_dur
-                clip = clip.set_fps(30)
+                clip = clip.with_fps(30)
 
                 # Not all images are same size,
                 # so we need to resize them
@@ -614,7 +614,7 @@ class YouTube:
                 tot_dur += clip.duration
 
         final_clip = concatenate_videoclips(clips)
-        final_clip = final_clip.set_fps(30)
+        final_clip = final_clip.with_fps(30)
         random_song = choose_random_song()
 
         subtitles = None
@@ -629,7 +629,7 @@ class YouTube:
         random_song_clip = AudioFileClip(random_song).set_fps(44100)
 
         # Turn down volume
-        random_song_clip = random_song_clip.fx(afx.volumex, 0.1)
+        random_song_clip = random_song_clip.with_effects([afx.MultiplyVolume(0.1)])
         comp_audio = CompositeAudioClip([tts_clip.set_fps(44100), random_song_clip])
 
         final_clip = final_clip.set_audio(comp_audio)
