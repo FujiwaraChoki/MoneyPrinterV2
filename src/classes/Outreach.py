@@ -74,7 +74,7 @@ class Outreach:
             info("=> Scraper already unzipped. Skipping unzip.")
             return
 
-        r = requests.get(zip_link)
+        r = requests.get(zip_link, timeout=60)
         z = zipfile.ZipFile(io.BytesIO(r.content))
         for member in z.namelist():
             if ".." in member or member.startswith("/"):
@@ -160,6 +160,24 @@ class Outreach:
             items = [item.strip() for item in items[1:]]
             return items
 
+    @staticmethod
+    def _is_junk_email(email: str) -> bool:
+        """Check if an email address is a junk/non-personal address."""
+        junk_prefixes = (
+            "noreply", "no-reply", "donotreply", "do-not-reply",
+            "webmaster", "postmaster", "hostmaster", "admin@",
+            "info@", "support@", "sales@", "contact@", "abuse@",
+            "mailer-daemon", "root@",
+        )
+        junk_domains = ("example.com", "example.org", "test.com", "localhost")
+        lower = email.lower()
+        if any(lower.startswith(p) for p in junk_prefixes):
+            return True
+        domain = lower.split("@")[-1] if "@" in lower else ""
+        if domain in junk_domains:
+            return True
+        return False
+
     def set_email_for_website(self, index: int, website: str, output_file: str):
         """Extracts an email address from a website and updates a CSV file with it.
 
@@ -175,7 +193,7 @@ class Outreach:
         # Extract and set an email for a website
         email = ""
 
-        r = requests.get(website)
+        r = requests.get(website, timeout=15)
         if r.status_code == 200:
             # Define a regular expression pattern to match email addresses
             email_pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b"
@@ -183,7 +201,9 @@ class Outreach:
             # Find all email addresses in the HTML string
             email_addresses = re.findall(email_pattern, r.text)
 
-            email = email_addresses[0] if len(email_addresses) > 0 else ""
+            # Filter out junk/non-personal addresses
+            valid = [e for e in email_addresses if not self._is_junk_email(e)]
+            email = valid[0] if valid else ""
 
         if email:
             print(f"=> Setting email {email} for website {website}")
@@ -259,7 +279,7 @@ class Outreach:
                 website = [w for w in website if w.startswith("http")]
                 website = website[0] if len(website) > 0 else ""
                 if website != "":
-                    test_r = requests.get(website)
+                    test_r = requests.get(website, timeout=15)
                     if test_r.status_code == 200:
                         self.set_email_for_website(index, website, output_path)
 
@@ -268,6 +288,10 @@ class Outreach:
 
                         if "@" not in receiver_email:
                             warning(f" => No email provided. Skipping...")
+                            continue
+
+                        if self._is_junk_email(receiver_email):
+                            warning(f" => Junk email {receiver_email}. Skipping...")
                             continue
 
                         company_name = item.split(",")[0]
