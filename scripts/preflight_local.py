@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import importlib.metadata as metadata
 import json
 import os
 import sys
@@ -23,6 +24,70 @@ def fail(msg: str) -> None:
     print(f"[FAIL] {msg}")
 
 
+def get_installed_version(package_name: str) -> str | None:
+    try:
+        return metadata.version(package_name)
+    except metadata.PackageNotFoundError:
+        return None
+
+
+def check_dependency_versions() -> int:
+    failures = 0
+
+    selenium_version = get_installed_version("selenium")
+    if selenium_version:
+        ok(f"selenium={selenium_version}")
+    else:
+        fail("selenium is not installed")
+        failures += 1
+
+    moviepy_version = get_installed_version("moviepy")
+    if moviepy_version:
+        ok(f"moviepy={moviepy_version}")
+    else:
+        fail("moviepy is not installed")
+        failures += 1
+
+    pillow_version = get_installed_version("Pillow")
+    if pillow_version:
+        ok(f"Pillow={pillow_version}")
+    else:
+        fail("Pillow is not installed")
+        failures += 1
+
+    requests_version = get_installed_version("requests")
+    if requests_version:
+        ok(f"requests={requests_version}")
+    else:
+        fail("requests is not installed")
+        failures += 1
+
+    if moviepy_version and moviepy_version != "1.0.3":
+        fail(
+            "moviepy must stay on 1.0.3 until src/classes/YouTube.py is migrated "
+            "to the MoviePy v2 API."
+        )
+        failures += 1
+
+    if moviepy_version == "1.0.3" and pillow_version:
+        pillow_major = int(pillow_version.split(".", maxsplit=1)[0])
+        if pillow_major >= 10:
+            fail(
+                "Pillow 10+ is incompatible with moviepy 1.0.3 in the current codebase. "
+                "Install Pillow 9.5.0."
+            )
+            failures += 1
+
+    selenium_firefox_version = get_installed_version("selenium_firefox")
+    if selenium_firefox_version:
+        warn(
+            "selenium_firefox is installed but unused. It is incompatible with modern "
+            "Selenium and should be removed."
+        )
+
+    return failures
+
+
 def check_url(url: str, timeout: int = 3) -> Tuple[bool, str]:
     try:
         response = requests.get(url, timeout=timeout)
@@ -39,7 +104,7 @@ def main() -> int:
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
         cfg = json.load(f)
 
-    failures = 0
+    failures = check_dependency_versions()
 
     stt_provider = str(cfg.get("stt_provider", "local_whisper")).lower()
 
