@@ -1,6 +1,7 @@
 import ollama
 
 from config import get_ollama_base_url
+from retry import retry_on_exception
 
 _selected_model: str | None = None
 
@@ -38,9 +39,11 @@ def get_active_model() -> str | None:
     return _selected_model
 
 
+@retry_on_exception(max_retries=2, base_delay=2.0, exceptions=(Exception,))
 def generate_text(prompt: str, model_name: str = None) -> str:
     """
     Generates text using the local Ollama server.
+    Retries up to 2 times with exponential backoff on failure.
 
     Args:
         prompt (str): User prompt
