@@ -15,7 +15,7 @@ from status import *
 from uuid import uuid4
 from constants import *
 from typing import List
-from moviepy.editor import *
+from moviepy import *
 from termcolor import colored
 from selenium_firefox import *
 from selenium import webdriver
@@ -590,23 +590,21 @@ class YouTube:
                 if round((clip.w / clip.h), 4) < 0.5625:
                     if get_verbose():
                         info(f" => Resizing Image: {image_path} to 1080x1920")
-                    clip = crop(
-                        clip,
-                        width=clip.w,
-                        height=round(clip.w / 0.5625),
-                        x_center=clip.w / 2,
-                        y_center=clip.h / 2,
-                    )
+                    clip = clip.with_effects([Crop(
+    width=clip.w,
+    height=round(clip.w / 0.5625),
+    x_center=clip.w / 2,
+    y_center=clip.h / 2,
+)])
                 else:
                     if get_verbose():
                         info(f" => Resizing Image: {image_path} to 1920x1080")
-                    clip = crop(
-                        clip,
-                        width=round(0.5625 * clip.h),
-                        height=clip.h,
-                        x_center=clip.w / 2,
-                        y_center=clip.h / 2,
-                    )
+                    clip = clip.with_effects([Crop(
+    width=round(0.5625 * clip.h),
+    height=clip.h,
+    x_center=clip.w / 2,
+    y_center=clip.h / 2,
+)])
                 clip = clip.resize((1080, 1920))
 
                 # FX (Fade In)
