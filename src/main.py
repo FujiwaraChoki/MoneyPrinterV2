@@ -16,6 +16,7 @@ from prettytable import PrettyTable
 from classes.Outreach import Outreach
 from classes.AFM import AffiliateMarketing
 from llm_provider import list_models, select_model, get_active_model
+from config import validate_config
 
 def main():
     """Main entry point for the application, providing a menu-driven interface
@@ -434,6 +435,14 @@ if __name__ == "__main__":
 
     if first_time:
         print(colored("Hey! It looks like you're running MoneyPrinter V2 for the first time. Let's get you setup first!", "yellow"))
+
+    # Validate config
+    config_issues = validate_config()
+    if config_issues:
+        warning("Configuration issues detected:")
+        for issue in config_issues:
+            warning(f"  - {issue}")
+        print()
 
     # Setup file tree
     assert_folder_structure()

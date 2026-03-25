@@ -24,6 +24,8 @@ from moviepy.config import change_settings
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from moviepy.video.tools.subtitles import SubtitlesClip
 from webdriver_manager.firefox import GeckoDriverManager
 from datetime import datetime
@@ -98,6 +100,17 @@ class YouTube:
         self.browser: webdriver.Firefox = webdriver.Firefox(
             service=self.service, options=self.options
         )
+        self.wait: WebDriverWait = WebDriverWait(self.browser, 30)
+
+    def _save_screenshot(self, label: str) -> str:
+        """Saves a browser screenshot for debugging. Returns the path."""
+        screenshot_path = os.path.join(ROOT_DIR, ".mp", f"screenshot_{label}_{uuid4().hex[:8]}.png")
+        try:
+            self.browser.save_screenshot(screenshot_path)
+            warning(f"Screenshot saved to {screenshot_path}")
+        except Exception:
+            pass
+        return screenshot_path
 
     @property
     def niche(self) -> str:
@@ -326,7 +339,7 @@ class YouTube:
         Returns:
             path (str): The path to the generated image.
         """
-        print(f"Generating Image using Nano Banana 2 API: {prompt}")
+        info(f"Generating Image using Nano Banana 2 API: {prompt[:80]}...")
 
         api_key = get_nanobanana2_api_key()
         if not api_key:
@@ -574,7 +587,7 @@ class YouTube:
             method="caption",
         )
 
-        print(colored("[+] Combining images...", "blue"))
+        info("Combining images...")
 
         clips = []
         tot_dur = 0
@@ -700,9 +713,23 @@ class YouTube:
 
         return channel_id
 
+    def _wait_and_find(self, by, value, timeout=30):
+        """Wait for an element to be present and return it."""
+        return WebDriverWait(self.browser, timeout).until(
+            EC.presence_of_element_located((by, value))
+        )
+
+    def _wait_and_click(self, by, value, timeout=30):
+        """Wait for an element to be clickable, then click it."""
+        element = WebDriverWait(self.browser, timeout).until(
+            EC.element_to_be_clickable((by, value))
+        )
+        element.click()
+        return element
+
     def upload_video(self) -> bool:
         """
-        Uploads the video to YouTube.
+        Uploads the video to YouTube using explicit waits for reliability.
 
         Returns:
             success (bool): Whether the upload was successful or not.
@@ -716,25 +743,28 @@ class YouTube:
             # Go to youtube.com/upload
             driver.get("https://www.youtube.com/upload")
 
-            # Set video file
-            FILE_PICKER_TAG = "ytcp-uploads-file-picker"
-            file_picker = driver.find_element(By.TAG_NAME, FILE_PICKER_TAG)
-            INPUT_TAG = "input"
-            file_input = file_picker.find_element(By.TAG_NAME, INPUT_TAG)
+            # Set video file -- wait for the file picker to appear
+            if verbose:
+                info("\t=> Waiting for file picker...")
+            file_picker = self._wait_and_find(By.TAG_NAME, "ytcp-uploads-file-picker")
+            file_input = file_picker.find_element(By.TAG_NAME, "input")
             file_input.send_keys(self.video_path)
 
-            # Wait for upload to finish
-            time.sleep(5)
+            # Wait for the title textbox to appear (signals upload dialog loaded)
+            if verbose:
+                info("\t=> Waiting for upload dialog...")
+            self._wait_and_find(By.ID, YOUTUBE_TEXTBOX_ID, timeout=60)
+
+            # Give YouTube a moment to fully render the form
+            time.sleep(3)
 
             # Set title
             textboxes = driver.find_elements(By.ID, YOUTUBE_TEXTBOX_ID)
-
             title_el = textboxes[0]
             description_el = textboxes[-1]
 
             if verbose:
                 info("\t=> Setting title...")
-
             title_el.click()
             time.sleep(1)
             title_el.clear()
@@ -742,82 +772,57 @@ class YouTube:
 
             if verbose:
                 info("\t=> Setting description...")
-
-            # Set description
-            time.sleep(10)
+            time.sleep(2)
             description_el.click()
             time.sleep(0.5)
             description_el.clear()
             description_el.send_keys(self.metadata["description"])
-
             time.sleep(0.5)
 
             # Set `made for kids` option
             if verbose:
                 info("\t=> Setting `made for kids` option...")
 
-            is_for_kids_checkbox = driver.find_element(
-                By.NAME, YOUTUBE_MADE_FOR_KIDS_NAME
-            )
-            is_not_for_kids_checkbox = driver.find_element(
-                By.NAME, YOUTUBE_NOT_MADE_FOR_KIDS_NAME
-            )
-
             if not get_is_for_kids():
-                is_not_for_kids_checkbox.click()
+                self._wait_and_click(By.NAME, YOUTUBE_NOT_MADE_FOR_KIDS_NAME)
             else:
-                is_for_kids_checkbox.click()
+                self._wait_and_click(By.NAME, YOUTUBE_MADE_FOR_KIDS_NAME)
 
             time.sleep(0.5)
 
-            # Click next
-            if verbose:
-                info("\t=> Clicking next...")
-
-            next_button = driver.find_element(By.ID, YOUTUBE_NEXT_BUTTON_ID)
-            next_button.click()
-
-            # Click next again
-            if verbose:
-                info("\t=> Clicking next again...")
-            next_button = driver.find_element(By.ID, YOUTUBE_NEXT_BUTTON_ID)
-            next_button.click()
-
-            # Wait for 2 seconds
-            time.sleep(2)
-
-            # Click next again
-            if verbose:
-                info("\t=> Clicking next again...")
-            next_button = driver.find_element(By.ID, YOUTUBE_NEXT_BUTTON_ID)
-            next_button.click()
+            # Click through wizard pages (3 "Next" clicks)
+            for step in range(3):
+                if verbose:
+                    info(f"\t=> Clicking next (step {step + 1}/3)...")
+                self._wait_and_click(By.ID, YOUTUBE_NEXT_BUTTON_ID)
+                time.sleep(1)
 
             # Set as unlisted
             if verbose:
                 info("\t=> Setting as unlisted...")
-
-            radio_button = driver.find_elements(By.XPATH, YOUTUBE_RADIO_BUTTON_XPATH)
-            radio_button[2].click()
+            time.sleep(1)
+            radio_buttons = driver.find_elements(By.XPATH, YOUTUBE_RADIO_BUTTON_XPATH)
+            radio_buttons[2].click()
 
             if verbose:
                 info("\t=> Clicking done button...")
+            self._wait_and_click(By.ID, YOUTUBE_DONE_BUTTON_ID)
 
-            # Click done button
-            done_button = driver.find_element(By.ID, YOUTUBE_DONE_BUTTON_ID)
-            done_button.click()
-
-            # Wait for 2 seconds
-            time.sleep(2)
+            # Wait for processing
+            time.sleep(3)
 
             # Get latest video
             if verbose:
                 info("\t=> Getting video URL...")
 
-            # Get the latest uploaded video URL
             driver.get(
                 f"https://studio.youtube.com/channel/{self.channel_id}/videos/short"
             )
-            time.sleep(2)
+
+            # Wait for video rows to appear
+            self._wait_and_find(By.TAG_NAME, "ytcp-video-row", timeout=30)
+            time.sleep(1)
+
             videos = driver.find_elements(By.TAG_NAME, "ytcp-video-row")
             first_video = videos[0]
             anchor_tag = first_video.find_element(By.TAG_NAME, "a")
@@ -826,9 +831,7 @@ class YouTube:
                 info(f"\t=> Extracting video ID from URL: {href}")
             video_id = href.split("/")[-2]
 
-            # Build URL
             url = build_url(video_id)
-
             self.uploaded_video_url = url
 
             if verbose:
@@ -844,12 +847,16 @@ class YouTube:
                 }
             )
 
-            # Close the browser
             driver.quit()
-
             return True
-        except:
-            self.browser.quit()
+
+        except Exception as e:
+            error(f"Video upload failed: {e}")
+            self._save_screenshot("upload_failure")
+            try:
+                self.browser.quit()
+            except Exception:
+                pass
             return False
 
     def get_videos(self) -> List[dict]:

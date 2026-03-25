@@ -7,6 +7,106 @@ from termcolor import colored
 
 ROOT_DIR = os.path.dirname(sys.path[0])
 
+# Config schema: (key, required, expected_type, default)
+# required=True means the key MUST exist and be non-empty
+# required=False means the key is optional (has a sensible default)
+_CONFIG_SCHEMA = [
+    ("verbose", True, bool, None),
+    ("firefox_profile", False, str, None),
+    ("headless", True, bool, None),
+    ("threads", True, int, None),
+    ("zip_url", False, str, None),
+    ("is_for_kids", True, bool, None),
+    ("font", True, str, None),
+    ("imagemagick_path", True, str, None),
+    ("twitter_language", True, str, None),
+    ("ollama_base_url", False, str, "http://127.0.0.1:11434"),
+    ("ollama_model", False, str, ""),
+    ("nanobanana2_api_base_url", False, str, None),
+    ("nanobanana2_api_key", False, str, None),
+    ("nanobanana2_model", False, str, None),
+    ("nanobanana2_aspect_ratio", False, str, None),
+    ("google_maps_scraper", False, str, None),
+    ("google_maps_scraper_niche", False, str, None),
+    ("scraper_timeout", False, int, 300),
+    ("outreach_message_subject", False, str, None),
+    ("outreach_message_body_file", False, str, None),
+    ("stt_provider", False, str, "local_whisper"),
+    ("whisper_model", False, str, "base"),
+    ("whisper_device", False, str, "auto"),
+    ("whisper_compute_type", False, str, "int8"),
+    ("assembly_ai_api_key", False, str, None),
+    ("tts_voice", False, str, "Jasper"),
+    ("script_sentence_length", False, int, 4),
+    ("email", True, dict, None),
+]
+
+
+def validate_config(config: dict = None) -> list:
+    """
+    Validates the config dictionary against the expected schema.
+    Returns a list of warning/error strings. Empty list means all OK.
+
+    Args:
+        config: Config dict to validate. If None, reads from config.json.
+
+    Returns:
+        issues (list[str]): List of validation issues found.
+    """
+    if config is None:
+        config_path = os.path.join(ROOT_DIR, "config.json")
+        if not os.path.exists(config_path):
+            return [f"config.json not found at {config_path}. Copy config.example.json and fill in values."]
+        with open(config_path, "r") as f:
+            config = json.load(f)
+
+    issues = []
+
+    for key, required, expected_type, default in _CONFIG_SCHEMA:
+        if key not in config:
+            if required:
+                issues.append(f"Missing required key: '{key}'")
+            continue
+
+        value = config[key]
+
+        # Type check (allow None for optional fields)
+        if value is not None and not isinstance(value, expected_type):
+            issues.append(
+                f"Key '{key}' has wrong type: expected {expected_type.__name__}, "
+                f"got {type(value).__name__}"
+            )
+
+        # Empty check for required string fields
+        if required and expected_type == str and (value is None or value == ""):
+            issues.append(f"Required key '{key}' is empty")
+
+    # Validate email sub-structure
+    if "email" in config and isinstance(config["email"], dict):
+        email = config["email"]
+        for email_key in ("smtp_server", "smtp_port", "username", "password"):
+            if email_key not in email:
+                issues.append(f"Missing email sub-key: 'email.{email_key}'")
+
+    # Validate imagemagick_path exists on disk (if set)
+    img_path = config.get("imagemagick_path", "")
+    if img_path and not os.path.exists(img_path):
+        issues.append(
+            f"imagemagick_path '{img_path}' does not exist on disk. "
+            "Video subtitle rendering will fail."
+        )
+
+    # Validate stt_provider is a known value
+    stt = config.get("stt_provider", "local_whisper")
+    if stt not in ("local_whisper", "third_party_assemblyai"):
+        issues.append(
+            f"Unknown stt_provider '{stt}'. "
+            "Expected 'local_whisper' or 'third_party_assemblyai'."
+        )
+
+    return issues
+
+
 def assert_folder_structure() -> None:
     """
     Make sure that the nessecary folder structure is present.

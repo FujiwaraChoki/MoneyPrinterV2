@@ -1,44 +1,31 @@
 import os
 import json
+import fcntl
+import tempfile
 
 from typing import List
 from config import ROOT_DIR
 
-def get_cache_path() -> str:
-    """
-    Gets the path to the cache file.
 
-    Returns:
-        path (str): The path to the cache folder
-    """
+def get_cache_path() -> str:
+    """Gets the path to the cache folder."""
     return os.path.join(ROOT_DIR, '.mp')
 
-def get_afm_cache_path() -> str:
-    """
-    Gets the path to the Affiliate Marketing cache file.
 
-    Returns:
-        path (str): The path to the AFM cache folder
-    """
+def get_afm_cache_path() -> str:
+    """Gets the path to the Affiliate Marketing cache file."""
     return os.path.join(get_cache_path(), 'afm.json')
 
-def get_twitter_cache_path() -> str:
-    """
-    Gets the path to the Twitter cache file.
 
-    Returns:
-        path (str): The path to the Twitter cache folder
-    """
+def get_twitter_cache_path() -> str:
+    """Gets the path to the Twitter cache file."""
     return os.path.join(get_cache_path(), 'twitter.json')
 
-def get_youtube_cache_path() -> str:
-    """
-    Gets the path to the YouTube cache file.
 
-    Returns:
-        path (str): The path to the YouTube cache folder
-    """
+def get_youtube_cache_path() -> str:
+    """Gets the path to the YouTube cache file."""
     return os.path.join(get_cache_path(), 'youtube.json')
+
 
 def get_provider_cache_path(provider: str) -> str:
     """
@@ -60,6 +47,54 @@ def get_provider_cache_path(provider: str) -> str:
 
     raise ValueError(f"Unsupported provider '{provider}'. Expected 'twitter' or 'youtube'.")
 
+
+def _read_json_locked(path: str) -> dict:
+    """
+    Reads a JSON file with a shared (read) lock.
+    Prevents reading while another process is writing.
+    """
+    with open(path, 'r') as f:
+        fcntl.flock(f, fcntl.LOCK_SH)
+        try:
+            return json.load(f)
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
+
+
+def _write_json_atomic(path: str, data: dict) -> None:
+    """
+    Writes a JSON file atomically using a temp file + rename.
+    Uses an exclusive lock to prevent concurrent writes.
+
+    The write goes to a temporary file in the same directory,
+    then atomically replaces the target via os.replace().
+    This prevents partial/corrupt reads from concurrent processes.
+    """
+    dir_name = os.path.dirname(path)
+    fd, tmp_path = tempfile.mkstemp(dir=dir_name, suffix='.tmp')
+    try:
+        with os.fdopen(fd, 'w') as f:
+            fcntl.flock(f, fcntl.LOCK_EX)
+            try:
+                json.dump(data, f, indent=4)
+            finally:
+                fcntl.flock(f, fcntl.LOCK_UN)
+        os.replace(tmp_path, path)
+    except BaseException:
+        # Clean up temp file on any failure
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
+
+
+def _ensure_cache_file(path: str, default_data: dict) -> None:
+    """Creates a cache file with default_data if it does not exist."""
+    if not os.path.exists(path):
+        _write_json_atomic(path, default_data)
+
+
 def get_accounts(provider: str) -> List[dict]:
     """
     Gets the accounts from the cache.
@@ -68,28 +103,21 @@ def get_accounts(provider: str) -> List[dict]:
         provider (str): The provider to get the accounts for
 
     Returns:
-        account (List[dict]): The accounts
+        accounts (List[dict]): The accounts
     """
     cache_path = get_provider_cache_path(provider)
+    _ensure_cache_file(cache_path, {"accounts": []})
 
-    if not os.path.exists(cache_path):
-        # Create the cache file
-        with open(cache_path, 'w') as file:
-            json.dump({
-                "accounts": []
-            }, file, indent=4)
+    parsed = _read_json_locked(cache_path)
 
-    with open(cache_path, 'r') as file:
-        parsed = json.load(file)
+    if parsed is None:
+        return []
 
-        if parsed is None:
-            return []
-        
-        if 'accounts' not in parsed:
-            return []
+    if 'accounts' not in parsed:
+        return []
 
-        # Get accounts dictionary
-        return parsed['accounts']
+    return parsed['accounts']
+
 
 def add_account(provider: str, account: dict) -> None:
     """
@@ -98,23 +126,12 @@ def add_account(provider: str, account: dict) -> None:
     Args:
         provider (str): The provider to add the account to ("twitter" or "youtube")
         account (dict): The account to add
-
-    Returns:
-        None
     """
     cache_path = get_provider_cache_path(provider)
-
-    # Get the current accounts
     accounts = get_accounts(provider)
-
-    # Add the new account
     accounts.append(account)
+    _write_json_atomic(cache_path, {"accounts": accounts})
 
-    # Write the new accounts to the cache
-    with open(cache_path, 'w') as file:
-        json.dump({
-            "accounts": accounts
-        }, file, indent=4)
 
 def remove_account(provider: str, account_id: str) -> None:
     """
@@ -123,71 +140,33 @@ def remove_account(provider: str, account_id: str) -> None:
     Args:
         provider (str): The provider to remove the account from ("twitter" or "youtube")
         account_id (str): The ID of the account to remove
-
-    Returns:
-        None
     """
-    # Get the current accounts
     accounts = get_accounts(provider)
-
-    # Remove the account
     accounts = [account for account in accounts if account['id'] != account_id]
-
-    # Write the new accounts to the cache
     cache_path = get_provider_cache_path(provider)
+    _write_json_atomic(cache_path, {"accounts": accounts})
 
-    with open(cache_path, 'w') as file:
-        json.dump({
-            "accounts": accounts
-        }, file, indent=4)
 
 def get_products() -> List[dict]:
-    """
-    Gets the products from the cache.
+    """Gets the products from the cache."""
+    _ensure_cache_file(get_afm_cache_path(), {"products": []})
 
-    Returns:
-        products (List[dict]): The products
-    """
-    if not os.path.exists(get_afm_cache_path()):
-        # Create the cache file
-        with open(get_afm_cache_path(), 'w') as file:
-            json.dump({
-                "products": []
-            }, file, indent=4)
+    parsed = _read_json_locked(get_afm_cache_path())
+    return parsed.get("products", [])
 
-    with open(get_afm_cache_path(), 'r') as file:
-        parsed = json.load(file)
 
-        # Get the products
-        return parsed["products"]
-    
 def add_product(product: dict) -> None:
     """
     Adds a product to the cache.
 
     Args:
         product (dict): The product to add
-
-    Returns:
-        None
     """
-    # Get the current products
     products = get_products()
-
-    # Add the new product
     products.append(product)
+    _write_json_atomic(get_afm_cache_path(), {"products": products})
 
-    # Write the new products to the cache
-    with open(get_afm_cache_path(), 'w') as file:
-        json.dump({
-            "products": products
-        }, file, indent=4)
-    
+
 def get_results_cache_path() -> str:
-    """
-    Gets the path to the results cache file.
-
-    Returns:
-        path (str): The path to the results cache folder
-    """
+    """Gets the path to the results cache file."""
     return os.path.join(get_cache_path(), 'scraper_results.csv')
