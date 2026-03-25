@@ -74,7 +74,7 @@ class Outreach:
             info("=> Scraper already unzipped. Skipping unzip.")
             return
 
-        r = requests.get(zip_link)
+        r = requests.get(zip_link, timeout=120)
         z = zipfile.ZipFile(io.BytesIO(r.content))
         for member in z.namelist():
             if ".." in member or member.startswith("/"):
@@ -175,7 +175,7 @@ class Outreach:
         # Extract and set an email for a website
         email = ""
 
-        r = requests.get(website)
+        r = requests.get(website, timeout=15)
         if r.status_code == 200:
             # Define a regular expression pattern to match email addresses
             email_pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b"
@@ -259,7 +259,7 @@ class Outreach:
                 website = [w for w in website if w.startswith("http")]
                 website = website[0] if len(website) > 0 else ""
                 if website != "":
-                    test_r = requests.get(website)
+                    test_r = requests.get(website, timeout=15)
                     if test_r.status_code == 200:
                         self.set_email_for_website(index, website, output_path)
 
