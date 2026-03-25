@@ -339,3 +339,33 @@ def get_script_sentence_length() -> int:
             return config_json["script_sentence_length"]
         else:
             return 4
+
+
+def get_post_bridge_enabled() -> bool:
+    """Returns whether Post Bridge integration is enabled."""
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("post_bridge", {}).get("enabled", False)
+
+
+def get_post_bridge_api_key() -> str:
+    """Returns the Post Bridge API key."""
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("post_bridge", {}).get("api_key", "")
+
+
+def get_post_bridge_platforms() -> list:
+    """Returns the platforms to cross-post to via Post Bridge."""
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("post_bridge", {}).get("platforms", [])
+
+
+def get_post_bridge_account_ids() -> list:
+    """Returns the configured Post Bridge social account IDs."""
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("post_bridge", {}).get("account_ids", [])
+
+
+def get_post_bridge_auto_crosspost() -> bool:
+    """Returns whether to automatically cross-post after YouTube upload."""
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("post_bridge", {}).get("auto_crosspost", False)

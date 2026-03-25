@@ -15,7 +15,68 @@ from classes.YouTube import YouTube
 from prettytable import PrettyTable
 from classes.Outreach import Outreach
 from classes.AFM import AffiliateMarketing
+from classes.PostBridge import PostBridge
 from llm_provider import list_models, select_model, get_active_model
+from config import (
+    get_post_bridge_enabled,
+    get_post_bridge_api_key,
+    get_post_bridge_platforms,
+    get_post_bridge_account_ids,
+    get_post_bridge_auto_crosspost,
+)
+
+def offer_crosspost(video_path: str, title: str) -> None:
+    """
+    Offers to cross-post the video to multiple platforms via Post Bridge
+    after a YouTube upload completes.
+
+    Args:
+        video_path (str): Path to the generated video file.
+        title (str): Video title / caption.
+    """
+    if not get_post_bridge_enabled():
+        return
+
+    api_key = get_post_bridge_api_key()
+    if not api_key:
+        if get_verbose():
+            warning("Post Bridge enabled but API key is missing. Skipping.")
+        return
+
+    platforms = get_post_bridge_platforms()
+    account_ids = get_post_bridge_account_ids()
+
+    if get_post_bridge_auto_crosspost():
+        do_crosspost = True
+    else:
+        platform_str = ", ".join(platforms) if platforms else "all connected platforms"
+        info(f"\nCross-post to {platform_str} via Post Bridge?")
+        user_input = question("Yes/No: ").strip().lower()
+        do_crosspost = user_input in ["yes", "y"]
+
+    if not do_crosspost:
+        return
+
+    post_bridge = PostBridge(api_key)
+
+    # Build platform-specific configs (set title on TikTok)
+    platform_configurations = {}
+    if title:
+        platform_configurations["tiktok"] = {"title": title}
+
+    result = post_bridge.upload_and_post(
+        video_path=video_path,
+        caption=title,
+        account_ids=account_ids if account_ids else None,
+        platforms=platforms if platforms else None,
+        platform_configurations=platform_configurations if platform_configurations else None,
+    )
+
+    if result:
+        success("Cross-posted via Post Bridge!")
+    else:
+        warning("Post Bridge cross-post failed. YouTube upload was still successful.")
+
 
 def main():
     """Main entry point for the application, providing a menu-driven interface
@@ -164,6 +225,10 @@ def main():
                         upload_to_yt = question("Do you want to upload this video to YouTube? (Yes/No): ")
                         if upload_to_yt.lower() == "yes":
                             youtube.upload_video()
+                            offer_crosspost(
+                                video_path=youtube.video_path,
+                                title=youtube.metadata.get("title", ""),
+                            )
                     elif user_input == 2:
                         videos = youtube.get_videos()
 
