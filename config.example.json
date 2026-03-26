@@ -31,5 +31,7 @@
   "tts_voice": "Jasper",
   "font": "bold_font.ttf",
   "imagemagick_path": "Path to magick.exe or on linux/macOS just /usr/bin/convert",
-  "script_sentence_length": 4
+  "script_sentence_length": 4,
+  "google_api_credentials_path": "",
+  "gemini_cost_per_call": 0.005
 }
