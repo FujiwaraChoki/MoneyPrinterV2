@@ -16,22 +16,25 @@ from prettytable import PrettyTable
 from classes.Outreach import Outreach
 from classes.AFM import AffiliateMarketing
 from llm_provider import list_models, select_model, get_active_model
+from analytics import fetch_all_metrics
+from report import print_niche_summary, export_csv
+
 
 def main():
     """Main entry point for the application, providing a menu-driven interface
     to manage YouTube, Twitter bots, Affiliate Marketing, and Outreach tasks.
 
     This function allows users to:
-    1. Start the YouTube Shorts Automater to manage YouTube accounts, 
+    1. Start the YouTube Shorts Automater to manage YouTube accounts,
        generate and upload videos, and set up CRON jobs.
-    2. Start a Twitter Bot to manage Twitter accounts, post tweets, and 
+    2. Start a Twitter Bot to manage Twitter accounts, post tweets, and
        schedule posts using CRON jobs.
-    3. Manage Affiliate Marketing by creating pitches and sharing them via 
+    3. Manage Affiliate Marketing by creating pitches and sharing them via
        Twitter accounts.
     4. Initiate an Outreach process for engagement and promotion tasks.
     5. Exit the application.
 
-    The function continuously prompts users for input, validates it, and 
+    The function continuously prompts users for input, validates it, and
     executes the selected option until the user chooses to quit.
 
     Args:
@@ -45,7 +48,7 @@ def main():
     valid_input = False
     while not valid_input:
         try:
-    # Show user options
+            # Show user options
             info("\n============ OPTIONS ============", False)
 
             for idx, option in enumerate(OPTIONS):
@@ -53,7 +56,7 @@ def main():
 
             info("=================================\n", False)
             user_input = input("Select an option: ").strip()
-            if user_input == '':
+            if user_input == "":
                 print("\n" * 100)
                 raise ValueError("Empty input is not allowed.")
             user_input = int(user_input)
@@ -61,7 +64,6 @@ def main():
         except ValueError as e:
             print("\n" * 100)
             print(f"Invalid input: {e}")
-
 
     # Start the selected option
     if user_input == 1:
@@ -99,12 +101,21 @@ def main():
             table.field_names = ["ID", "UUID", "Nickname", "Niche"]
 
             for account in cached_accounts:
-                table.add_row([cached_accounts.index(account) + 1, colored(account["id"], "cyan"), colored(account["nickname"], "blue"), colored(account["niche"], "green")])
+                table.add_row(
+                    [
+                        cached_accounts.index(account) + 1,
+                        colored(account["id"], "cyan"),
+                        colored(account["nickname"], "blue"),
+                        colored(account["niche"], "green"),
+                    ]
+                )
 
             print(table)
             info("Type 'd' to delete an account.", False)
 
-            user_input = question("Select an account to start (or 'd' to delete): ").strip()
+            user_input = question(
+                "Select an account to start (or 'd' to delete): "
+            ).strip()
 
             if user_input.lower() == "d":
                 delete_input = question("Enter account number to delete: ").strip()
@@ -118,7 +129,13 @@ def main():
                 if account_to_delete is None:
                     error("Invalid account selected. Please try again.", "red")
                 else:
-                    confirm = question(f"Are you sure you want to delete '{account_to_delete['nickname']}'? (Yes/No): ").strip().lower()
+                    confirm = (
+                        question(
+                            f"Are you sure you want to delete '{account_to_delete['nickname']}'? (Yes/No): "
+                        )
+                        .strip()
+                        .lower()
+                    )
 
                     if confirm == "yes":
                         remove_account("youtube", account_to_delete["id"])
@@ -143,7 +160,7 @@ def main():
                     selected_account["nickname"],
                     selected_account["firefox_profile"],
                     selected_account["niche"],
-                    selected_account["language"]
+                    selected_account["language"],
                 )
 
                 while True:
@@ -161,7 +178,9 @@ def main():
 
                     if user_input == 1:
                         youtube.generate_video(tts)
-                        upload_to_yt = question("Do you want to upload this video to YouTube? (Yes/No): ")
+                        upload_to_yt = question(
+                            "Do you want to upload this video to YouTube? (Yes/No): "
+                        )
                         if upload_to_yt.lower() == "yes":
                             youtube.upload_video()
                     elif user_input == 2:
@@ -172,11 +191,13 @@ def main():
                             videos_table.field_names = ["ID", "Date", "Title"]
 
                             for video in videos:
-                                videos_table.add_row([
-                                    videos.index(video) + 1,
-                                    colored(video["date"], "blue"),
-                                    colored(video["title"][:60] + "...", "green")
-                                ])
+                                videos_table.add_row(
+                                    [
+                                        videos.index(video) + 1,
+                                        colored(video["date"], "blue"),
+                                        colored(video["title"][:60] + "...", "green"),
+                                    ]
+                                )
 
                             print(videos_table)
                         else:
@@ -193,7 +214,13 @@ def main():
                         user_input = int(question("Select an Option: "))
 
                         cron_script_path = os.path.join(ROOT_DIR, "src", "cron.py")
-                        command = ["python", cron_script_path, "youtube", selected_account['id'], get_active_model()]
+                        command = [
+                            "python",
+                            cron_script_path,
+                            "youtube",
+                            selected_account["id"],
+                            get_active_model(),
+                        ]
 
                         def job():
                             subprocess.run(command)
@@ -230,24 +257,36 @@ def main():
                 fp_profile = question(" => Enter the path to the Firefox profile: ")
                 topic = question(" => Enter the account topic: ")
 
-                add_account("twitter", {
-                    "id": generated_uuid,
-                    "nickname": nickname,
-                    "firefox_profile": fp_profile,
-                    "topic": topic,
-                    "posts": []
-                })
+                add_account(
+                    "twitter",
+                    {
+                        "id": generated_uuid,
+                        "nickname": nickname,
+                        "firefox_profile": fp_profile,
+                        "topic": topic,
+                        "posts": [],
+                    },
+                )
         else:
             table = PrettyTable()
             table.field_names = ["ID", "UUID", "Nickname", "Account Topic"]
 
             for account in cached_accounts:
-                table.add_row([cached_accounts.index(account) + 1, colored(account["id"], "cyan"), colored(account["nickname"], "blue"), colored(account["topic"], "green")])
+                table.add_row(
+                    [
+                        cached_accounts.index(account) + 1,
+                        colored(account["id"], "cyan"),
+                        colored(account["nickname"], "blue"),
+                        colored(account["topic"], "green"),
+                    ]
+                )
 
             print(table)
             info("Type 'd' to delete an account.", False)
 
-            user_input = question("Select an account to start (or 'd' to delete): ").strip()
+            user_input = question(
+                "Select an account to start (or 'd' to delete): "
+            ).strip()
 
             if user_input.lower() == "d":
                 delete_input = question("Enter account number to delete: ").strip()
@@ -261,7 +300,13 @@ def main():
                 if account_to_delete is None:
                     error("Invalid account selected. Please try again.", "red")
                 else:
-                    confirm = question(f"Are you sure you want to delete '{account_to_delete['nickname']}'? (Yes/No): ").strip().lower()
+                    confirm = (
+                        question(
+                            f"Are you sure you want to delete '{account_to_delete['nickname']}'? (Yes/No): "
+                        )
+                        .strip()
+                        .lower()
+                    )
 
                     if confirm == "yes":
                         remove_account("twitter", account_to_delete["id"])
@@ -281,10 +326,14 @@ def main():
                 error("Invalid account selected. Please try again.", "red")
                 main()
             else:
-                twitter = Twitter(selected_account["id"], selected_account["nickname"], selected_account["firefox_profile"], selected_account["topic"])
+                twitter = Twitter(
+                    selected_account["id"],
+                    selected_account["nickname"],
+                    selected_account["firefox_profile"],
+                    selected_account["topic"],
+                )
 
                 while True:
-                    
                     info("\n============ OPTIONS ============", False)
 
                     for idx, twitter_option in enumerate(TWITTER_OPTIONS):
@@ -305,11 +354,13 @@ def main():
                         posts_table.field_names = ["ID", "Date", "Content"]
 
                         for post in posts:
-                            posts_table.add_row([
-                                posts.index(post) + 1,
-                                colored(post["date"], "blue"),
-                                colored(post["content"][:60] + "...", "green")
-                            ])
+                            posts_table.add_row(
+                                [
+                                    posts.index(post) + 1,
+                                    colored(post["date"], "blue"),
+                                    colored(post["content"][:60] + "...", "green"),
+                                ]
+                            )
 
                         print(posts_table)
                     elif user_input == 3:
@@ -324,7 +375,13 @@ def main():
                         user_input = int(question("Select an Option: "))
 
                         cron_script_path = os.path.join(ROOT_DIR, "src", "cron.py")
-                        command = ["python", cron_script_path, "twitter", selected_account['id'], get_active_model()]
+                        command = [
+                            "python",
+                            cron_script_path,
+                            "twitter",
+                            selected_account["id"],
+                            get_active_model(),
+                        ]
 
                         def job():
                             subprocess.run(command)
@@ -369,13 +426,21 @@ def main():
                     if acc["id"] == twitter_uuid:
                         account = acc
 
-                add_product({
-                    "id": str(uuid4()),
-                    "affiliate_link": affiliate_link,
-                    "twitter_uuid": twitter_uuid
-                })
+                add_product(
+                    {
+                        "id": str(uuid4()),
+                        "affiliate_link": affiliate_link,
+                        "twitter_uuid": twitter_uuid,
+                    }
+                )
 
-                afm = AffiliateMarketing(affiliate_link, account["firefox_profile"], account["id"], account["nickname"], account["topic"])
+                afm = AffiliateMarketing(
+                    affiliate_link,
+                    account["firefox_profile"],
+                    account["id"],
+                    account["nickname"],
+                    account["topic"],
+                )
 
                 afm.generate_pitch()
                 afm.share_pitch("twitter")
@@ -384,7 +449,13 @@ def main():
             table.field_names = ["ID", "Affiliate Link", "Twitter Account UUID"]
 
             for product in cached_products:
-                table.add_row([cached_products.index(product) + 1, colored(product["affiliate_link"], "cyan"), colored(product["twitter_uuid"], "blue")])
+                table.add_row(
+                    [
+                        cached_products.index(product) + 1,
+                        colored(product["affiliate_link"], "cyan"),
+                        colored(product["twitter_uuid"], "blue"),
+                    ]
+                )
 
             print(table)
 
@@ -406,7 +477,13 @@ def main():
                     if acc["id"] == selected_product["twitter_uuid"]:
                         account = acc
 
-                afm = AffiliateMarketing(selected_product["affiliate_link"], account["firefox_profile"], account["id"], account["nickname"], account["topic"])
+                afm = AffiliateMarketing(
+                    selected_product["affiliate_link"],
+                    account["firefox_profile"],
+                    account["id"],
+                    account["nickname"],
+                    account["topic"],
+                )
 
                 afm.generate_pitch()
                 afm.share_pitch("twitter")
@@ -418,13 +495,36 @@ def main():
 
         outreach.start()
     elif user_input == 5:
+        info("Starting Analytics...")
+
+        while True:
+            info("\n============ OPTIONS ============", False)
+
+            for idx, option in enumerate(ANALYTICS_OPTIONS):
+                print(colored(f" {idx + 1}. {option}", "cyan"))
+
+            info("=================================\n", False)
+
+            analytics_input = int(question("Select an option: "))
+
+            if analytics_input == 1:
+                print_niche_summary()
+            elif analytics_input == 2:
+                count = fetch_all_metrics()
+                success(f"Updated metrics for {count} videos.")
+            elif analytics_input == 3:
+                path = export_csv()
+                success(f"Exported to: {path}")
+            elif analytics_input == 4:
+                break
+    elif user_input == 6:
         if get_verbose():
             print(colored(" => Quitting...", "blue"))
         sys.exit(0)
     else:
         error("Invalid option selected. Please try again.", "red")
         main()
-    
+
 
 if __name__ == "__main__":
     # Print ASCII Banner
@@ -433,7 +533,12 @@ if __name__ == "__main__":
     first_time = get_first_time_running()
 
     if first_time:
-        print(colored("Hey! It looks like you're running MoneyPrinter V2 for the first time. Let's get you setup first!", "yellow"))
+        print(
+            colored(
+                "Hey! It looks like you're running MoneyPrinter V2 for the first time. Let's get you setup first!",
+                "yellow",
+            )
+        )
 
     # Setup file tree
     assert_folder_structure()
@@ -457,7 +562,9 @@ if __name__ == "__main__":
             sys.exit(1)
 
         if not models:
-            error("No models found on Ollama. Pull a model first (e.g. 'ollama pull llama3.2:3b').")
+            error(
+                "No models found on Ollama. Pull a model first (e.g. 'ollama pull llama3.2:3b')."
+            )
             sys.exit(1)
 
         info("\n========== OLLAMA MODELS =========", False)

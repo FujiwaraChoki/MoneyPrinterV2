@@ -27,6 +27,7 @@ from selenium.webdriver.firefox.options import Options
 from moviepy.video.tools.subtitles import SubtitlesClip
 from webdriver_manager.firefox import GeckoDriverManager
 from datetime import datetime
+from cost_tracker import record_image_cost, finalize_video as finalize_video_analytics
 
 # Set ImageMagick Path
 change_settings({"IMAGEMAGICK_BINARY": get_imagemagick_path()})
@@ -75,6 +76,7 @@ class YouTube:
         self._language: str = language
 
         self.images = []
+        self._pending_video_id = str(uuid4())
 
         # Initialize the Firefox profile
         self.options: Options = Options()
@@ -364,13 +366,17 @@ class YouTube:
                     if not inline_data:
                         continue
                     data = inline_data.get("data")
-                    mime_type = inline_data.get("mimeType") or inline_data.get("mime_type", "")
+                    mime_type = inline_data.get("mimeType") or inline_data.get(
+                        "mime_type", ""
+                    )
                     if data and str(mime_type).startswith("image/"):
                         image_bytes = base64.b64decode(data)
                         return self._persist_image(image_bytes, "Nano Banana 2 API")
 
             if get_verbose():
-                warning(f"Nano Banana 2 did not return an image payload. Response: {body}")
+                warning(
+                    f"Nano Banana 2 did not return an image payload. Response: {body}"
+                )
             return None
         except Exception as e:
             if get_verbose():
@@ -387,7 +393,13 @@ class YouTube:
         Returns:
             path (str): The path to the generated image.
         """
-        return self.generate_image_nanobanana2(prompt)
+        result = self.generate_image_nanobanana2(prompt)
+        if result is not None:
+            record_image_cost(
+                video_id=self._pending_video_id,
+                model=get_nanobanana2_model(),
+            )
+        return result
 
     def generate_script_to_speech(self, tts_instance: TTS) -> str:
         """
@@ -656,6 +668,9 @@ class YouTube:
         Returns:
             path (str): The path to the generated MP4 File.
         """
+        # Reset pending video ID for this generation session
+        self._pending_video_id = str(uuid4())
+
         # Generate the Topic
         self.generate_topic()
 
@@ -842,6 +857,24 @@ class YouTube:
                     "url": url,
                     "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 }
+            )
+
+            # Update pending cost entry with real YouTube video_id
+            from cost_tracker import _read_analytics, _write_analytics
+
+            analytics_data = _read_analytics()
+            for entry in analytics_data.get("pending_costs", []):
+                if entry["video_id"] == self._pending_video_id:
+                    entry["video_id"] = video_id
+                    break
+            _write_analytics(analytics_data)
+
+            # Record analytics data with real YouTube video_id
+            finalize_video_analytics(
+                video_id=video_id,
+                title=self.metadata["title"],
+                niche=self._niche,
+                upload_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             )
 
             # Close the browser

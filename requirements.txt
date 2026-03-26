@@ -16,3 +16,6 @@ faster-whisper
 srt_equalizer
 undetected_chromedriver
 platformdirs
+google-api-python-client
+google-auth-oauthlib
+pytest

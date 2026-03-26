@@ -10,43 +10,26 @@ OPTIONS = [
     "Twitter Bot",
     "Affiliate Marketing",
     "Outreach",
-    "Quit"
+    "Analytics",
+    "Quit",
 ]
 
-TWITTER_OPTIONS = [
-    "Post something",
-    "Show all Posts",
-    "Setup CRON Job",
-    "Quit"
-]
+TWITTER_OPTIONS = ["Post something", "Show all Posts", "Setup CRON Job", "Quit"]
 
-TWITTER_CRON_OPTIONS = [
-    "Once a day",
-    "Twice a day",
-    "Thrice a day",
-    "Quit"
-]
+TWITTER_CRON_OPTIONS = ["Once a day", "Twice a day", "Thrice a day", "Quit"]
 
-YOUTUBE_OPTIONS = [
-    "Upload Short",
-    "Show all Shorts",
-    "Setup CRON Job",
-    "Quit"
-]
+YOUTUBE_OPTIONS = ["Upload Short", "Show all Shorts", "Setup CRON Job", "Quit"]
 
-YOUTUBE_CRON_OPTIONS = [
-    "Once a day",
-    "Twice a day",
-    "Thrice a day",
-    "Quit"
-]
+YOUTUBE_CRON_OPTIONS = ["Once a day", "Twice a day", "Thrice a day", "Quit"]
+
+ANALYTICS_OPTIONS = ["Niche Summary", "Fetch Latest Metrics", "Export CSV", "Quit"]
 
 # YouTube Section
 YOUTUBE_TEXTBOX_ID = "textbox"
 YOUTUBE_MADE_FOR_KIDS_NAME = "VIDEO_MADE_FOR_KIDS_MFK"
 YOUTUBE_NOT_MADE_FOR_KIDS_NAME = "VIDEO_MADE_FOR_KIDS_NOT_MFK"
 YOUTUBE_NEXT_BUTTON_ID = "next-button"
-YOUTUBE_RADIO_BUTTON_XPATH = "//*[@id=\"radioLabel\"]"
+YOUTUBE_RADIO_BUTTON_XPATH = '//*[@id="radioLabel"]'
 YOUTUBE_DONE_BUTTON_ID = "done-button"
 
 # Amazon Section (AFM)$
