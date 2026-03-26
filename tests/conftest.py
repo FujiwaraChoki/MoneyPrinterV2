@@ -1,5 +1,12 @@
 import json
 import pytest
+import sys
+import os
+from unittest.mock import MagicMock
+
+# Mock the config module to avoid dependency issues during testing
+sys.modules["srt_equalizer"] = MagicMock()
+sys.modules["config"] = MagicMock(ROOT_DIR=os.getcwd())
 
 
 @pytest.fixture
