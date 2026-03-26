@@ -1,7 +1,6 @@
 import os
 import sys
 import json
-import srt_equalizer
 
 from termcolor import colored
 
@@ -282,19 +281,6 @@ def get_whisper_compute_type() -> str:
     """
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file).get("whisper_compute_type", "int8")
-    
-def equalize_subtitles(srt_path: str, max_chars: int = 10) -> None:
-    """
-    Equalizes the subtitles in a SRT file.
-
-    Args:
-        srt_path (str): The path to the SRT file
-        max_chars (int): The maximum amount of characters in a subtitle
-
-    Returns:
-        None
-    """
-    srt_equalizer.equalize_srt_file(srt_path, srt_path, max_chars)
     
 def get_font() -> str:
     """

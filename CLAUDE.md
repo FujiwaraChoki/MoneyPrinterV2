@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-MoneyPrinterV2 (MPV2) is a Python 3.12 CLI tool that automates four online workflows:
+MoneyPrinterV2 (MPV2) is a Python 3.12 CLI tool (Python 3.13 is NOT supported due to PyTorch compatibility issues) that automates four online workflows:
 1. **YouTube Shorts** — generate video (LLM script → TTS → images → MoviePy composite) and upload via Selenium
 2. **Twitter/X Bot** — generate and post tweets via Selenium
 3. **Affiliate Marketing** — scrape Amazon product info, generate pitch, share on Twitter
