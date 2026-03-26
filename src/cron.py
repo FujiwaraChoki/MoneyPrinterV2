@@ -3,7 +3,7 @@ import sys
 
 from status import *
 from cache import get_accounts
-from config import get_verbose
+from config import get_verbose, get_llm_provider, get_openrouter_model
 from classes.Tts import TTS
 from classes.Twitter import Twitter
 from classes.YouTube import YouTube
@@ -32,7 +32,9 @@ def main():
     account_id = str(sys.argv[2])
     model = str(sys.argv[3]) if len(sys.argv) > 3 else None
 
-    if model:
+    if get_llm_provider() == "openrouter":
+        select_model(model or get_openrouter_model())
+    elif model:
         select_model(model)
     else:
         error("No Ollama model specified. Pass model name as third argument.")

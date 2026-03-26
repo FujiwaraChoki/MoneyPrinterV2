@@ -6,9 +6,31 @@ cd "$ROOT_DIR"
 
 echo "[setup] Root: $ROOT_DIR"
 
+FRESH_CONFIG=false
 if [[ ! -f "config.json" ]]; then
   cp config.example.json config.json
   echo "[setup] Created config.json from config.example.json"
+  FRESH_CONFIG=true
+fi
+
+# On a fresh config, ask the user which LLM provider they want before
+# probing any services. This avoids blocking OpenRouter users with
+# an unnecessary Ollama connectivity check.
+if [[ "$FRESH_CONFIG" == "true" ]]; then
+  echo ""
+  echo "[setup] Which LLM provider would you like to use?"
+  echo "  1) ollama   — run models locally (requires Ollama installed)"
+  echo "  2) openrouter — use cloud models via openrouter.ai API key"
+  read -rp "[setup] Enter 1 or 2 [default: 1]: " provider_choice
+  if [[ "$provider_choice" == "2" ]]; then
+    python3 -c "
+import json
+with open('config.json', 'r') as f: cfg = json.load(f)
+cfg['llm_provider'] = 'openrouter'
+with open('config.json', 'w') as f: json.dump(cfg, f, indent=2); f.write('\n')
+"
+    echo "[setup] Set llm_provider=openrouter in config.json"
+  fi
 fi
 
 PYTHON_BIN="${ROOT_DIR}/venv/bin/python"
@@ -34,9 +56,14 @@ if [[ -d "$HOME/Library/Application Support/Firefox/Profiles" ]]; then
   fi
 fi
 
-OLLAMA_MODELS_JSON="$(curl -sS http://127.0.0.1:11434/api/tags || true)"
+LLM_PROVIDER="$(python3 -c "import json; print(json.load(open('config.json')).get('llm_provider','ollama'))" 2>/dev/null || echo "ollama")"
+if [[ "$LLM_PROVIDER" != "openrouter" ]]; then
+  OLLAMA_MODELS_JSON="$(curl -sS http://127.0.0.1:11434/api/tags || true)"
+else
+  echo "[setup] LLM provider is openrouter — skipping Ollama check"
+fi
 
-MAGICK_PATH="$MAGICK_PATH" FIREFOX_PROFILE="$FIREFOX_PROFILE" "$PYTHON_BIN" - <<'PY'
+MAGICK_PATH="$MAGICK_PATH" FIREFOX_PROFILE="$FIREFOX_PROFILE" LLM_PROVIDER="$LLM_PROVIDER" "$PYTHON_BIN" - <<'PY'
 import json
 import os
 import subprocess
@@ -67,39 +94,41 @@ firefox_profile = os.environ.get("FIREFOX_PROFILE", "")
 if firefox_profile and not cfg.get("firefox_profile"):
     cfg["firefox_profile"] = firefox_profile
 
-# Pick a reasonable installed Ollama model.
-ollama_model = cfg.get("ollama_model", "llama3.2:3b")
-installed = []
-try:
-    out = subprocess.check_output(
-        ["curl", "-sS", "http://127.0.0.1:11434/api/tags"],
-        text=True,
-    )
-    payload = json.loads(out)
-    installed = [m.get("name") for m in payload.get("models", []) if m.get("name")]
-except Exception:
+# Pick a reasonable installed Ollama model (skip when using OpenRouter).
+llm_provider = os.environ.get("LLM_PROVIDER", cfg.get("llm_provider", "ollama"))
+if llm_provider != "openrouter":
+    ollama_model = cfg.get("ollama_model", "llama3.2:3b")
     installed = []
+    try:
+        out = subprocess.check_output(
+            ["curl", "-sS", "http://127.0.0.1:11434/api/tags"],
+            text=True,
+        )
+        payload = json.loads(out)
+        installed = [m.get("name") for m in payload.get("models", []) if m.get("name")]
+    except Exception:
+        installed = []
 
-if installed:
-    preferred = [
-        "glm-4.7-flash:latest",
-        "qwen3:14b",
-        "phi4:latest",
-        "phi4:14b",
-        "gpt-oss:20b",
-        "deepseek-r1:32b",
-    ]
-    selected = None
-    for candidate in preferred:
-        if candidate in installed:
-            selected = candidate
-            break
+    if installed:
+        preferred = [
+            "glm-4.7-flash:latest",
+            "qwen3:14b",
+            "phi4:latest",
+            "phi4:14b",
+            "gpt-oss:20b",
+            "deepseek-r1:32b",
+        ]
+        selected = None
+        for candidate in preferred:
+            if candidate in installed:
+                selected = candidate
+                break
 
-    if selected is None:
-        selected = installed[0]
+        if selected is None:
+            selected = installed[0]
 
-    if ollama_model not in installed or ollama_model != selected:
-        cfg["ollama_model"] = selected
+        if ollama_model not in installed or ollama_model != selected:
+            cfg["ollama_model"] = selected
 
 with open(cfg_path, "w", encoding="utf-8") as f:
     json.dump(cfg, f, indent=2)
