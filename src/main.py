@@ -16,6 +16,8 @@ from prettytable import PrettyTable
 from classes.Outreach import Outreach
 from classes.AFM import AffiliateMarketing
 from llm_provider import list_models, select_model, get_active_model
+from analytics import fetch_all_metrics
+from report import print_niche_summary, export_csv
 
 
 def main():

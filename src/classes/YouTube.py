@@ -668,6 +668,9 @@ class YouTube:
         Returns:
             path (str): The path to the generated MP4 File.
         """
+        # Reset pending video ID for this generation session
+        self._pending_video_id = str(uuid4())
+
         # Generate the Topic
         self.generate_topic()
 
