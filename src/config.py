@@ -77,7 +77,7 @@ def get_llm_provider() -> str:
         provider (str): "ollama" (default) or "openrouter"
     """
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
-        return json.load(file).get("llm_provider", "ollama")
+        return json.load(file).get("llm_provider", "ollama").strip().lower()
 
 def get_openrouter_api_key() -> str:
     """

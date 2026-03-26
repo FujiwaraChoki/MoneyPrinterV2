@@ -6,9 +6,31 @@ cd "$ROOT_DIR"
 
 echo "[setup] Root: $ROOT_DIR"
 
+FRESH_CONFIG=false
 if [[ ! -f "config.json" ]]; then
   cp config.example.json config.json
   echo "[setup] Created config.json from config.example.json"
+  FRESH_CONFIG=true
+fi
+
+# On a fresh config, ask the user which LLM provider they want before
+# probing any services. This avoids blocking OpenRouter users with
+# an unnecessary Ollama connectivity check.
+if [[ "$FRESH_CONFIG" == "true" ]]; then
+  echo ""
+  echo "[setup] Which LLM provider would you like to use?"
+  echo "  1) ollama   — run models locally (requires Ollama installed)"
+  echo "  2) openrouter — use cloud models via openrouter.ai API key"
+  read -rp "[setup] Enter 1 or 2 [default: 1]: " provider_choice
+  if [[ "$provider_choice" == "2" ]]; then
+    python3 -c "
+import json
+with open('config.json', 'r') as f: cfg = json.load(f)
+cfg['llm_provider'] = 'openrouter'
+with open('config.json', 'w') as f: json.dump(cfg, f, indent=2); f.write('\n')
+"
+    echo "[setup] Set llm_provider=openrouter in config.json"
+  fi
 fi
 
 PYTHON_BIN="${ROOT_DIR}/venv/bin/python"
