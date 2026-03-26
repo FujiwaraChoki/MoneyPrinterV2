@@ -1,4 +1,5 @@
 import os
+import json
 
 from config import ROOT_DIR, get_google_api_credentials_path
 from cost_tracker import _read_analytics, _write_analytics
@@ -24,25 +25,48 @@ def _get_youtube_service():
     creds = None
 
     if os.path.exists(TOKEN_PATH):
-        creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
+        try:
+            creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
+        except (json.JSONDecodeError, ValueError, OSError) as e:
+            warning(f"Token file corrupted, re-authenticating: {e}")
+            creds = None
 
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
+            try:
+                creds.refresh(Request())
+            except Exception as e:
+                warning(f"Token refresh failed, re-authenticating: {e}")
+                creds = None
+
+        if not creds or not creds.valid:
             credentials_path = get_google_api_credentials_path()
             if not credentials_path or not os.path.exists(credentials_path):
                 error(
                     "Google API credentials not configured. Set google_api_credentials_path in config.json."
                 )
                 return None
-            flow = InstalledAppFlow.from_client_secrets_file(credentials_path, SCOPES)
-            creds = flow.run_local_server(port=0, open_browser=False)
+            try:
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    credentials_path, SCOPES
+                )
+                creds = flow.run_local_server(port=0, open_browser=False)
+            except (ValueError, OSError) as e:
+                error(f"OAuth flow failed: {e}")
+                return None
 
-        with open(TOKEN_PATH, "w") as token_file:
-            token_file.write(creds.to_json())
+        try:
+            with open(TOKEN_PATH, "w") as token_file:
+                token_file.write(creds.to_json())
+            os.chmod(TOKEN_PATH, 0o600)
+        except OSError as e:
+            warning(f"Failed to save token file: {e}")
 
-    return build("youtube", "v3", credentials=creds)
+    try:
+        return build("youtube", "v3", credentials=creds)
+    except Exception as e:
+        error(f"Failed to build YouTube service: {e}")
+        return None
 
 
 def fetch_metrics_for_video(video_id: str) -> dict | None:

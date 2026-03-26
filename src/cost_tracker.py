@@ -12,17 +12,31 @@ def _read_analytics(analytics_path: str | None = None) -> dict:
     path = analytics_path or _get_default_analytics_path()
     if not os.path.exists(path):
         return {"videos": [], "pending_costs": []}
-    with open(path, "r") as f:
-        data = json.load(f)
-    if "pending_costs" not in data:
-        data["pending_costs"] = []
+    try:
+        with open(path, "r") as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        from status import warning
+
+        warning(f"Failed to read analytics file ({path}): {e}")
+        return {"videos": [], "pending_costs": []}
+    if not isinstance(data, dict):
+        return {"videos": [], "pending_costs": []}
+    data.setdefault("videos", [])
+    data.setdefault("pending_costs", [])
     return data
 
 
 def _write_analytics(data: dict, analytics_path: str | None = None) -> None:
     path = analytics_path or _get_default_analytics_path()
-    with open(path, "w") as f:
-        json.dump(data, f, indent=2)
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as f:
+            json.dump(data, f, indent=2)
+    except (OSError, TypeError) as e:
+        from status import error
+
+        error(f"Failed to write analytics file ({path}): {e}")
 
 
 def record_image_cost(
