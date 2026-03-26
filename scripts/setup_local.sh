@@ -34,9 +34,14 @@ if [[ -d "$HOME/Library/Application Support/Firefox/Profiles" ]]; then
   fi
 fi
 
-OLLAMA_MODELS_JSON="$(curl -sS http://127.0.0.1:11434/api/tags || true)"
+LLM_PROVIDER="$(python3 -c "import json; print(json.load(open('config.json')).get('llm_provider','ollama'))" 2>/dev/null || echo "ollama")"
+if [[ "$LLM_PROVIDER" != "openrouter" ]]; then
+  OLLAMA_MODELS_JSON="$(curl -sS http://127.0.0.1:11434/api/tags || true)"
+else
+  echo "[setup] LLM provider is openrouter — skipping Ollama check"
+fi
 
-MAGICK_PATH="$MAGICK_PATH" FIREFOX_PROFILE="$FIREFOX_PROFILE" "$PYTHON_BIN" - <<'PY'
+MAGICK_PATH="$MAGICK_PATH" FIREFOX_PROFILE="$FIREFOX_PROFILE" LLM_PROVIDER="$LLM_PROVIDER" "$PYTHON_BIN" - <<'PY'
 import json
 import os
 import subprocess
@@ -67,39 +72,41 @@ firefox_profile = os.environ.get("FIREFOX_PROFILE", "")
 if firefox_profile and not cfg.get("firefox_profile"):
     cfg["firefox_profile"] = firefox_profile
 
-# Pick a reasonable installed Ollama model.
-ollama_model = cfg.get("ollama_model", "llama3.2:3b")
-installed = []
-try:
-    out = subprocess.check_output(
-        ["curl", "-sS", "http://127.0.0.1:11434/api/tags"],
-        text=True,
-    )
-    payload = json.loads(out)
-    installed = [m.get("name") for m in payload.get("models", []) if m.get("name")]
-except Exception:
+# Pick a reasonable installed Ollama model (skip when using OpenRouter).
+llm_provider = os.environ.get("LLM_PROVIDER", cfg.get("llm_provider", "ollama"))
+if llm_provider != "openrouter":
+    ollama_model = cfg.get("ollama_model", "llama3.2:3b")
     installed = []
+    try:
+        out = subprocess.check_output(
+            ["curl", "-sS", "http://127.0.0.1:11434/api/tags"],
+            text=True,
+        )
+        payload = json.loads(out)
+        installed = [m.get("name") for m in payload.get("models", []) if m.get("name")]
+    except Exception:
+        installed = []
 
-if installed:
-    preferred = [
-        "glm-4.7-flash:latest",
-        "qwen3:14b",
-        "phi4:latest",
-        "phi4:14b",
-        "gpt-oss:20b",
-        "deepseek-r1:32b",
-    ]
-    selected = None
-    for candidate in preferred:
-        if candidate in installed:
-            selected = candidate
-            break
+    if installed:
+        preferred = [
+            "glm-4.7-flash:latest",
+            "qwen3:14b",
+            "phi4:latest",
+            "phi4:14b",
+            "gpt-oss:20b",
+            "deepseek-r1:32b",
+        ]
+        selected = None
+        for candidate in preferred:
+            if candidate in installed:
+                selected = candidate
+                break
 
-    if selected is None:
-        selected = installed[0]
+        if selected is None:
+            selected = installed[0]
 
-    if ollama_model not in installed or ollama_model != selected:
-        cfg["ollama_model"] = selected
+        if ollama_model not in installed or ollama_model != selected:
+            cfg["ollama_model"] = selected
 
 with open(cfg_path, "w", encoding="utf-8") as f:
     json.dump(cfg, f, indent=2)
