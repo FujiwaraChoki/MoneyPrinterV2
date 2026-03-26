@@ -1,10 +1,10 @@
 # MoneyPrinter V2
 
-<p align="center">
-  <a href="https://www.post-bridge.com/?ref=moneyprinter">
-    <img src="docs/repo/PostBridgeBanner.png" alt="Post Bridge integration banner" width="720" />
-  </a>
-</p>
+Sponsored by Post Bridge
+
+<a href="https://www.post-bridge.com/?ref=moneyprinter">
+  <img src="docs/repo/PostBridgeBanner.png" alt="Post Bridge integration banner" width="720" />
+</a>
 
 
 [![madewithlove](https://img.shields.io/badge/made_with-%E2%9D%A4-red?style=for-the-badge&labelColor=orange)](https://github.com/FujiwaraChoki/MoneyPrinterV2)
