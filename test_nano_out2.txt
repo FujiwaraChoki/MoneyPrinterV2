@@ -1,0 +1,12 @@
+import requests
+payload = {
+    'contents': [{'parts': [{'text': 'A beautiful mountain'}]}],
+    'generationConfig': {
+        'responseModalities': ['IMAGE'],
+        'imageConfig': {'aspectRatio': '9:16'}
+    }
+}
+url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent'
+res = requests.post(url, headers={'x-goog-api-key': 'AIzaSyAzjE3dGNdGmKov9o-QxjYuSclik4ZJKrE', 'Content-Type': 'application/json'}, json=payload)
+print(res.status_code)
+print(res.text[:500])

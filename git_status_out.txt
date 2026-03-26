@@ -1,0 +1,27 @@
+﻿add_subtitles.py
+fonts/Montserrat-ExtraBold.ttf
+geckodriver.log
+git_status_out.txt
+output_video.mp4
+output_video_subtitled.mp4
+resume_combine.py
+split_videos.py
+src/static/style.css
+src/templates/index.html
+src/web.py
+"start_web - K\304\261sayol.lnk"
+start_web.bat
+test.py
+test_firefox.py
+test_nano.py
+test_tts.mp3
+video_05TEMP_MPY_wvf_snd.mp3
+src/classes/AFM.py
+src/classes/Tts.py
+src/classes/Twitter.py
+src/classes/YouTube.py
+src/config.py
+src/llm_provider.py
+src/main.py
+src/status.py
+src/utils.py

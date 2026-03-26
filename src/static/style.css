@@ -1,0 +1,212 @@
+/* Pixel/Retro Font Import */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+:root {
+  --bg-color: #0d0e15;
+  --text-color: #00ff41;  /* Terminal green */
+  --highlight-color: #ff0055;
+  --border-color: #4a4a4a;
+  --panel-bg: #1a1a24;
+}
+
+body {
+  font-family: 'Press Start 2P', monospace;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  margin: 0;
+  padding: 20px;
+  line-height: 1.6;
+  font-size: 12px;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* CRT Scanlines Effect */
+body::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%,
+    rgba(0, 0, 0, 0.25) 50%
+  ), linear-gradient(
+    90deg,
+    rgba(255, 0, 0, 0.06),
+    rgba(0, 255, 0, 0.02),
+    rgba(0, 0, 255, 0.06)
+  );
+  z-index: 2;
+  background-size: 100% 4px, 6px 100%;
+  pointer-events: none;
+}
+
+h1 {
+  text-align: center;
+  color: var(--highlight-color);
+  text-shadow: 2px 2px 0px #000;
+  font-size: 24px;
+  margin-bottom: 40px;
+  text-transform: uppercase;
+}
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  position: relative;
+  z-index: 10; /* Above scanlines */
+}
+
+/* 8-bit Box Style */
+.panel {
+  background-color: var(--panel-bg);
+  border: 4px solid var(--border-color);
+  padding: 20px;
+  box-shadow: 
+    -4px -4px 0 0 #000,
+    4px 4px 0 0 #000,
+    inset -4px -4px 0 0 rgba(0,0,0,0.5);
+  position: relative;
+}
+
+.panel-title {
+  position: absolute;
+  top: -14px;
+  left: 10px;
+  background-color: var(--bg-color);
+  padding: 0 10px;
+  color: #fff;
+}
+
+/* Forms & Buttons */
+button {
+  font-family: 'Press Start 2P', monospace;
+  background-color: var(--text-color);
+  color: #000;
+  border: none;
+  padding: 15px 20px;
+  font-size: 12px;
+  cursor: pointer;
+  text-transform: uppercase;
+  width: 100%;
+  margin-top: 10px;
+  position: relative;
+  box-shadow: 
+    inset -4px -4px 0 0 rgba(0,0,0,0.3),
+    inset 4px 4px 0 0 rgba(255,255,255,0.3);
+}
+
+button:hover {
+  background-color: #00cc33;
+  transform: scale(0.98);
+}
+
+button:active {
+  box-shadow: 
+    inset 4px 4px 0 0 rgba(0,0,0,0.3),
+    inset -4px -4px 0 0 rgba(255,255,255,0.3);
+}
+
+button:disabled {
+  background-color: #555;
+  color: #888;
+  cursor: not-allowed;
+}
+
+select, input {
+  font-family: 'Press Start 2P', monospace;
+  background-color: #000;
+  color: var(--text-color);
+  border: 4px solid var(--border-color);
+  padding: 10px;
+  width: calc(100% - 28px);
+  margin-bottom: 20px;
+  font-size: 10px;
+}
+
+select:focus, input:focus {
+  outline: none;
+  border-color: var(--highlight-color);
+}
+
+label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 10px;
+  color: #aaa;
+}
+
+/* Progress area */
+.progress-bar-container {
+  width: 100%;
+  height: 20px;
+  background-color: #000;
+  border: 2px solid var(--text-color);
+  margin-top: 20px;
+  position: relative;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background-color: var(--highlight-color);
+  width: 0%;
+  transition: width 0.3s;
+}
+
+.status-text {
+  margin-top: 10px;
+  font-size: 10px;
+  min-height: 14px;
+}
+
+.video-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.video-list li {
+  padding: 10px;
+  border-bottom: 2px dashed var(--border-color);
+  font-size: 10px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.video-list li:hover {
+  background-color: rgba(0,255,65,0.1);
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.stat-box {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding: 10px;
+  background: #000;
+  border: 2px solid var(--border-color);
+}
+
+/* Blink Animation for errors or alerts */
+.blink {
+  animation: blinker 1s linear infinite;
+}
+
+@keyframes blinker {
+  50% { opacity: 0; }
+}
+
+.error-text {
+  color: #ff0000;
+}

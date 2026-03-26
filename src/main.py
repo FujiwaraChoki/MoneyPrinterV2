@@ -147,7 +147,6 @@ def main():
                 )
 
                 while True:
-                    rem_temp_files()
                     info("\n============ OPTIONS ============", False)
 
                     for idx, youtube_option in enumerate(YOUTUBE_OPTIONS):
@@ -160,6 +159,7 @@ def main():
                     tts = TTS()
 
                     if user_input == 1:
+                        rem_temp_files()  # Clean only before new video
                         youtube.generate_video(tts)
                         upload_to_yt = question("Do you want to upload this video to YouTube? (Yes/No): ")
                         if upload_to_yt.lower() == "yes":
@@ -444,41 +444,47 @@ if __name__ == "__main__":
     # Fetch MP3 Files
     fetch_songs()
 
-    # Select Ollama model — use config value if set, otherwise pick interactively
-    configured_model = get_ollama_model()
-    if configured_model:
-        select_model(configured_model)
-        success(f"Using configured model: {configured_model}")
+    # Determine LLM provider: Gemini takes priority, else Ollama
+    gemini_key = get_gemini_llm_api_key()
+    if gemini_key:
+        gemini_model = get_gemini_llm_model()
+        success(f"Using Gemini LLM: {gemini_model}")
     else:
-        try:
-            models = list_models()
-        except Exception as e:
-            error(f"Could not connect to Ollama: {e}")
-            sys.exit(1)
-
-        if not models:
-            error("No models found on Ollama. Pull a model first (e.g. 'ollama pull llama3.2:3b').")
-            sys.exit(1)
-
-        info("\n========== OLLAMA MODELS =========", False)
-        for idx, model_name in enumerate(models):
-            print(colored(f" {idx + 1}. {model_name}", "cyan"))
-        info("==================================\n", False)
-
-        model_choice = None
-        while model_choice is None:
-            raw = input(colored("Select a model: ", "magenta")).strip()
+        # Select Ollama model — use config value if set, otherwise pick interactively
+        configured_model = get_ollama_model()
+        if configured_model:
+            select_model(configured_model)
+            success(f"Using configured Ollama model: {configured_model}")
+        else:
             try:
-                choice_idx = int(raw) - 1
-                if 0 <= choice_idx < len(models):
-                    model_choice = models[choice_idx]
-                else:
-                    warning("Invalid selection. Try again.")
-            except ValueError:
-                warning("Please enter a number.")
+                models = list_models()
+            except Exception as e:
+                error(f"Could not connect to Ollama: {e}")
+                sys.exit(1)
 
-        select_model(model_choice)
-        success(f"Using model: {model_choice}")
+            if not models:
+                error("No models found on Ollama. Pull a model first (e.g. 'ollama pull llama3.2:3b').")
+                sys.exit(1)
+
+            info("\n========== OLLAMA MODELS =========", False)
+            for idx, model_name in enumerate(models):
+                print(colored(f" {idx + 1}. {model_name}", "cyan"))
+            info("==================================\n", False)
+
+            model_choice = None
+            while model_choice is None:
+                raw = input(colored("Select a model: ", "magenta")).strip()
+                try:
+                    choice_idx = int(raw) - 1
+                    if 0 <= choice_idx < len(models):
+                        model_choice = models[choice_idx]
+                    else:
+                        warning("Invalid selection. Try again.")
+                except ValueError:
+                    warning("Please enter a number.")
+
+            select_model(model_choice)
+            success(f"Using model: {model_choice}")
 
     while True:
         main()

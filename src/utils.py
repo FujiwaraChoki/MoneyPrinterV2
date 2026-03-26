@@ -9,6 +9,26 @@ from config import *
 
 DEFAULT_SONG_ARCHIVE_URLS = []
 
+def get_firefox_binary() -> str:
+    import subprocess
+    cmd = ['powershell.exe', '-Command', "(Get-ItemProperty 'HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\firefox.exe' -ErrorAction SilentlyContinue).'(default)'"]
+    try:
+        out = subprocess.check_output(cmd).decode('utf-8').strip()
+        if out and os.path.exists(out):
+            return out
+    except Exception:
+        pass
+    
+    cmd = ['powershell.exe', '-Command', "(Get-ItemProperty 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\firefox.exe' -ErrorAction SilentlyContinue).'(default)'"]
+    try:
+        out = subprocess.check_output(cmd).decode('utf-8').strip()
+        if out and os.path.exists(out):
+            return out
+    except Exception:
+        pass
+        
+    return ""
+
 
 def close_running_selenium_instances() -> None:
     """

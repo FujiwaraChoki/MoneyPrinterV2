@@ -62,6 +62,11 @@ class AffiliateMarketing:
         # Set the service
         self.service: Service = Service(GeckoDriverManager().install())
 
+        # Configure Firefox Binary
+        firefox_bin = get_firefox_binary()
+        if firefox_bin:
+            self.options.binary_location = firefox_bin
+
         # Initialize the browser
         self.browser: webdriver.Firefox = webdriver.Firefox(
             service=self.service, options=self.options

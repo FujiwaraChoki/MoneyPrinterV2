@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MoneyPrinter V2</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+  <h1>💸 MoneyPrinter V2 💸</h1>
+
+  <div class="container">
+    
+    <!-- LEFT PANEL: Controls -->
+    <div class="panel">
+      <div class="panel-title">CONTROL DECK</div>
+      
+      <label for="account-select">PLAYER (YouTube Account):</label>
+      <select id="account-select">
+        <option value="">LOADING...</option>
+      </select>
+
+      <div style="margin: 15px 0;">
+        <label style="cursor: pointer;">
+          <input type="checkbox" id="upload-checkbox" style="width: auto; margin-right: 8px;" checked>
+          UPLOAD TO YOUTUBE
+        </label>
+      </div>
+
+      <button id="btn-generate" onclick="startGeneration()">[ START GENERATION ]</button>
+
+      
+      <div id="status-area" style="display: none; margin-top: 30px;">
+        <div class="status-text blink" id="status-label">INITIALIZING...</div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="progress-bar"></div>
+        </div>
+        <div class="error-text" id="error-label" style="margin-top: 10px;"></div>
+      </div>
+
+      <div class="panel-title" style="top: auto; bottom: -14px;">GAME STATS</div>
+      <div style="margin-top: 40px;">
+        <div class="stat-box">
+          <span>IMAGES (.png):</span><span id="stat-images">0</span>
+        </div>
+        <div class="stat-box">
+          <span>AUDIO (.wav):</span><span id="stat-audio">0</span>
+        </div>
+        <div class="stat-box">
+          <span>SUBS (.srt):</span><span id="stat-srt">0</span>
+        </div>
+        <div class="stat-box">
+          <span>SONGS:</span><span id="stat-songs">0</span>
+        </div>
+        <button onclick="refreshStats()" style="margin-top:5px; padding: 10px;">REFRESH STATS</button>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: Settings -->
+    <div class="panel" style="overflow-y: auto; max-height: 500px;">
+      <div class="panel-title">GAME SETTINGS</div>
+      <form id="settings-form" onsubmit="saveSettings(event)">
+        <div id="settings-container">LOADING SETTINGS...</div>
+        <button type="submit" id="btn-save-settings">[ SAVE SETTINGS ]</button>
+      </form>
+      <div id="settings-msg" class="blink" style="color: yellow; margin-top:10px; font-size: 10px;"></div>
+    </div>
+
+    <!-- BOTTOM PANEL: Videos -->
+    <div class="panel full-width">
+      <div class="panel-title">INVENTORY (VIDEOS)</div>
+      <ul class="video-list" id="video-list">
+        <li>LOADING INVENTORY...</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <script>
+    let pollInterval = null;
+    let currentConfig = {};
+
+    async function fetchAccounts() {
+      try {
+        const res = await fetch('/api/accounts');
+        const accs = await res.json();
+        const sel = document.getElementById('account-select');
+        sel.innerHTML = '';
+        if (accs.length === 0) {
+          sel.innerHTML = '<option>NO ACCOUNTS FOUND</option>';
+          document.getElementById('btn-generate').disabled = true;
+          return;
+        }
+        accs.forEach((acc, index) => {
+          let opt = document.createElement('option');
+          opt.value = index;
+          opt.innerText = `${acc.nickname} (${acc.niche})`;
+          sel.appendChild(opt);
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    async function fetchStats() {
+      try {
+        const resA = await fetch('/api/assets');
+        const assets = await resA.json();
+        document.getElementById('stat-images').innerText = assets.images;
+        document.getElementById('stat-audio').innerText = assets.audio;
+        document.getElementById('stat-srt').innerText = assets.srt;
+
+        const resS = await fetch('/api/songs');
+        const songs = await resS.json();
+        document.getElementById('stat-songs').innerText = songs.length;
+      } catch (e) { console.error(e); }
+    }
+
+    async function fetchVideos() {
+      try {
+        const res = await fetch('/api/videos');
+        const videos = await res.json();
+        const list = document.getElementById('video-list');
+        list.innerHTML = '';
+        if (videos.length === 0) {
+          list.innerHTML = '<li>INVENTORY EMPTY (NO MP4 FILES)</li>';
+          return;
+        }
+        videos.forEach(v => {
+          let li = document.createElement('li');
+          li.innerHTML = `<span>${v.name}</span> <span>${v.size_mb} MB | ${v.modified}</span>`;
+          list.appendChild(li);
+        });
+      } catch(e) { console.error(e); }
+    }
+
+    async function fetchConfig() {
+      try {
+        const res = await fetch('/api/config');
+        currentConfig = await res.json();
+        const container = document.getElementById('settings-container');
+        container.innerHTML = '';
+        
+        // Allowed keys to show
+        for (const [key, value] of Object.entries(currentConfig)) {
+            if (key === "email") continue; // skip nested for simplicity
+            
+            let wrap = document.createElement('div');
+            wrap.style.marginBottom = "15px";
+
+            let lbl = document.createElement('label');
+            lbl.innerText = key.toUpperCase().replace(/_/g, ' ');
+            wrap.appendChild(lbl);
+
+            let inp = document.createElement('input');
+            inp.name = key;
+            inp.id = `cfg_${key}`;
+            inp.style.marginBottom = "0px";
+
+            if (typeof value === "boolean") {
+                inp.type = "checkbox";
+                inp.checked = value;
+                inp.style.width = "auto";
+                // Layout adjustment for checkbox
+                wrap.style.display = "flex";
+                wrap.style.alignItems = "center";
+                wrap.style.gap = "10px";
+                lbl.style.marginBottom = "0";
+            } else if (typeof value === "number") {
+                inp.type = "number";
+                inp.value = value;
+            } else {
+                inp.type = "text";
+                inp.value = value;
+            }
+            wrap.appendChild(inp);
+            container.appendChild(wrap);
+        }
+      } catch(e) { console.error(e); }
+    }
+
+    async function saveSettings(e) {
+      e.preventDefault();
+      const payload = {};
+      const inputs = document.querySelectorAll('#settings-container input');
+      inputs.forEach(inp => {
+          if (inp.type === "checkbox") {
+              payload[inp.name] = inp.checked;
+          } else if (inp.type === "number") {
+              payload[inp.name] = Number(inp.value);
+          } else {
+              payload[inp.name] = inp.value;
+          }
+      });
+
+      const msg = document.getElementById('settings-msg');
+      try {
+          msg.innerText = "SAVING...";
+          const res = await fetch('/api/config', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify(payload)
+          });
+          if(res.ok) {
+              msg.innerText = "SETTINGS SAVED!";
+              setTimeout(() => { msg.innerText = ""; }, 3000);
+          } else { throw new Error("Server error"); }
+      } catch (err) {
+          msg.innerText = "ERROR SAVING SETTINGS";
+      }
+    }
+
+    function refreshStats() {
+      fetchStats();
+      fetchVideos();
+    }
+
+    async function startGeneration() {
+      const idx = document.getElementById('account-select').value;
+      const upload = document.getElementById('upload-checkbox').checked;
+      if (idx === "") return;
+
+      document.getElementById('btn-generate').disabled = true;
+      document.getElementById('status-area').style.display = 'block';
+      document.getElementById('error-label').innerText = '';
+      
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({account_index: parseInt(idx), upload_video: upload})
+        });
+        
+        if (!res.ok) {
+          const err = await res.json();
+          alert('Error: ' + err.error);
+          document.getElementById('btn-generate').disabled = false;
+          return;
+        }
+
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = setInterval(pollStatus, 2000);
+      } catch (e) { console.error(e); }
+    }
+
+    async function pollStatus() {
+      try {
+        const res = await fetch('/api/generation-status');
+        const state = await res.json();
+
+        document.getElementById('status-label').innerText = state.step.toUpperCase();
+        document.getElementById('progress-bar').style.width = state.progress + '%';
+        
+        fetchStats();
+
+        if (state.error) {
+          clearInterval(pollInterval);
+          document.getElementById('btn-generate').disabled = false;
+          document.getElementById('error-label').innerText = 'ERROR: ' + state.error;
+          document.getElementById('status-label').classList.remove('blink');
+        } else if (!state.running && state.progress === 100) {
+          clearInterval(pollInterval);
+          document.getElementById('btn-generate').disabled = false;
+          document.getElementById('status-label').innerText = 'MISSION ACCOMPLISHED!';
+          document.getElementById('status-label').classList.remove('blink');
+          refreshStats();
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    window.onload = () => {
+      fetchAccounts();
+      fetchConfig();
+      refreshStats();
+    };
+  </script>
+</body>
+</html>
