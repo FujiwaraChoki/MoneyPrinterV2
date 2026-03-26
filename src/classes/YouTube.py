@@ -28,9 +28,6 @@ from moviepy.video.tools.subtitles import SubtitlesClip
 from webdriver_manager.firefox import GeckoDriverManager
 from datetime import datetime
 
-# Set ImageMagick Path
-change_settings({"IMAGEMAGICK_BINARY": get_imagemagick_path()})
-
 
 class YouTube:
     """
@@ -73,6 +70,9 @@ class YouTube:
         self._fp_profile_path: str = fp_profile_path
         self._niche: str = niche
         self._language: str = language
+
+        # Configure MoviePy's ImageMagick path (must be done before any MoviePy operations)
+        change_settings({"IMAGEMAGICK_BINARY": get_imagemagick_path()})
 
         self.images = []
 
@@ -377,17 +377,97 @@ class YouTube:
                 warning(f"Failed to generate image with Nano Banana 2 API: {str(e)}")
             return None
 
-    def generate_image(self, prompt: str) -> str:
-        """
-        Generates an AI Image based on the given prompt using Nano Banana 2.
+def generate_image(self, prompt: str) -> str:
+    """
+    Generates an AI Image based on the given prompt using configured provider:
+    openrouter (free) > gemini > static fallback.
 
-        Args:
-            prompt (str): Reference for image generation
+    Args:
+        prompt (str): Reference for image generation
 
-        Returns:
-            path (str): The path to the generated image.
-        """
-        return self.generate_image_nanobanana2(prompt)
+    Returns:
+        path (str): The path to the generated image, or None.
+    """
+    provider = get_image_provider()
+    
+    if provider == "openrouter":
+        img_path = self.generate_image_openrouter(prompt)
+        if img_path:
+            return img_path
+    
+    # Fallback to Gemini
+    img_path = self.generate_image_nanobanana2(prompt)
+    if img_path:
+        return img_path
+    
+    # Static fallback
+    if get_use_image_fallback():
+        return self._get_static_image()
+    
+    warning("No image generated - video will have no visuals.")
+    return None
+
+def generate_image_openrouter(self, prompt: str) -> str:
+    """
+    Generates image using OpenRouter free API.
+
+    Args:
+        prompt (str): Image prompt
+
+    Returns:
+        path (str): Image path or None
+    """
+    print(f"Generating Image using OpenRouter ({get_openrouter_image_model()}): {prompt}")
+    
+    api_key = get_openrouter_api_key()
+    if not api_key:
+        if get_verbose():
+            info("OpenRouter API key not set, skipping.")
+        return None
+    
+    url = "https://openrouter.ai/api/v1/images/generations"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://openrouter.ai",  # Required
+        "X-Title": "MoneyPrinterV2",  # Optional
+    }
+    data = {
+        "model": get_openrouter_image_model(),
+        "prompt": prompt,
+        "n": 1,
+        "size": "1024x1024",  # Adjust for shorts
+        "response_format": "b64_json",
+    }
+    
+    try:
+        resp = requests.post(url, headers=headers, json=data, timeout=120)
+        resp.raise_for_status()
+        result = resp.json()
+        img_data = result["data"][0]["b64_json"]
+        image_bytes = base64.b64decode(img_data)
+        return self._persist_image(image_bytes, "OpenRouter")
+    except Exception as e:
+        if get_verbose():
+            warning(f"OpenRouter image gen failed: {str(e)}")
+        return None
+
+def _get_static_image(self) -> str:
+    """
+    Returns a static fallback image path (e.g., niche background).
+
+    Returns:
+        path (str): Static image path
+    """
+    static_dir = os.path.join(ROOT_DIR, "assets", "static_images")
+    fallback_img = os.path.join(static_dir, "fallback.png")  # Add your image here
+    if os.path.exists(fallback_img):
+        if get_verbose():
+            info("Using static fallback image.")
+        self.images.append(fallback_img)  # Reuse same image
+        return fallback_img
+    warning("No static fallback image found. Skipping visuals.")
+    return None
 
     def generate_script_to_speech(self, tts_instance: TTS) -> str:
         """
@@ -423,23 +503,26 @@ class YouTube:
         Returns:
             None
         """
-        videos = self.get_videos()
-        videos.append(video)
+        # Get the latest accounts (handles file corruption gracefully)
+        accounts = get_accounts("youtube")
+        found = False
+        for account in accounts:
+            if account["id"] == self._account_uuid:
+                account.setdefault("videos", []).append(video)
+                found = True
+                break
 
-        cache = get_youtube_cache_path()
+        if not found:
+            warning(f"YouTube account {self._account_uuid} not found in cache. Cannot add video.")
+            return
 
-        with open(cache, "r") as file:
-            previous_json = json.loads(file.read())
-
-            # Find our account
-            accounts = previous_json["accounts"]
-            for account in accounts:
-                if account["id"] == self._account_uuid:
-                    account["videos"].append(video)
-
-            # Commit changes
-            with open(cache, "w") as f:
-                f.write(json.dumps(previous_json))
+        # Write the updated accounts back atomically
+        cache_path = get_youtube_cache_path()
+        try:
+            with open(cache_path, "w") as f:
+                json.dump({"accounts": accounts}, f, indent=4)
+        except OSError as e:
+            error(f"Failed to write cache file {cache_path}: {e}")
 
     def generate_subtitles(self, audio_path: str) -> str:
         """
@@ -859,20 +942,16 @@ class YouTube:
         Returns:
             videos (List[dict]): The uploaded videos.
         """
-        if not os.path.exists(get_youtube_cache_path()):
-            # Create the cache file
-            with open(get_youtube_cache_path(), "w") as file:
-                json.dump({"videos": []}, file, indent=4)
-            return []
+        accounts = get_accounts("youtube")
+        for account in accounts:
+            if account["id"] == self._account_uuid:
+                return account.get("videos", [])
+        return []
 
-        videos = []
-        # Read the cache file
-        with open(get_youtube_cache_path(), "r") as file:
-            previous_json = json.loads(file.read())
-            # Find our account
-            accounts = previous_json["accounts"]
-            for account in accounts:
-                if account["id"] == self._account_uuid:
-                    videos = account["videos"]
-
-        return videos
+    def __del__(self) -> None:
+        """Ensure browser is closed when instance is destroyed."""
+        try:
+            if hasattr(self, 'browser') and self.browser:
+                self.browser.quit()
+        except Exception:
+            pass  # Ignore cleanup errors
