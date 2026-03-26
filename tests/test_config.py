@@ -63,6 +63,22 @@ class PostBridgeConfigTests(unittest.TestCase):
 
         self.assertEqual(post_bridge_config["platforms"], [])
 
+    def test_non_object_post_bridge_config_falls_back_to_defaults(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            self.write_config(
+                temp_dir,
+                {
+                    "post_bridge": None,
+                },
+            )
+
+            with patch.object(config, "ROOT_DIR", temp_dir):
+                post_bridge_config = config.get_post_bridge_config()
+
+        self.assertEqual(post_bridge_config["platforms"], ["tiktok", "instagram"])
+        self.assertEqual(post_bridge_config["account_ids"], [])
+        self.assertFalse(post_bridge_config["enabled"])
+
 
 if __name__ == "__main__":
     unittest.main()

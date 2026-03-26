@@ -219,6 +219,10 @@ class PostBridge:
 
         for attempt in range(1, self._max_retries + 1):
             try:
+                request_data = kwargs.get("data")
+                if hasattr(request_data, "seek"):
+                    request_data.seek(0)
+
                 response = self._session.request(
                     method,
                     url,

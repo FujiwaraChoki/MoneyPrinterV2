@@ -126,6 +126,31 @@ class PostBridgeClientTests(unittest.TestCase):
         self.assertEqual(upload_call.args[1], "https://signed-upload.example/path")
         self.assertEqual(upload_call.kwargs["headers"], {"Content-Type": "video/mp4"})
 
+    @patch("classes.PostBridge.time.sleep")
+    def test_request_rewinds_streamed_upload_body_before_retry(self, sleep_mock) -> None:
+        session = Mock()
+        session.request.side_effect = [
+            MockResponse(500, {"message": "temporary error"}),
+            MockResponse(200, {}),
+        ]
+        client = PostBridge("token", session=session)
+
+        stream = unittest.mock.mock_open(read_data=b"video").return_value
+        stream.seek = Mock()
+
+        client._request(
+            "PUT",
+            "https://signed-upload.example/path",
+            data=stream,
+            headers={"Content-Type": "video/mp4"},
+            expected_statuses={200},
+            use_default_headers=False,
+        )
+
+        self.assertEqual(stream.seek.call_count, 2)
+        stream.seek.assert_any_call(0)
+        sleep_mock.assert_called_once()
+
 
 if __name__ == "__main__":
     unittest.main()

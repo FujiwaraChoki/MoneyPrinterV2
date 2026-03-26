@@ -360,6 +360,8 @@ def get_post_bridge_config() -> dict:
         config_json = json.load(file)
 
     raw_config = config_json.get("post_bridge", {})
+    if not isinstance(raw_config, dict):
+        raw_config = {}
 
     raw_platforms = raw_config.get("platforms")
     normalized_platforms = []
