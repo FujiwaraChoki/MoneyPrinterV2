@@ -69,6 +69,47 @@ def get_headless() -> bool:
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file)["headless"]
 
+def get_llm_provider() -> str:
+    """
+    Gets the LLM provider from the config file.
+
+    Returns:
+        provider (str): The LLM provider (e.g., 'ollama' or 'groq')
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("llm_provider", "ollama")
+
+def get_groq_api_key() -> str:
+    """
+    Gets the Groq API key from the config file.
+
+    Returns:
+        api_key (str): The Groq API key
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        configured = json.load(file).get("groq_api_key", "")
+        return configured or os.environ.get("GROQ_API_KEY", "")
+
+def get_groq_model() -> str:
+    """
+    Gets the Groq model name from the config file.
+
+    Returns:
+        model (str): The Groq model name
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("groq_model", "llama-3.3-70b-versatile")
+        
+def get_groq_base_url() -> str:
+    """
+    Gets the Groq base URL from the config file.
+    
+    Returns:
+        url (str): The Groq base URL
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("groq_base_url", "https://api.groq.com/openai/v1")
+
 def get_ollama_base_url() -> str:
     """
     Gets the Ollama base URL.
