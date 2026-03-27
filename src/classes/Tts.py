@@ -1,6 +1,12 @@
 import os
 import soundfile as sf
-from kittentts import KittenTTS as KittenModel
+
+try:
+    from kittentts import KittenTTS as KittenModel
+    KITTENTTS_IMPORT_ERROR = None
+except ImportError as exc:
+    KittenModel = None
+    KITTENTTS_IMPORT_ERROR = exc
 
 from config import ROOT_DIR, get_tts_voice
 
@@ -9,6 +15,13 @@ KITTEN_SAMPLE_RATE = 24000
 
 class TTS:
     def __init__(self) -> None:
+        if KittenModel is None:
+            raise RuntimeError(
+                "KittenTTS is not available. MoneyPrinterV2 currently requires a "
+                "Python 3.12 virtual environment for TTS support. Recreate your "
+                "venv with 'py -3.12 -m venv venv' and reinstall requirements."
+            ) from KITTENTTS_IMPORT_ERROR
+
         self._model = KittenModel(KITTEN_MODEL)
         self._voice = get_tts_voice()
 

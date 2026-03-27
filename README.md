@@ -18,7 +18,9 @@ Sponsored by Post Bridge
 An Application that automates the process of making money online.
 MPV2 (MoneyPrinter Version 2) is, as the name suggests, the second version of the MoneyPrinter project. It is a complete rewrite of the original project, with a focus on a wider range of features and a more modular architecture.
 
-> **Note:** MPV2 needs Python 3.12 to function effectively.
+> **Note:** MPV2 works best on Python 3.12.
+> On Python 3.13+, the app can install, but KittenTTS-based voice generation is unavailable because its upstream dependencies do not publish compatible builds there.
+> On Windows, use `py -3.12 -m venv venv` if you need the full YouTube/TTS flow.
 > Watch the YouTube video [here](https://youtu.be/wAZ_ZSuIqfk)
 
 ## Features
@@ -49,6 +51,9 @@ cp config.example.json config.json
 
 # Create a virtual environment
 python -m venv venv
+
+# Windows: force Python 3.12 specifically
+py -3.12 -m venv venv
 
 # Activate the virtual environment - Windows
 .\venv\Scripts\activate
