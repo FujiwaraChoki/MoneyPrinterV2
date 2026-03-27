@@ -38,6 +38,12 @@ All your configurations will be in a file in the root directory, called `config.
 - `font`: `string` - The font that will be used to generate images. This should be a `.ttf` file in the `fonts/` directory.
 - `imagemagick_path`: `string` - The path to the ImageMagick binary. This is used by MoviePy to manipulate images. Install ImageMagick from [here](https://imagemagick.org/script/download.php) and set the path to the `magick.exe` on Windows, or on Linux/MacOS the path to `convert` (usually /usr/bin/convert).
 - `script_sentence_length`: `number` - The number of sentences in the generated video script (default: `4`).
+- `post_bridge`: `object`:
+    - `enabled`: `boolean` - Enables Post Bridge cross-posting after successful YouTube uploads.
+    - `api_key`: `string` - Your Post Bridge API key. If empty, MPV2 falls back to `POST_BRIDGE_API_KEY`.
+    - `platforms`: `string[]` - Platforms to target. Supported values in v1 are `tiktok` and `instagram`.
+    - `account_ids`: `number[]` - Optional fixed Post Bridge account IDs to avoid account-selection prompts.
+    - `auto_crosspost`: `boolean` - If `true`, cross-post automatically after a successful YouTube upload. If `false`, interactive runs ask and cron runs skip.
 
 ## Example
 
@@ -75,16 +81,27 @@ All your configurations will be in a file in the root directory, called `config.
   "tts_voice": "Jasper",
   "font": "bold_font.ttf",
   "imagemagick_path": "Path to magick.exe or on linux/macOS just /usr/bin/convert",
-  "script_sentence_length": 4
+  "script_sentence_length": 4,
+  "post_bridge": {
+    "enabled": false,
+    "api_key": "",
+    "platforms": ["tiktok", "instagram"],
+    "account_ids": [],
+    "auto_crosspost": false
+  }
 }
 ```
 
 ## Environment Variable Fallbacks
 
 - `GEMINI_API_KEY`: used when `nanobanana2_api_key` is empty.
+- `POST_BRIDGE_API_KEY`: used when `post_bridge.api_key` is empty.
 
 Example:
 
 ```bash
 export GEMINI_API_KEY="your_api_key_here"
+export POST_BRIDGE_API_KEY="your_post_bridge_api_key_here"
 ```
+
+See [PostBridge.md](./PostBridge.md) for the full Post Bridge setup and behavior details.
