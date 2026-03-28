@@ -10,6 +10,7 @@ In your `config.json`, you need the following attributes filled out, so that the
 {
   "twitter_language": "Any Language, formatting doesn't matter",
   "headless": true,
-  "llm": "The Large Language Model you want to use, check Configuration.md for more information",
+  "llm_provider": "openai",
+  "openai_model": "gpt-5-mini"
 }
 ```

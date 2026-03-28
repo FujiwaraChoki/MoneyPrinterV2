@@ -12,7 +12,8 @@ In your `config.json`, you need the following attributes filled out, so that the
 {
   "firefox_profile": "The path to your Firefox profile (used to log in to YouTube)",
   "headless": true,
-  "llm": "The Large Language Model you want to use to generate the video script.",
+  "llm_provider": "openai",
+  "openai_model": "gpt-5-mini",
   "image_model": "What AI Model you want to use to generate images.",
   "threads": 4,
   "is_for_kids": true

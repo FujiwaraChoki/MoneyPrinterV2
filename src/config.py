@@ -79,6 +79,16 @@ def get_ollama_base_url() -> str:
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file).get("ollama_base_url", "http://127.0.0.1:11434")
 
+def get_llm_provider() -> str:
+    """
+    Gets the configured LLM provider.
+
+    Returns:
+        provider (str): provider name
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("llm_provider", "ollama").strip().lower() or "ollama"
+
 def get_ollama_model() -> str:
     """
     Gets the Ollama model name from the config file.
@@ -88,6 +98,50 @@ def get_ollama_model() -> str:
     """
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file).get("ollama_model", "")
+
+def get_openai_base_url() -> str:
+    """
+    Gets the OpenAI API base URL.
+
+    Returns:
+        url (str): OpenAI API base URL
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("openai_base_url", "https://api.openai.com/v1")
+
+def get_openai_api_key() -> str:
+    """
+    Gets the OpenAI API key.
+
+    Returns:
+        key (str): API key
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        configured = json.load(file).get("openai_api_key", "")
+        return configured or os.environ.get("OPENAI_API_KEY", "")
+
+def get_openai_model() -> str:
+    """
+    Gets the configured OpenAI model name.
+
+    Returns:
+        model (str): OpenAI model name
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("openai_model", "")
+
+def get_configured_llm_model() -> str:
+    """
+    Gets the configured model for the active LLM provider.
+
+    Returns:
+        model (str): configured model name
+    """
+    provider = get_llm_provider()
+    if provider == "openai":
+        return get_openai_model()
+
+    return get_ollama_model()
 
 def get_twitter_language() -> str:
     """

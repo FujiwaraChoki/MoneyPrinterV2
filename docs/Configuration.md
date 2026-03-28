@@ -7,8 +7,12 @@ All your configurations will be in a file in the root directory, called `config.
 - `verbose`: `boolean` - If `true`, the application will print out more information.
 - `firefox_profile`: `string` - The path to your Firefox profile. This is used to use your Social Media Accounts without having to log in every time you run the application.
 - `headless`: `boolean` - If `true`, the application will run in headless mode. This means that the browser will not be visible.
+- `llm_provider`: `string` - Text generation provider. Supported values: `ollama`, `openai`.
 - `ollama_base_url`: `string` - Base URL of your local Ollama server (default: `http://127.0.0.1:11434`).
 - `ollama_model`: `string` - Ollama model to use for text generation (e.g. `llama3.2:3b`). If empty, the app queries Ollama at startup and lets you pick from the available models interactively.
+- `openai_base_url`: `string` - Base URL for the OpenAI API (default: `https://api.openai.com/v1`).
+- `openai_api_key`: `string` - OpenAI API key. If empty, MPV2 falls back to the `OPENAI_API_KEY` environment variable.
+- `openai_model`: `string` - OpenAI model used when `llm_provider` is `openai` (default example: `gpt-5-mini`).
 - `twitter_language`: `string` - The language that will be used to generate & post tweets.
 - `nanobanana2_api_base_url`: `string` - Nano Banana 2 API base URL (default: `https://generativelanguage.googleapis.com/v1beta`).
 - `nanobanana2_api_key`: `string` - API key for Nano Banana 2 (Gemini image API). If empty, MPV2 falls back to environment variable `GEMINI_API_KEY`.
@@ -46,8 +50,12 @@ All your configurations will be in a file in the root directory, called `config.
   "verbose": true,
   "firefox_profile": "",
   "headless": false,
+  "llm_provider": "ollama",
   "ollama_base_url": "http://127.0.0.1:11434",
   "ollama_model": "",
+  "openai_base_url": "https://api.openai.com/v1",
+  "openai_api_key": "",
+  "openai_model": "gpt-5-mini",
   "twitter_language": "English",
   "nanobanana2_api_base_url": "https://generativelanguage.googleapis.com/v1beta",
   "nanobanana2_api_key": "",
@@ -82,6 +90,7 @@ All your configurations will be in a file in the root directory, called `config.
 ## Environment Variable Fallbacks
 
 - `GEMINI_API_KEY`: used when `nanobanana2_api_key` is empty.
+- `OPENAI_API_KEY`: used when `openai_api_key` is empty.
 
 Example:
 

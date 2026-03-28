@@ -30,11 +30,12 @@ def main():
     purpose = str(sys.argv[1])
     account_id = str(sys.argv[2])
     model = str(sys.argv[3]) if len(sys.argv) > 3 else None
+    provider = str(sys.argv[4]) if len(sys.argv) > 4 else None
 
     if model:
-        select_model(model)
+        select_model(model, provider=provider)
     else:
-        error("No Ollama model specified. Pass model name as third argument.")
+        error("No model specified. Pass model name as third argument.")
         sys.exit(1)
 
     verbose = get_verbose()

@@ -15,7 +15,7 @@ from classes.YouTube import YouTube
 from prettytable import PrettyTable
 from classes.Outreach import Outreach
 from classes.AFM import AffiliateMarketing
-from llm_provider import list_models, select_model, get_active_model
+from llm_provider import list_models, select_model, get_active_model, get_active_provider
 
 def main():
     """Main entry point for the application, providing a menu-driven interface
@@ -193,7 +193,14 @@ def main():
                         user_input = int(question("Select an Option: "))
 
                         cron_script_path = os.path.join(ROOT_DIR, "src", "cron.py")
-                        command = ["python", cron_script_path, "youtube", selected_account['id'], get_active_model()]
+                        command = [
+                            "python",
+                            cron_script_path,
+                            "youtube",
+                            selected_account['id'],
+                            get_active_model(),
+                            get_active_provider(),
+                        ]
 
                         def job():
                             subprocess.run(command)
@@ -324,7 +331,14 @@ def main():
                         user_input = int(question("Select an Option: "))
 
                         cron_script_path = os.path.join(ROOT_DIR, "src", "cron.py")
-                        command = ["python", cron_script_path, "twitter", selected_account['id'], get_active_model()]
+                        command = [
+                            "python",
+                            cron_script_path,
+                            "twitter",
+                            selected_account['id'],
+                            get_active_model(),
+                            get_active_provider(),
+                        ]
 
                         def job():
                             subprocess.run(command)
@@ -444,14 +458,29 @@ if __name__ == "__main__":
     # Fetch MP3 Files
     fetch_songs()
 
-    # Select Ollama model — use config value if set, otherwise pick interactively
-    configured_model = get_ollama_model()
+    provider = get_llm_provider()
+    configured_model = get_configured_llm_model()
+
+    if provider not in ("ollama", "openai"):
+        error(f"Unsupported llm_provider '{provider}'. Use 'ollama' or 'openai'.")
+        sys.exit(1)
+
+    if provider == "openai" and not get_openai_api_key():
+        error("OpenAI provider selected, but no API key was found. Set openai_api_key in config.json or OPENAI_API_KEY in your environment.")
+        sys.exit(1)
+
     if configured_model:
-        select_model(configured_model)
-        success(f"Using configured model: {configured_model}")
+        select_model(configured_model, provider=provider)
+        success(f"Using configured {provider} model: {configured_model}")
+    elif provider == "openai":
+        default_openai_model = "gpt-5-mini"
+        select_model(default_openai_model, provider=provider)
+        success(
+            f"Using default OpenAI model: {default_openai_model}. Set openai_model in config.json to change it."
+        )
     else:
         try:
-            models = list_models()
+            models = list_models(provider=provider)
         except Exception as e:
             error(f"Could not connect to Ollama: {e}")
             sys.exit(1)
@@ -477,7 +506,7 @@ if __name__ == "__main__":
             except ValueError:
                 warning("Please enter a number.")
 
-        select_model(model_choice)
+        select_model(model_choice, provider=provider)
         success(f"Using model: {model_choice}")
 
     while True:
