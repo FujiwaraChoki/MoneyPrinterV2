@@ -24,14 +24,6 @@ YOUTUBE_CRON_OPTIONS = ["Once a day", "Twice a day", "Thrice a day", "Quit"]
 
 ANALYTICS_OPTIONS = ["Niche Summary", "Fetch Latest Metrics", "Export CSV", "Quit"]
 
-# YouTube Section
-YOUTUBE_TEXTBOX_ID = "textbox"
-YOUTUBE_MADE_FOR_KIDS_NAME = "VIDEO_MADE_FOR_KIDS_MFK"
-YOUTUBE_NOT_MADE_FOR_KIDS_NAME = "VIDEO_MADE_FOR_KIDS_NOT_MFK"
-YOUTUBE_NEXT_BUTTON_ID = "next-button"
-YOUTUBE_RADIO_BUTTON_XPATH = '//*[@id="radioLabel"]'
-YOUTUBE_DONE_BUTTON_ID = "done-button"
-
 # Amazon Section (AFM)$
 AMAZON_PRODUCT_TITLE_ID = "productTitle"
 AMAZON_FEATURE_BULLETS_ID = "feature-bullets"

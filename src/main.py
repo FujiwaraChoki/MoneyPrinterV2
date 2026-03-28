@@ -80,14 +80,12 @@ def main():
 
                 success(f" => Generated ID: {generated_uuid}")
                 nickname = question(" => Enter a nickname for this account: ")
-                fp_profile = question(" => Enter the path to the Firefox profile: ")
                 niche = question(" => Enter the account niche: ")
                 language = question(" => Enter the account language: ")
 
                 account_data = {
                     "id": generated_uuid,
                     "nickname": nickname,
-                    "firefox_profile": fp_profile,
                     "niche": niche,
                     "language": language,
                     "videos": [],
@@ -158,7 +156,6 @@ def main():
                 youtube = YouTube(
                     selected_account["id"],
                     selected_account["nickname"],
-                    selected_account["firefox_profile"],
                     selected_account["niche"],
                     selected_account["language"],
                 )
