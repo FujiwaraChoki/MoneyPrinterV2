@@ -400,3 +400,14 @@ def get_gemini_cost_per_call() -> float:
     """
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file).get("gemini_cost_per_call", 0.005)
+
+
+def get_upload_visibility() -> str:
+    """
+    Gets the YouTube upload visibility setting.
+
+    Returns:
+        visibility (str): "unlisted", "public", or "private"
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("upload_visibility", "unlisted")
