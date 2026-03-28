@@ -9,6 +9,7 @@ from classes.Twitter import Twitter
 from classes.YouTube import YouTube
 from llm_provider import select_model
 
+
 def main():
     """Main function to post content to Twitter or upload videos to YouTube.
 
@@ -50,10 +51,7 @@ def main():
                 if verbose:
                     info("Initializing Twitter...")
                 twitter = Twitter(
-                    acc["id"],
-                    acc["nickname"],
-                    acc["firefox_profile"],
-                    acc["topic"]
+                    acc["id"], acc["nickname"], acc["firefox_profile"], acc["topic"]
                 )
                 twitter.post()
                 if verbose:
@@ -72,11 +70,7 @@ def main():
                 if verbose:
                     info("Initializing YouTube...")
                 youtube = YouTube(
-                    acc["id"],
-                    acc["nickname"],
-                    acc["firefox_profile"],
-                    acc["niche"],
-                    acc["language"]
+                    acc["id"], acc["nickname"], acc["niche"], acc["language"]
                 )
                 youtube.generate_video(tts)
                 youtube.upload_video()
@@ -86,6 +80,7 @@ def main():
     else:
         error("Invalid Purpose, exiting...")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
