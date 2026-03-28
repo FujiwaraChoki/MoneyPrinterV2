@@ -99,6 +99,16 @@ def get_twitter_language() -> str:
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file)["twitter_language"]
 
+def get_twitter_dialect() -> str:
+    """
+    Gets the Twitter dialect from the config file.
+
+    Returns:
+        dialect (str): The Twitter dialect, or an empty string if not set
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("twitter_dialect", "")
+
 def get_nanobanana2_api_base_url() -> str:
     """
     Gets the Nano Banana 2 (Gemini image) API base URL.

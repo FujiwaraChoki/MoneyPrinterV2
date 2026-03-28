@@ -81,6 +81,9 @@ def main():
                 fp_profile = question(" => Enter the path to the Firefox profile: ")
                 niche = question(" => Enter the account niche: ")
                 language = question(" => Enter the account language: ")
+                character_context = question(
+                    " => Enter the account character/context (tone, personality, audience): "
+                )
 
                 account_data = {
                     "id": generated_uuid,
@@ -88,6 +91,7 @@ def main():
                     "firefox_profile": fp_profile,
                     "niche": niche,
                     "language": language,
+                    "character_context": character_context,
                     "videos": [],
                 }
 
@@ -138,12 +142,29 @@ def main():
                 error("Invalid account selected. Please try again.", "red")
                 main()
             else:
+                if not selected_account.get("character_context", "").strip():
+                    warning(
+                        "This YouTube account has no character/context yet. Adding one will keep future videos more consistent."
+                    )
+                    character_context = question(
+                        " => Enter the account character/context (or leave empty to skip): "
+                    ).strip()
+                    if character_context:
+                        update_account(
+                            "youtube",
+                            selected_account["id"],
+                            {"character_context": character_context},
+                        )
+                        selected_account["character_context"] = character_context
+                        success("Saved account character/context.")
+
                 youtube = YouTube(
                     selected_account["id"],
                     selected_account["nickname"],
                     selected_account["firefox_profile"],
                     selected_account["niche"],
-                    selected_account["language"]
+                    selected_account["language"],
+                    selected_account.get("character_context", ""),
                 )
 
                 while True:
@@ -229,12 +250,16 @@ def main():
                 nickname = question(" => Enter a nickname for this account: ")
                 fp_profile = question(" => Enter the path to the Firefox profile: ")
                 topic = question(" => Enter the account topic: ")
+                character_context = question(
+                    " => Enter the account character/context (tone, personality, audience): "
+                )
 
                 add_account("twitter", {
                     "id": generated_uuid,
                     "nickname": nickname,
                     "firefox_profile": fp_profile,
                     "topic": topic,
+                    "character_context": character_context,
                     "posts": []
                 })
         else:
@@ -281,7 +306,29 @@ def main():
                 error("Invalid account selected. Please try again.", "red")
                 main()
             else:
-                twitter = Twitter(selected_account["id"], selected_account["nickname"], selected_account["firefox_profile"], selected_account["topic"])
+                if not selected_account.get("character_context", "").strip():
+                    warning(
+                        "This Twitter account has no character/context yet. Adding one will keep future posts more consistent."
+                    )
+                    character_context = question(
+                        " => Enter the account character/context (or leave empty to skip): "
+                    ).strip()
+                    if character_context:
+                        update_account(
+                            "twitter",
+                            selected_account["id"],
+                            {"character_context": character_context},
+                        )
+                        selected_account["character_context"] = character_context
+                        success("Saved account character/context.")
+
+                twitter = Twitter(
+                    selected_account["id"],
+                    selected_account["nickname"],
+                    selected_account["firefox_profile"],
+                    selected_account["topic"],
+                    selected_account.get("character_context", ""),
+                )
 
                 while True:
                     
