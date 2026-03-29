@@ -274,11 +274,8 @@ class Outreach:
                         subject = message_subject.replace(
                             "{{COMPANY_NAME}}", company_name
                         )
-                        body = (
-                            open(message_body, "r")
-                            .read()
-                            .replace("{{COMPANY_NAME}}", company_name)
-                        )
+                        with open(message_body, "r") as f:
+                            body = f.read().replace("{{COMPANY_NAME}}", company_name)
 
                         info(f" => Sending email to {receiver_email}...")
 

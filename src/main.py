@@ -18,6 +18,7 @@ from prettytable import PrettyTable
 from classes.Outreach import Outreach
 from classes.AFM import AffiliateMarketing
 from llm_provider import list_models, select_model, get_active_model
+from post_bridge_integration import maybe_crosspost_youtube_short
 
 def main():
     """Main entry point for the application, providing a menu-driven interface
@@ -178,11 +179,20 @@ def main():
                                 try:
                                     channel_choice = int(question("Select a channel (or press Enter for default): ") or "1") - 1
                                     selected_channel = channels[channel_choice]["id"] if 0 <= channel_choice < len(channels) else None
-                                    youtube.upload_video(channel_id=selected_channel)
+                                    upload_success = youtube.upload_video(channel_id=selected_channel)
                                 except (ValueError, IndexError):
-                                    youtube.upload_video()
+                                    upload_success = youtube.upload_video()
                             else:
-                                youtube.upload_video()
+                                upload_success = youtube.upload_video()
+                            
+                            if upload_success:
+                                maybe_crosspost_youtube_short(
+                                    video_path=youtube.video_path,
+                                    title=youtube.metadata.get("title", ""),
+                                    interactive=True,
+                                )
+                            else:
+                                warning("YouTube upload failed. Skipping Post Bridge cross-post.")
                     elif user_input == 2:
                         videos = youtube.get_videos()
 
