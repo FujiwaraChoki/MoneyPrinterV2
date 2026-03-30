@@ -1,200 +1,249 @@
 # Frank's MoneyPrinter
 
-## What This Fork Is
+## Reset
 
-This is not a generic "AI makes money online" machine.
+This fork should not stop at becoming "one more client acquisition helper".
 
-For Frank, this fork is a:
+If it only helps win more custom work, it is useful, but it is not really a `MoneyPrinter`.
 
-- proof engine
-- content engine
-- outreach engine
+For Frank, the more accurate target is:
 
-It exists to support one concrete service business:
+> A system that continuously creates, distributes, and compounds monetizable content and audience assets.
 
-> Help founders and small teams deploy, harden, and adapt open-source AI / web projects so they become usable in the real world.
+That means the fork should move away from "more ways to sell hours" and closer to:
 
-## What This Fork Is Not
+- more reusable content
+- more owned attention
+- more conversion paths into assets
+- more low-touch or no-touch monetization
 
-This fork is not optimized for:
+## The Three Printers
 
-- faceless entertainment channels
-- broad affiliate spam
-- generic motivational AI content
-- waiting for platform ad revenue as the first monetization layer
+To avoid future confusion, separate the business layers clearly:
 
-Those paths are slower, noisier, and less aligned with Frank's actual strengths.
+### 1. Cash Printer
 
-## Core Strengths This Fork Must Amplify
+Prints:
 
-Based on the discovery work, the fork should amplify:
+- active revenue
+- delivery revenue
+- consulting / implementation income
 
-- extracting precise requirements from messy input
-- solving technical problems with AI as a force multiplier
-- explaining complex topics clearly
-- documenting work so it becomes reusable
-- operating with a security-aware mindset
+Use case:
 
-## Business Thesis
+- useful for survival
+- useful for early proof
+- not the final destination
 
-Frank is currently strongest as:
+### 2. Lead Printer
 
-> An AI-assisted delivery-focused problem solver.
+Prints:
 
-Near-term positioning:
+- inbound attention
+- qualified subscribers
+- repeated visibility
+- search and social entry points
 
-> Open-source AI / web project deployment, hardening, and customization.
+Use case:
 
-This is stronger than vague labels like "website developer" or "consultant" because it:
+- makes future sales cheaper
+- feeds both service and product revenue
 
-- maps to real evidence
-- is easier to explain
-- is easier to price
-- creates better case-study content
+### 3. Asset Printer
 
-## Offer Ladder
+Prints:
 
-### 1. Deployment Sprint
+- reusable content assets
+- affiliate pages
+- comparison pages
+- email lists
+- resource packs
+- templates
+- digital products
 
-Best for:
+Use case:
 
-- customers who picked a GitHub project but cannot get it running
+- closest to the real meaning of "printer"
+- scales better than direct service work
+- becomes more durable over time
 
-Output:
+## Which Printer This Fork Should Optimize For
 
-- local or server deployment
-- environment setup
-- domain / HTTPS / basic launch notes
+Primary target:
 
-### 2. Hardening Pass
+- Asset Printer
 
-Best for:
+Secondary target:
 
-- projects that run but are fragile, overexposed, or badly configured
+- Lead Printer
 
-Output:
+Tertiary / bootstrap only:
 
-- basic hardening review
-- auth / env / proxy / backup suggestions
-- concrete risk notes
+- Cash Printer
 
-### 3. Customization Sprint
+This order matters.
 
-Best for:
+Service revenue can still exist, but it should support asset building rather than replace it.
 
-- buyers who do not want a greenfield build
-- buyers who want an existing project adapted to their real workflow
+## What This Fork Should Produce
 
-Output:
+This fork should gradually become a pipeline that turns one idea or one proof point into multiple reusable assets:
 
-- scoped changes on top of an existing codebase
-- UI / workflow / integration adjustments
+1. a short-form video
+2. a thread / short post
+3. a longer article or note
+4. an owned capture point
+5. a monetization path
 
-## Content Strategy
+That monetization path may be:
 
-Content is not the business model.
+- newsletter signup
+- downloadable checklist
+- template pack
+- paid SOP
+- affiliate recommendation
+- low-touch productized service
 
-Content is evidence that Frank can:
+The fork should not assume every content unit ends in "book a call".
 
-- make complex systems work
-- avoid naive mistakes
-- turn vague requirements into practical outcomes
+## Strategic Principle
 
-### Content Pillars
+Do not ask:
 
-- deployment lessons
-- hardening and risk reduction
-- open-source project teardowns
-- workflow adaptation and customization
-- calm technical judgment for non-expert buyers
+> How can this repo help me get one more client?
 
-### Short-Form Content Pattern
+Ask:
 
-Every short should follow one of these angles:
+> How can this repo help me create one more durable income asset?
 
-- what usually breaks
-- what most people miss
-- how to deploy this properly
-- how to reduce one expensive risk
-- how to adapt an existing project to a real use case
+## Suitable Monetization Types
 
-### Tone
+### Strong fit
 
-- calm
-- specific
-- operator-like
-- no fake hustle energy
-- no empty AI hot takes
+- long-tail technical content
+- search-friendly tutorials
+- tool comparison content
+- deployment / risk / cost guides
+- curated resource packs
+- paid checklists and SOPs
+- affiliate recommendations for tools you actually use
+- email capture tied to technical utility
 
-## Outreach Strategy
+### Medium fit
 
-Outreach should target:
+- low-touch standardized audits
+- productized deployment bundles
+- starter kits
 
-- indie hackers
-- small SaaS teams
-- operators with visible tooling pain
-- buyers already trying to use open-source tools
+### Weak fit
 
-Outreach should not say:
+- broad freelance bidding
+- generic "AI agency" marketing
+- pure personality-driven content
+- entertainment-first faceless content
 
-- "I can do anything"
-- "I am an AI expert"
-- "I offer consulting"
+## What Existing Strengths Still Matter
 
-Outreach should say:
+The discovery work still stands, but it should be pointed at assets:
 
-- I can help you get this running
-- I can harden this setup
-- I can adapt this project to your workflow
+- extracting precise needs from messy input
+- using AI to turn ideas into concrete outputs quickly
+- documenting work in reusable form
+- staying relatively calm and explicit
+- recognizing security and operational risk
 
-## Product Direction
+These strengths are still valuable, but instead of only producing custom delivery, they should also produce:
 
-This fork should move through these layers in order:
+- reusable pages
+- reusable checklists
+- reusable scripts
+- reusable conversion funnels
 
-1. paid delivery
-2. public proof
-3. repeatable templates
-4. productized services
-5. selective digital products / affiliate later
+## New Content Strategy
 
-If a future idea skips layer 1 and layer 2, it is probably premature for this fork.
+Content should be chosen by monetizable intent, not by broad self-expression.
 
-## Public Fork Lessons
+### Better content types
 
-Publicly visible evolution around MoneyPrinter-like tools points in a few directions:
+- "how to deploy X without breaking Y"
+- "what usually goes wrong when teams self-host X"
+- "X vs Y for this exact workflow"
+- "what is worth paying for vs what to self-host"
+- "how to reduce one expensive deployment / security mistake"
+- "what I would use if I had to start from zero"
 
-- stronger localization
-- web UI and easier setup
-- better TTS / subtitles / media quality
-- multi-platform distribution
-- more robust automation surfaces
+### Weaker content types
 
-Frank's fork intentionally takes a different angle:
+- generic AI commentary
+- broad hot takes
+- vague productivity advice
+- inspirational tech writing without monetizable intent
 
-- less generic media volume
-- more business relevance
-- more proof from real delivery work
-- better alignment with service revenue
+## Audience Logic
 
-## Operational Rules
+Not every visitor needs to become a service lead.
 
-Before building anything new in this repo, ask:
+The audience can split into:
 
-1. Does it help attract or convert the right client?
-2. Does it help turn real work into reusable proof?
-3. Does it reduce delivery time on repeated service work?
+- readers who subscribe
+- readers who download
+- readers who click affiliate links
+- readers who buy a small digital product
+- readers who later become service buyers
 
-If not, it is probably distraction, not leverage.
+This is healthier than forcing all traffic into direct selling.
 
-## Operating Notes
+## Website Logic
 
-When using this fork as a service-led lead engine, keep these constraints in mind:
+`fzhang.dev` should remain primarily a content site, not a hard sales page.
 
-- Do not promise greenfield custom software if the real offer is deployment, hardening, or adaptation on top of existing projects.
-- Do not publish sensitive client details. Use sanitized case briefs and remove secrets, domains, credentials, and private architecture specifics.
-- Do not let content drift into generic AI commentary. Every post should point back to a real technical problem and a service-relevant outcome.
-- Do not optimize for vanity metrics first. A post with 300 qualified impressions is better than 30,000 irrelevant views.
-- Do not underprice by default. Low pricing can help cold start, but the long-term positioning depends on clarity, trust, and operational competence.
-- Do not skip review. Generated content should be checked for hype, hallucinated certainty, and misalignment with the actual offer.
-- Do not let outreach overrun delivery. The system only works if public proof comes from real work, not from fabricated expertise.
-- Do not treat every upstream feature as useful. If it does not improve client acquisition, proof generation, or delivery reuse, it is probably out of scope for this fork.
+Recommended role split:
+
+- homepage = trust + navigation + selected conversion paths
+- articles = long-tail traffic and credibility
+- dedicated pages = resource capture, product pages, affiliate pages, selective service pages
+
+Do not overcorrect the site into a generic agency homepage.
+
+## Transition Rule
+
+The current codebase already contains some service-led logic.
+
+That is acceptable as a transitional layer, but future changes should bias toward:
+
+- asset generation
+- asset reuse
+- audience capture
+- monetization experiments
+
+and away from:
+
+- purely one-off service CTAs
+- generic cold outreach logic
+- content that only makes sense as custom work proof
+
+## Operating Rules
+
+Before building anything new, ask:
+
+1. Does this help create a reusable asset?
+2. Does this help build owned audience instead of rented reach?
+3. Does this make future monetization more automatic or lower-touch?
+4. If it only helps sell more hours, is it still worth the complexity?
+
+If the answer to 1-3 is "no", be skeptical.
+
+## Practical Guardrails
+
+- Do not turn every content unit into a direct sales pitch.
+- Do not optimize for vanity metrics at the expense of monetizable intent.
+- Do not assume affiliate links alone are enough; pair them with owned capture and utility.
+- Do not create assets that require constant manual babysitting.
+- Do not let the repo become a second freelance platform profile manager.
+- Do not confuse short-term cash optimization with long-term printer design.
+
+## Current Best Interpretation
+
+For Frank, `MoneyPrinterV2` should become:
+
+> A content-asset production and distribution system that compounds into owned audience, monetizable pages, and low-touch revenue streams.

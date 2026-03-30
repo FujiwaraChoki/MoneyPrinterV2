@@ -1,343 +1,165 @@
-# fzhang.dev Homepage Copy
+# fzhang.dev Homepage Direction
 
-This draft assumes the homepage has one primary goal:
+This document replaces the previous service-heavy homepage draft.
 
-> Turn founders and small teams with tooling or deployment friction into booked conversations.
+After re-evaluating the strategy, the homepage should **not** become a generic service landing page.
 
-Primary CTA:
+`fzhang.dev` works better as:
 
-- `预约一次项目诊断`
+- a trust-building content site
+- a long-tail traffic surface
+- an owned-audience capture surface
 
-Secondary CTA:
+The homepage should therefore:
 
-- `查看案例与文章`
+1. keep the blog / thinking-site identity
+2. make one owned-asset CTA visible
+3. optionally leave a light path to service, without letting service dominate
 
-## Positioning
+## Homepage Job
 
-### Headline Options
+Primary job:
 
-Option A:
+- help the right readers understand what the site is about
+- guide them toward a repeatable relationship
 
-- `把开源 AI / Web 项目真正跑起来、稳起来、改成能用的版本`
+Recommended primary action:
 
-Option B:
+- `订阅更新`
+- or `领取一份免费资源`
 
-- `从 GitHub 项目到可交付系统`
+Recommended secondary action:
 
-Option C:
+- `查看文章归档`
 
-- `帮你部署、加固并改造开源 AI / Web 项目`
+Optional tertiary action:
 
-### Recommended Headline
+- `了解我还能提供什么`
 
-`把开源 AI / Web 项目真正跑起来、稳起来、改成能用的版本`
+Do not make "book a call" the main homepage CTA unless the whole site is deliberately being repositioned away from content.
 
-### Subheadline Options
+## Recommended Homepage Adjustment
 
-Option A:
+Keep the existing hero structure, but add a more strategic sentence.
 
-- `我帮助个人创业者、小团队和产品负责人，把开源项目从“本地能跑”推进到“线上可用、风险可控、贴合业务流程”。`
+### Current direction
 
-Option B:
+The current site already communicates:
 
-- `如果你已经选好了一个 GitHub 项目，但部署卡住、配置混乱、存在安全隐患，或者还需要按你的业务流程做定制化改造，我可以帮你把第一版落到可用。`
+- technical writing
+- practical reflection
+- searchable knowledge
 
-### Recommended Subheadline
+That is good and should remain.
 
-`如果你已经选好了一个 GitHub 项目，但部署卡住、配置混乱、存在安全隐患，或者还需要按你的业务流程做定制化改造，我可以帮你把第一版落到可用。`
+### Recommended hero subtitle revision
 
-### Hero CTA
+Current site language is close to:
 
-- Primary: `预约一次项目诊断`
-- Secondary: `查看最近案例`
+- `写 macOS、Vim、AI 与学习方法的实践与思考`
 
-## Hero Proof Strip
+Suggested stronger version:
 
-Use a short proof strip directly under the fold:
+- `写 macOS、Vim、AI 与学习方法，也持续整理那些值得长期保存、复用和变现的技术经验。`
 
-- `适合：独立开发者、AI 创业者、小团队`
-- `服务方向：部署 / 基础加固 / 二次改造`
-- `工作方式：先诊断，再交付，再沉淀为可复用文档`
+This keeps the blog identity while subtly moving toward asset thinking.
 
-## Problem Section
+## New Homepage Block
 
-### Section Title
+Add one lightweight block below the hero and above recent posts.
 
-`大多数项目不是死在“不会写”，而是死在“跑不起来”`
+### Section title
 
-### Body Copy
+- `如果你想看的是可长期复用的技术资产`
 
-- `很多人已经找到了合适的开源项目，也知道自己想做什么，但真正卡住他们的往往不是创意，而是部署、配置、权限、反代、环境变量、数据库连接、第三方接入，以及改到一半之后发现整个流程根本不贴合实际业务。`
-- `你不一定需要从零开发一个全新系统。很多时候，你需要的是一个人，把现成项目梳理清楚，跑起来，补上明显风险点，再按你的实际工作流改成能交付的版本。`
+### Body copy
 
-## What I Do Section
+- `这里不只记录零散经验。我更关心的是：哪些排障过程、工具判断、部署教训和 AI 工作流，值得被整理成可以反复搜索、反复引用、甚至延伸成资源包、模板或长期专题的内容。`
+- `如果你也更在意“长期可复用价值”而不是一时的信息刺激，可以从文章归档开始，或者直接订阅后续更新。`
 
-### Section Title
+### CTA options
 
-`我主要做三件事`
+- Primary: `订阅更新`
+- Secondary: `查看文章归档`
+- Optional: `领取免费清单`
 
-### Card 1
+## Stronger Version If You Want One Resource CTA
 
-Title:
+If you are ready to test owned capture, replace the optional CTA with a real asset.
 
-- `开源项目部署`
+Examples:
 
-Copy:
+- `领取开源 AI 项目部署检查清单`
+- `领取自部署项目常见风险速查表`
+- `获取独立开发者 AI 工具栈清单`
 
-- `把你选中的 GitHub 项目部署到本地或服务器，处理环境配置、域名、HTTPS、基础运行问题，让它先真正跑起来。`
+The homepage should then introduce that asset briefly:
 
-### Card 2
+### Section title
 
-Title:
+- `先拿一份免费清单`
 
-- `基础加固`
+### Body copy
 
-Copy:
-
-- `针对暴露面、鉴权、密钥、备份、配置混乱等明显风险点做一轮基础整理和加固，让项目不只是能跑，而且更稳。`
-
-### Card 3
-
-Title:
-
-- `二次改造`
-
-Copy:
-
-- `在已有项目上做功能微调、流程适配、UI 调整或集成改造，让它更贴近你的业务而不是停留在 demo 阶段。`
-
-## Who It’s For Section
-
-### Section Title
-
-`这类服务最适合这些人`
-
-### Copy
-
-- `已经有明确方向，但不想从零开发的独立开发者`
-- `希望把开源 AI 工具落地成可用工作流的小团队`
-- `已经试过自己部署，但卡在配置、上线或稳定性问题上的创业者`
-- `知道自己想要什么结果，但不想把时间继续浪费在环境问题和重复试错上的产品负责人`
-
-## Why Me Section
-
-### Section Title
-
-`你不需要一个只会说“可以试试”的人`
-
-### Body Copy
-
-- `我更擅长的不是空谈方案，而是从杂乱需求里提炼出真实问题，借助 AI 和现有工具，把项目推进到能运行、能交付、能继续维护的状态。`
-- `相比泛化的“什么都能做”，我更关注三件事：需求能不能讲清、项目能不能落地、风险有没有提前处理。`
-- `如果一个项目不该做、暂时不值得做，或者现在的做法成本太高，我也会直接说。`
-
-## Process Section
-
-### Section Title
-
-`合作流程`
-
-### Steps
-
-1. `先诊断`
-   `你把目标、现状、代码仓库或部署环境发给我，我先判断问题在哪里，值不值得做。`
-
-2. `再定范围`
-   `只定义当前阶段真正需要的交付，不把项目做成无限扩张的需求黑洞。`
-
-3. `然后交付`
-   `我完成部署、基础加固或改造，并留下必要说明，方便你后续继续使用和维护。`
-
-4. `最后决定是否继续`
-   `如果第一阶段有效，再进入下一轮迭代，而不是一开始就把所有预算和时间压上去。`
-
-## Pricing Section
-
-### Section Title
-
-`服务与报价`
-
-### Intro Copy
-
-- `以下是当前阶段的标准化起步方案。具体价格会根据项目复杂度、现有代码质量、第三方依赖、交付时限和是否需要持续支持而调整。`
-
-### Package 1
-
-Name:
-
-- `项目诊断`
-
-Price:
-
-- `¥199 - ¥499`
-
-Best for:
-
-- `还不确定问题在哪里，想先判断项目值不值得继续做的人`
-
-Includes:
-
-- `30-45 分钟沟通`
-- `现状梳理`
-- `主要问题点与下一步建议`
-- `适合的话给出后续交付方向`
-
-CTA:
-
-- `先做一次诊断`
-
-### Package 2
-
-Name:
-
-- `Deployment Sprint`
-
-Price:
-
-- `¥999 起`
-
-Best for:
-
-- `已经选好项目，但部署、配置、上线卡住的人`
-
-Includes:
-
-- `部署到本地或服务器`
-- `基础环境配置`
-- `域名 / HTTPS / 启动说明`
-- `一轮基础问题排查`
-
-CTA:
-
-- `咨询部署 Sprint`
-
-### Package 3
-
-Name:
-
-- `Hardening Pass`
-
-Price:
-
-- `¥1499 起`
-
-Best for:
-
-- `项目已经能跑，但暴露面、配置、风险点比较混乱的人`
-
-Includes:
-
-- `基础安全与稳定性检查`
-- `鉴权 / 密钥 / 反代 / 备份建议`
-- `高风险项说明`
-- `一轮基础整理与修正`
-
-CTA:
-
-- `咨询加固服务`
-
-### Package 4
-
-Name:
-
-- `Customization Sprint`
-
-Price:
-
-- `¥2999 起`
-
-Best for:
-
-- `不想从零开发，只想把现有项目改成更贴合业务版本的人`
-
-Includes:
-
-- `需求澄清`
-- `已有项目上的功能或流程改造`
-- `必要的 UI / 集成适配`
-- `阶段性交付说明`
-
-CTA:
-
-- `咨询改造 Sprint`
-
-### Custom Tier
-
-Name:
-
-- `长期支持 / 组合交付`
-
-Price:
-
-- `按范围报价`
-
-Copy:
-
-- `如果你需要持续迭代、分阶段推进，或者部署、加固、改造需要组合进行，可以按实际范围单独报价。`
-
-## FAQ Section
-
-### FAQ 1
-
-Q:
-
-- `你是从零开发，还是更偏向在现有项目上做交付？`
-
-A:
-
-- `现阶段我更推荐在现有开源项目或已有代码基础上推进。这样成本更可控，交付速度更快，也更适合当前大多数创业团队的真实需求。`
-
-### FAQ 2
-
-Q:
-
-- `如果我还不确定该选哪个 GitHub 项目怎么办？`
-
-A:
-
-- `可以先从项目诊断开始。我会先根据你的目标、预算、时间和维护能力，帮你判断现成项目是否适合，或者现在是否应该继续推进。`
-
-### FAQ 3
-
-Q:
-
-- `你会承诺“绝对安全”或者“完全无 bug”吗？`
-
-A:
-
-- `不会。我更倾向于给出保守、真实、可验证的交付承诺。现阶段可以做的是基础加固、明显风险排查和实用性的稳定性改进，而不是夸大承诺。`
-
-### FAQ 4
-
-Q:
-
-- `我应该先做部署、加固还是改造？`
-
-A:
-
-- `多数情况下应该先把项目跑起来，再判断哪些风险必须先处理，最后再做更贴近业务的改造。也正因为如此，先做诊断通常更省钱。`
-
-## Final CTA Section
-
-### Title
-
-`先把第一版跑起来，再决定值不值得继续加码`
-
-### Copy
-
-- `如果你手上已经有一个想落地的开源 AI / Web 项目，但现在卡在部署、配置、风险点或改造方向上，先做一次诊断。`
-- `比起继续在环境问题上反复试错，更有效的做法，是先把问题讲清楚，再决定下一步怎么做。`
+- `如果你正在自部署开源 AI / Web 项目，或者正在筛选哪些工具值得真正投入，可以先从一份免费清单开始。它比零散收藏更适合回看，也更适合后续真正动手。`
 
 ### CTA
 
-- `预约一次项目诊断`
+- `领取免费清单`
 
-## Short Meta Draft
+## What Not To Do
 
-### Title Tag
+- Do not turn the homepage into a hard service pitch.
+- Do not place a large pricing table on the homepage.
+- Do not let direct service CTAs overpower subscription and content navigation.
+- Do not make the site feel like a generic "AI agency" page.
 
-- `开源 AI / Web 项目部署、加固与改造 | fzhang.dev`
+## About Page Direction
 
-### Meta Description
+The About page should carry more of the "what I do beyond writing" signal.
 
-- `帮助创业者和小团队把开源 AI / Web 项目真正跑起来、稳起来、改成能用的版本。提供部署、基础加固、二次改造与项目诊断服务。`
+Recommended addition:
+
+### Section title
+
+- `除了写作，我还在做什么`
+
+### Body copy
+
+- `除了持续写作，我也在关注另一件事：如何把真实技术经验整理成可复用的内容资产，而不是只停留在项目交付和聊天记录里。`
+- `这也是为什么这里的很多文章，会天然关注排障路径、工具判断、部署教训、AI 协作中的认知问题，以及哪些经验值得被整理成长期可用的资源。`
+
+This supports the new direction without turning About into a sales page.
+
+## Service Positioning On Site
+
+If you still want a service path, keep it light:
+
+- homepage = light mention only
+- about = one paragraph
+- dedicated page = full detail
+
+That keeps the site aligned with the new MoneyPrinter direction:
+
+- content first
+- owned audience second
+- monetization paths third
+
+## Recommended Homepage CTA Hierarchy
+
+1. `订阅更新`
+2. `查看文章归档`
+3. `领取免费清单` or `了解更多`
+4. optional service link, but not primary
+
+## Meta Direction
+
+Homepage title tag should stay content-led, not agency-led.
+
+Suggested title:
+
+- `Frank Zhang 的技术与思考 | macOS、Vim、AI 与长期可复用的技术经验`
+
+Suggested meta description:
+
+- `记录 macOS、Vim、AI 与学习方法的实践与思考，也持续整理那些值得长期保存、复用和延伸成技术资产的经验。`

@@ -1,110 +1,155 @@
 # Frank MoneyPrinter Roadmap
 
-This roadmap keeps the fork aligned with one business objective:
+This roadmap is now aligned to a different end state:
 
-> Turn real open-source AI / web delivery work into proof-driven content, targeted outreach, and paid service revenue.
+> Build a system that compounds content, audience, and monetizable assets into longer-term income channels.
 
-The default upstream "faceless content at scale" path is not the primary strategy for this fork.
+The fork is no longer primarily optimized around "more client work".
 
-## Positioning
+## North Star
 
-Primary role:
+The system should gradually make it easier to produce:
 
-- Open-source AI / web project deployment
-- Basic hardening and risk reduction
-- Business-facing customization on top of existing projects
+- long-tail traffic assets
+- owned audience
+- reusable monetization pages
+- low-touch offers
+- selective affiliate and digital-product revenue
 
-Primary audience:
+## Success Criteria
 
-- Indie hackers
-- Solo founders
-- Small product teams
-- Buyers who have already picked a GitHub project but need it running
+The fork is moving in the right direction when one content unit can lead to multiple assets:
 
-Primary monetization order:
+1. short-form content
+2. written content
+3. owned capture point
+4. monetization path
 
-1. Deployment / hardening / customization services
-2. Content as proof and lead generation
-3. Outreach to accelerate conversations
-4. Affiliate / info product / productized templates later
+The fork is drifting off course when outputs only support:
 
-## Phase 1: Proof-Driven Messaging
+- more outreach
+- more direct custom work
+- more manual selling with no asset accumulation
 
-- [x] Replace generic fork positioning in the README
-- [x] Define the fork's specialized business thesis
-- [x] Add a dedicated strategy document for Frank's version
-- [x] Add a roadmap that prevents future drift
-- [ ] Write the final service-page copy for `fzhang.dev`
-- [ ] Pick one public offer as the single CTA for all channels
+## Monetization Stack
 
-## Phase 2: Content Engine Refactor
+### Layer 1: Owned Attention
 
-- [x] Add account-level service content profiles
-- [x] Make YouTube topic generation case-study oriented
-- [x] Make YouTube scripts attract qualified prospects instead of generic viewers
-- [x] Make metadata and descriptions include soft service CTAs
-- [x] Make X posts calm, practical, and problem-solution driven
-- [x] Add support for loading reusable case briefs from files
-- [x] Add a review step before publishing generated content
-- [x] Add content variants for `deployment`, `hardening`, and `customization`
+- newsletter signups
+- RSS / subscription growth
+- bookmarkable site content
 
-## Phase 3: Offer Packaging
+### Layer 2: Utility Assets
 
-- [ ] Define 3 standard offers:
-- [ ] `Deployment Sprint`
-- [ ] `Hardening Pass`
-- [ ] `Customization Sprint`
-- [ ] Document delivery boundaries, inputs, outputs, and exclusions
-- [ ] Add pricing guidance and upgrade path
-- [ ] Add templates for discovery notes and project handoff notes
+- checklists
+- setup guides
+- resource packs
+- comparison pages
+- template pages
 
-## Phase 4: Outreach Engine
+### Layer 3: Revenue
 
-- [ ] Rewrite outreach copy around concrete technical outcomes
-- [ ] Narrow scraping keywords toward founder / operator / builder intent
-- [ ] Add contact qualification notes before sending outreach
-- [ ] Track reply quality, booked calls, and converted deals
-- [ ] Build one outreach flow per offer instead of generic cold email
+- affiliate links where trust is earned
+- paid SOPs
+- paid template packs
+- low-touch diagnostic or audit offers
 
-## Phase 5: Proof Asset Library
+### Layer 4: Bootstrap Revenue
 
-- [ ] Publish 3 public case studies
-- [ ] Publish 10 short-form technical proof posts
-- [ ] Publish 3 longer articles on `fzhang.dev`
-- [ ] Build a reusable before/after screenshot library
-- [ ] Maintain a list of real problems solved, grouped by offer
+- selective productized service work
 
-## Phase 6: Productization
+This layer is allowed, but it should finance the earlier layers rather than dominate the system.
 
-- [ ] Turn repeatable deployment patterns into checklists
-- [ ] Turn hardening steps into reusable audits
-- [ ] Turn recurring setup work into packaged templates
-- [ ] Evaluate a paid knowledge product or starter kit
-- [ ] Evaluate selective affiliate recommendations only after proof exists
+## Phase 1: Thesis Reset
+
+- [x] Rewrite the fork strategy around asset compounding
+- [x] Rewrite the roadmap around owned audience and reusable assets
+- [ ] Remove or reframe old service-led messaging where it creates strategic confusion
+- [ ] Define the first primary asset type this fork will print
+
+## Phase 2: Intent-Driven Content Engine
+
+- [ ] Replace broad service-led prompts with monetizable-intent prompts
+- [ ] Create content variants for:
+- [ ] deployment intent
+- [ ] risk / hardening intent
+- [ ] tool comparison intent
+- [ ] cost / trade-off intent
+- [ ] affiliate-safe recommendation intent
+- [ ] Add topic scoring based on searchability, evergreen value, and conversion potential
+
+## Phase 3: Asset Expansion Pipeline
+
+- [ ] Turn one topic into short + post + article + capture hook
+- [ ] Add support for article-outline generation from the same brief
+- [ ] Add support for downloadable asset hooks such as checklists or templates
+- [ ] Create reusable asset-brief templates instead of only case-study briefs
+
+## Phase 4: Owned Capture
+
+- [ ] Define one primary capture target:
+- [ ] newsletter
+- [ ] free resource pack
+- [ ] checklist download
+- [ ] waiting list for paid resources
+- [ ] Add CTA variants that point to owned capture instead of direct call booking
+- [ ] Add measurement for capture conversion by topic type
+
+## Phase 5: Monetization Experiments
+
+- [ ] Define the first affiliate-safe topic cluster
+- [ ] Define the first paid digital asset to test
+- [ ] Define the first low-touch offer, only if needed as bootstrap revenue
+- [ ] Map which content types should lead to which monetization type
+
+## Phase 6: Site Integration
+
+- [ ] Keep `fzhang.dev` primarily as a content site
+- [ ] Add a lightweight conversion path from homepage to owned assets
+- [ ] Add dedicated pages for resources, comparisons, or templates
+- [ ] Avoid turning the whole site into a generic service homepage
+
+## Phase 7: Measurement
+
+- [ ] Track which topics produce:
+- [ ] clicks
+- [ ] subscribers
+- [ ] saved resources
+- [ ] affiliate conversions
+- [ ] product interest
+- [ ] optional service conversations
+- [ ] Maintain a topic ledger of outputs vs downstream value
 
 ## Decision Filters
 
 Before adding any new feature, ask:
 
-1. Does this make it easier to win deployment / hardening / customization clients?
-2. Does this create public proof of real technical work?
-3. Does this reduce delivery friction or improve reuse?
-4. If the answer is "no", it is probably off-strategy for this fork.
+1. Does this create or improve a reusable asset?
+2. Does this help convert rented reach into owned audience?
+3. Does this improve future monetization with less manual work?
+4. If it mainly helps sell more hours, is it still worth building here?
+
+If the answer to 1-3 is "no", it is probably off-strategy.
 
 ## Execution Guardrails
 
-- Keep one primary offer active at a time. Do not let the repo generate content for multiple unrelated services in parallel.
-- Keep content tied to real delivery evidence. Do not manufacture authority with generic AI opinions.
-- Treat security claims conservatively. "Basic hardening" is easier to defend than broad "security expert" positioning.
-- Prefer sanitized case studies over abstract promises.
-- Review generated assets before publishing, especially CTAs, technical claims, and screenshots.
-- Protect working capital: prefer activities that shorten the path to the next paid conversation.
+- Do not let the repo become "another freelance channel manager".
+- Do not force every visitor into a service CTA.
+- Do not build around hot takes when evergreen intent is available.
+- Do not overfit to one platform's algorithm; prefer portable assets.
+- Do not confuse traffic with durable value.
+- Do not ship content that has no plausible owned-capture or monetization path.
 
 ## Immediate Next Tasks
 
-- [ ] Create one YouTube account and one X account using the new service-led profile fields
-- [ ] Define a single target customer and one offer name
-- [ ] Create 3 content angles from real delivery experience
-- [ ] Publish one short, one X post, and one site article from the same proof asset
+- [ ] Choose the first asset type to optimize for:
+- [ ] newsletter growth
+- [ ] affiliate content
+- [ ] resource packs
+- [ ] paid templates / SOPs
+- [ ] Rewrite the current account profile system around asset destination, not only service offer
+- [ ] Draft the first 10 topic angles with monetizable intent
+- [ ] Define one homepage conversion block for `fzhang.dev` that points to an owned asset
+- [ ] Create one pilot downloadable asset and one article that leads into it
 - [x] Update `origin` / `upstream` remotes so this fork can be pushed cleanly
 - [x] Add a dedicated upstream sync script for the fork workflow
