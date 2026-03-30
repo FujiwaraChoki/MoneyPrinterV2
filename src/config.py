@@ -364,3 +364,60 @@ def get_pexels_api_key() -> str:
         key (str): The Pexels API key
     """
     return _load_config().get("pexels_api_key", "")
+
+def get_tts_rate() -> str:
+    """
+    Gets the TTS speech rate (e.g. '+5%', '-10%').
+
+    Returns:
+        rate (str): The TTS rate
+    """
+    return _load_config().get("tts_rate", "+0%")
+
+def get_tts_pitch() -> str:
+    """
+    Gets the TTS pitch adjustment (e.g. '+0Hz', '+5Hz').
+
+    Returns:
+        pitch (str): The TTS pitch
+    """
+    return _load_config().get("tts_pitch", "+0Hz")
+
+def get_use_background_music() -> bool:
+    """
+    Gets whether to use background music.
+    False = orijinal ses only (Creator Pool %100 gelir).
+
+    Returns:
+        use_music (bool): Whether to use background music
+    """
+    return _load_config().get("use_background_music", False)
+
+def get_video_format() -> str:
+    """
+    Gets the video format type for script generation.
+    Options: ai_tool_showcase, before_after, quick_tutorial,
+             ai_predictions, myth_busting, ai_vs_human
+
+    Returns:
+        format_type (str): The video format
+    """
+    return _load_config().get("video_format", "ai_tool_showcase")
+
+def get_enable_ken_burns() -> bool:
+    """
+    Gets whether Ken Burns effect (zoom/pan) is enabled.
+
+    Returns:
+        enabled (bool): Whether Ken Burns is enabled
+    """
+    return _load_config().get("enable_ken_burns", True)
+
+def get_enable_loop() -> bool:
+    """
+    Gets whether loop architecture (last→first crossfade) is enabled.
+
+    Returns:
+        enabled (bool): Whether loop is enabled
+    """
+    return _load_config().get("enable_loop", True)

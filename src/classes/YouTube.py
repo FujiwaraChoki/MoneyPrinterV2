@@ -15,6 +15,7 @@ from status import *
 from uuid import uuid4
 from constants import *
 from typing import List
+import numpy as np
 from moviepy.editor import *
 from termcolor import colored
 from selenium_firefox import *
@@ -54,6 +55,7 @@ class YouTube:
         fp_profile_path: str,
         niche: str,
         language: str,
+        format_type: str = None,
     ) -> None:
         """
         Constructor for YouTube Class.
@@ -64,6 +66,7 @@ class YouTube:
             fp_profile_path (str): Path to the firefox profile that is logged into the specificed YouTube Account.
             niche (str): The niche of the provided YouTube Channel.
             language (str): The language of the Automation.
+            format_type (str): Video format (ai_tool_showcase, before_after, etc.).
 
         Returns:
             None
@@ -73,6 +76,7 @@ class YouTube:
         self._fp_profile_path: str = fp_profile_path
         self._niche: str = niche
         self._language: str = language
+        self._format_type: str = format_type or get_video_format()
 
         self.video_clips = []  # paths to downloaded Pexels stock videos
         self._browser = None  # Lazy init — only opened when needed
@@ -159,42 +163,89 @@ class YouTube:
 
         return completion
 
+    # -----------------------------------------------------------------
+    # 2026 FORMAT YAPILARI — Strateji raporundan
+    # -----------------------------------------------------------------
+    FORMAT_STRUCTURES = {
+        "ai_tool_showcase": {
+            "duration": (45, 55),
+            "structure": "Problem → Solution → Result",
+        },
+        "before_after": {
+            "duration": (45, 60),
+            "structure": "Before State → AI Application → After State",
+        },
+        "quick_tutorial": {
+            "duration": (45, 60),
+            "structure": "Goal → Step 1 → Step 2 → Step 3 → Result",
+        },
+        "ai_predictions": {
+            "duration": (40, 50),
+            "structure": "Question → AI Prediction → Surprising Result",
+        },
+        "myth_busting": {
+            "duration": (45, 55),
+            "structure": "False Belief → Truth → Evidence",
+        },
+        "ai_vs_human": {
+            "duration": (45, 60),
+            "structure": "Task → Human Attempt → AI Attempt → Comparison",
+        },
+    }
+
     def generate_script(self, _retry: int = 0) -> str:
         """
-        Generate a script for a video, depending on the subject of the video, the number of paragraphs, and the AI model.
+        Generate a script for a video using 2026 algorithm-optimized prompts.
+        Applies: Hyper-Hook, Loop Bridge, Satisfaction-Focused, Format Structure.
 
         Returns:
             script (str): The script of the video.
         """
         MAX_RETRIES = 4
         sentence_length = get_script_sentence_length()
-        prompt = f"""
-        Generate a script for a video in {sentence_length} sentences, depending on the subject of the video.
 
-        The script is to be returned as a string with the specified number of paragraphs.
+        # Format-based structure
+        fmt = self.FORMAT_STRUCTURES.get(self._format_type, self.FORMAT_STRUCTURES["ai_tool_showcase"])
+        dur_min, dur_max = fmt["duration"]
+        structure = fmt["structure"]
 
-        Here is an example of a string:
-        "This is an example string."
+        prompt = f"""Generate a script for a YouTube Shorts video in {sentence_length} sentences.
 
-        Do not under any circumstance reference this prompt in your response.
+The script is to be returned as a plain string. No markdown, no formatting, no titles.
 
-        Get straight to the point, don't start with unnecessary things like, "welcome to this video".
+=== 2026 YOUTUBE ALGORITHM RULES (CRITICAL) ===
+1. VIEWER SATISFACTION is the #1 metric (35% weight). Deliver genuine value, NOT clickbait.
+2. WATCH COMPLETION / LOOP RATE is #2 (30% weight). Every sentence must keep the viewer watching.
+3. REWATCH RATE is #3 (20% weight). The loop bridge at the end triggers rewatching.
+4. The first 2 seconds = swipe or stay. The HOOK must stop the scroll instantly.
 
-        Obviously, the script should be related to the subject of the video.
+=== STRUCTURE RULES ===
+1. HYPER-HOOK (Sentence 1): The FIRST sentence MUST be a powerful, curiosity-driven hook that summarizes the entire video's value in one breath. It must stop the swipe within 2 seconds. Make it dramatic and specific — NOT generic.
+2. BODY (Sentences 2 to {sentence_length - 2}): Follow the "{structure}" structure. Deliver fast, clear, value-packed content. Every sentence must earn the next second of attention. Use SPECIFIC examples — name real tools, cite real data, give concrete numbers. Avoid vague filler sentences.
+3. CTA (Second to last sentence): Encourage engagement — ask viewers to comment, share, or follow.
+4. LOOP BRIDGE (LAST sentence): The final sentence MUST create semantic continuity with the FIRST sentence. When the video loops back to the beginning, it should feel seamless and natural. This is CRITICAL for the 2026 algorithm.
 
-        VERY IMPORTANT STRUCTURE RULES:
-        1. The FIRST sentence MUST be a dramatic, attention-grabbing hook that creates curiosity and urgency. Examples: "What I'm about to tell you could change everything you thought you knew.", "Most people will never learn this, but listen carefully.", "Stay until the end, this will blow your mind."
-        2. The LAST sentence MUST encourage viewers to leave a comment. Examples: "Drop a comment below and tell me what you think.", "Comment your answer, I read every single one.", "Let me know in the comments if you agree."
-        3. The sentences in between should deliver the actual content.
-        
-        YOU MUST NOT EXCEED THE {sentence_length} SENTENCES LIMIT. MAKE SURE THE {sentence_length} SENTENCES ARE SHORT.
-        YOU MUST NOT INCLUDE ANY TYPE OF MARKDOWN OR FORMATTING IN THE SCRIPT, NEVER USE A TITLE.
-        YOU MUST WRITE THE SCRIPT IN THE LANGUAGE SPECIFIED IN [LANGUAGE].
-        ONLY RETURN THE RAW CONTENT OF THE SCRIPT. DO NOT INCLUDE "VOICEOVER", "NARRATOR" OR SIMILAR INDICATORS OF WHAT SHOULD BE SPOKEN AT THE BEGINNING OF EACH PARAGRAPH OR LINE. YOU MUST NOT MENTION THE PROMPT, OR ANYTHING ABOUT THE SCRIPT ITSELF. ALSO, NEVER TALK ABOUT THE AMOUNT OF PARAGRAPHS OR LINES. JUST WRITE THE SCRIPT
-        
-        Subject: {self.subject}
-        Language: {self.language}
-        """
+Target duration: {dur_min}-{dur_max} seconds of speech.
+Video Format: {self._format_type}
+
+=== QUALITY RULES ===
+- Each sentence should be 8-15 words. Not too short, not too long.
+- Use conversational, natural language. Sound like a real human talking to a friend.
+- Include at least one surprising fact, statistic, or counterintuitive insight.
+- Vary sentence rhythm — mix short punchy lines with slightly longer explanatory ones.
+- Make every sentence earn its place. If it doesn't add value, cut it.
+
+=== STRICT RULES ===
+- MUST be exactly {sentence_length} sentences. No more, no less.
+- NO markdown, NO formatting, NO titles.
+- Write in the language: {self.language}
+- Get straight to the point. No "welcome to this video" or similar waste.
+- DO NOT mention the prompt or the script itself.
+- ONLY return the raw script text.
+
+Subject: {self.subject}
+Language: {self.language}
+"""
         completion = self.generate_response(prompt)
 
         # Apply regex to remove *
@@ -307,17 +358,17 @@ Language: {self.language}
 
 STRICT RULES:
 1. LENGTH: The title MUST be between 40 and 70 characters. This is critical — titles over 70 characters get cut off on mobile.
-2. KEYWORD FIRST: Put the most important keyword(s) at the very beginning of the title (e.g. "AI", "LLM", "yapay zeka", etc.).
+2. KEYWORD FIRST: Put the most important keyword(s) at the very beginning of the title (e.g. "AI", "LLM", "ChatGPT", etc.).
 3. CURIOSITY + CLARITY: The title must clearly tell what the video is about AND trigger curiosity/emotion. Avoid clickbait that doesn't match content.
 4. NO HASHTAGS in the title. Keep it clean.
 5. NO quotation marks around the title.
 6. NO emojis in the title.
 
 Good examples:
-- "LLM'ler dünyayı böyle değiştiriyor"
-- "ChatGPT'nin sakladığı 3 gerçek"
 - "AI is hiding this from you"
 - "3 things LLMs can do that will shock you"
+- "ChatGPT just made this job obsolete"
+- "This AI tool replaces your entire workflow"
 
 Return ONLY the title text, nothing else."""
 
@@ -342,7 +393,7 @@ Return ONLY the title text, nothing else."""
                     warning(f"Generated Title is {len(title)} chars (max 70). Retrying ({_retry + 1}/{MAX_RETRIES})...")
                 return self.generate_metadata(_retry + 1)
 
-        # ── DESCRIPTION ────────────────────────────────────────────
+        # ── DESCRIPTION (SEO Optimized — 2026) ─────────────────
         description_prompt = f"""Generate a YouTube Shorts description for the following video.
 
 Subject: {self.subject}
@@ -351,15 +402,15 @@ Language: {self.language}
 
 STRICT RULES:
 1. FIRST 1-2 LINES: Write a short, compelling summary of what the video covers and what the viewer will learn. This is the most visible part on mobile — make it count.
-2. NATURAL KEYWORDS: Naturally weave in relevant keywords (like "AI", "LLM", "yapay zeka", etc.) — do NOT keyword-stuff.
+2. NATURAL KEYWORDS: Naturally weave in relevant keywords (like "AI", "LLM", "machine learning", "automation", etc.) — do NOT keyword-stuff.
 3. TOTAL LENGTH: 1-3 sentences for the summary. Keep it concise and meaningful.
 4. HASHTAGS: After the summary, leave one blank line, then add exactly 3-5 relevant hashtags. Include #shorts as one of them.
 5. NO quotation marks around the description.
 
 Example format:
-Bu kısa videoda LLM'lerin nasıl çalıştığını 30 saniyede anlatıyorum. Yapay zeka ve büyük dil modelleri hakkında daha fazla içerik için kanala göz atmayı unutma.
+This AI tool just replaced an entire marketing team in under 60 seconds. Here's how it works and why you need to try it today.
 
-#shorts #AI #LLM #yapayZeka
+#shorts #AI #Automation #ArtificialIntelligence #TechTips
 
 Return ONLY the description, nothing else."""
 
@@ -794,7 +845,8 @@ Return ONLY the JSON array."""
                           color: str = "#FFFFFF", bg_color: str = "black",
                           position: tuple = ("center", 200)) -> VideoClip:
         """
-        Creates a text overlay clip with a semi-transparent background.
+        Creates a premium text overlay clip with shadow effect for depth.
+        Uses a two-layer approach: shadow layer + main text for a professional look.
 
         Args:
             text (str): Text to display
@@ -807,22 +859,56 @@ Return ONLY the JSON array."""
         Returns:
             clip (VideoClip): The overlay clip
         """
-        txt_clip = TextClip(
+        font_path = os.path.join(get_fonts_dir(), get_font())
+
+        # Shadow layer — offset slightly for depth
+        shadow_clip = TextClip(
             text,
-            font=os.path.join(get_fonts_dir(), get_font()),
+            font=font_path,
+            fontsize=fontsize,
+            color="#000000",
+            stroke_color="#000000",
+            stroke_width=8,
+            size=(960, None),
+            method="caption",
+            align="center",
+        ).set_opacity(0.6)
+
+        # Main text layer — crisp with strong outline
+        main_clip = TextClip(
+            text,
+            font=font_path,
             fontsize=fontsize,
             color=color,
             stroke_color=bg_color,
-            stroke_width=4,
-            size=(980, None),
+            stroke_width=6,
+            size=(960, None),
             method="caption",
             align="center",
         )
-        txt_clip = txt_clip.set_duration(duration)
-        txt_clip = txt_clip.set_pos(position)
-        # Fade in and fade out for smooth appearance
-        txt_clip = txt_clip.crossfadein(0.4).crossfadeout(0.4)
-        return txt_clip
+
+        # Compose shadow + main text (shadow offset by 4px down-right)
+        pos_x = position[0]
+        pos_y = position[1] if isinstance(position[1], str) else position[1]
+
+        shadow_clip = shadow_clip.set_duration(duration)
+        main_clip = main_clip.set_duration(duration)
+
+        if isinstance(pos_y, int) or isinstance(pos_y, float):
+            shadow_clip = shadow_clip.set_pos((pos_x, pos_y + 4))
+            main_clip = main_clip.set_pos(position)
+        else:
+            shadow_clip = shadow_clip.set_pos(position)
+            main_clip = main_clip.set_pos(position)
+
+        combined = CompositeVideoClip(
+            [shadow_clip, main_clip],
+            size=(1080, 1920)
+        ).set_duration(duration)
+
+        # Smooth fade in/out
+        combined = combined.crossfadein(0.3).crossfadeout(0.3)
+        return combined
 
     def _crop_to_vertical(self, clip: VideoClip) -> VideoClip:
         """
@@ -858,6 +944,89 @@ Return ONLY the JSON array."""
 
         return clip.resize((target_w, target_h))
 
+    def _apply_ken_burns(self, clip: VideoClip, zoom_range: tuple = (1.05, 1.15)) -> VideoClip:
+        """
+        Applies Ken Burns effect (slow zoom + pan) to a video clip for dynamism.
+        Each call uses a random direction to break monotony.
+
+        Args:
+            clip (VideoClip): Input video clip
+            zoom_range (tuple): Min and max zoom factors
+
+        Returns:
+            clip (VideoClip): Clip with Ken Burns effect applied
+        """
+        w, h = clip.w, clip.h
+        zoom_start = 1.0
+        zoom_end = random.uniform(*zoom_range)
+        # Random pan direction
+        pan_x = random.uniform(-0.02, 0.02)  # percentage of width
+        pan_y = random.uniform(-0.02, 0.02)  # percentage of height
+
+        duration = clip.duration
+
+        def make_frame(get_frame, t):
+            progress = t / max(duration, 0.01)
+            current_zoom = zoom_start + (zoom_end - zoom_start) * progress
+
+            # Calculate crop region
+            new_w = int(w / current_zoom)
+            new_h = int(h / current_zoom)
+            cx = int(w / 2 + pan_x * w * progress)
+            cy = int(h / 2 + pan_y * h * progress)
+
+            # Clamp bounds
+            x1 = max(0, min(cx - new_w // 2, w - new_w))
+            y1 = max(0, min(cy - new_h // 2, h - new_h))
+            x2 = x1 + new_w
+            y2 = y1 + new_h
+
+            frame = get_frame(t)
+            cropped = frame[y1:y2, x1:x2]
+
+            # Resize back to original dimensions
+            from PIL import Image
+            img = Image.fromarray(cropped)
+            img = img.resize((w, h), Image.LANCZOS)
+            return np.array(img)
+
+        return clip.fl(make_frame)
+
+    def _create_loop_bridge(self, clips: list, crossfade_duration: float = 0.5) -> list:
+        """
+        Creates loop architecture by adding a crossfade transition
+        from the last clip segment back to the first.
+        The last 0.5s fades into content similar to the first 0.5s,
+        so when YouTube loops the video it feels seamless.
+
+        Args:
+            clips (list): List of video clip segments
+            crossfade_duration (float): Duration of the crossfade
+
+        Returns:
+            clips (list): Modified clips list with loop bridge applied
+        """
+        if len(clips) < 2:
+            return clips
+
+        try:
+            # Apply crossfade-out to the last clip
+            last_clip = clips[-1]
+            if last_clip.duration > crossfade_duration * 2:
+                clips[-1] = last_clip.crossfadeout(crossfade_duration)
+
+            # Apply crossfade-in to the first clip
+            first_clip = clips[0]
+            if first_clip.duration > crossfade_duration * 2:
+                clips[0] = first_clip.crossfadein(crossfade_duration)
+
+            if get_verbose():
+                info(f" => Loop bridge applied: {crossfade_duration}s crossfade")
+        except Exception as e:
+            warning(f"Failed to apply loop bridge: {e}")
+
+        return clips
+
     def combine(self) -> str:
         """
         Combines downloaded stock videos with TTS audio, subtitles, and overlays
@@ -871,16 +1040,16 @@ Return ONLY the JSON array."""
         tts_clip = AudioFileClip(self.tts_path)
         max_duration = tts_clip.duration
 
-        # Make a generator that returns a TextClip when called with consecutive
-        # Style: clean white text with dark outline — modern, readable, premium look
+        # Subtitle generator — premium viral style
+        # Bright white with thick dark outline for maximum readability on any background
         generator = lambda txt: TextClip(
             txt,
             font=os.path.join(get_fonts_dir(), get_font()),
-            fontsize=100,
-            color="white",
-            stroke_color="#111111",
-            stroke_width=5,
-            size=(1000, None),
+            fontsize=110,
+            color="#FFFFFF",
+            stroke_color="#000000",
+            stroke_width=7,
+            size=(950, None),
             method="caption",
             align="center",
         )
@@ -889,6 +1058,7 @@ Return ONLY the JSON array."""
 
         # Load all downloaded stock video clips
         raw_clips = []
+        use_ken_burns = get_enable_ken_burns()
         for vpath in self.video_clips:
             try:
                 vc = VideoFileClip(vpath)
@@ -896,6 +1066,12 @@ Return ONLY the JSON array."""
                 vc = vc.set_fps(30)
                 # Remove original audio from stock video (we'll use TTS)
                 vc = vc.without_audio()
+                # Apply Ken Burns effect if enabled (2026 Strateji: dinamiklik)
+                if use_ken_burns:
+                    try:
+                        vc = self._apply_ken_burns(vc)
+                    except Exception as kb_err:
+                        warning(f"Ken Burns failed for '{vpath}', using original: {kb_err}")
                 raw_clips.append(vc)
             except Exception as e:
                 warning(f"Failed to load stock video '{vpath}': {e}")
@@ -927,24 +1103,32 @@ Return ONLY the JSON array."""
             tot_dur += segment_duration
             clip_idx += 1
 
+        # Apply loop architecture if enabled (2026 Strateji: Trend 4)
+        if get_enable_loop():
+            clips = self._create_loop_bridge(clips)
+
         final_clip = concatenate_videoclips(clips, method="compose")
         final_clip = final_clip.set_fps(30)
 
-        # Try to load background music — optional, continue without it if unavailable
+        # Background music policy (2026 Strateji: orijinal ses = %100 Creator Pool)
         random_song_clip = None
-        try:
-            random_song = choose_random_song()
-            random_song_clip = AudioFileClip(random_song).set_fps(44100)
-            random_song_clip = random_song_clip.fx(afx.volumex, 0.15)
-        except Exception as e:
-            warning(f"No background music available, continuing without it: {e}")
+        if get_use_background_music():
+            try:
+                random_song = choose_random_song()
+                random_song_clip = AudioFileClip(random_song).set_fps(44100)
+                random_song_clip = random_song_clip.fx(afx.volumex, 0.15)
+            except Exception as e:
+                warning(f"No background music available, continuing without it: {e}")
+        else:
+            if get_verbose():
+                info(" => Background music disabled (original audio policy)")
 
         subtitles = None
         try:
             subtitles_path = self.generate_subtitles(self.tts_path)
             equalize_subtitles(subtitles_path, 10)
             subtitles = SubtitlesClip(subtitles_path, generator)
-            subtitles = subtitles.set_pos(("center", 1350))
+            subtitles = subtitles.set_pos(("center", 1300))
         except Exception as e:
             warning(f"Failed to generate subtitles, continuing without subtitles: {e}")
 
@@ -963,42 +1147,42 @@ Return ONLY the JSON array."""
         if subtitles is not None:
             overlay_layers.append(subtitles)
 
-        # HOOK OVERLAY — first 2 seconds, top area of the screen
-        hook_duration = min(2.0, max_duration * 0.3)  # 2s or 30% of video, whichever is shorter
+        # HOOK OVERLAY — first 3 seconds, top area with premium styling
+        hook_duration = min(3.0, max_duration * 0.3)
         try:
             hook_text = getattr(self, 'hook_text', 'WATCH TILL THE END...')
             hook_clip = self._make_overlay_clip(
                 text=hook_text,
                 duration=hook_duration,
-                fontsize=90,
-                color="#FF4444",
-                bg_color="black",
-                position=("center", 280),
+                fontsize=95,
+                color="#FFD700",
+                bg_color="#111111",
+                position=("center", 260),
             )
             hook_clip = hook_clip.set_start(0)
             overlay_layers.append(hook_clip)
             if get_verbose():
-                info(f" => Added hook overlay: \"{hook_text}\" ({hook_duration:.1f}s)")
+                info(f' => Added hook overlay: "{hook_text}" ({hook_duration:.1f}s)')
         except Exception as e:
             warning(f"Failed to create hook overlay, continuing without it: {e}")
 
-        # CTA OVERLAY — last 3 seconds, lower area of the screen
-        cta_duration = min(3.0, max_duration * 0.3)  # 3s or 30% of video, whichever is shorter
+        # CTA OVERLAY — last 3.5 seconds, lower area with premium styling
+        cta_duration = min(3.5, max_duration * 0.3)
         cta_start = max(0, max_duration - cta_duration)
         try:
             cta_text = getattr(self, 'cta_text', 'COMMENT BELOW! 👇')
             cta_clip = self._make_overlay_clip(
                 text=cta_text,
                 duration=cta_duration,
-                fontsize=85,
+                fontsize=90,
                 color="#00FF88",
-                bg_color="black",
-                position=("center", 1500),
+                bg_color="#111111",
+                position=("center", 1480),
             )
             cta_clip = cta_clip.set_start(cta_start)
             overlay_layers.append(cta_clip)
             if get_verbose():
-                info(f" => Added CTA overlay: \"{cta_text}\" (starts at {cta_start:.1f}s, {cta_duration:.1f}s)")
+                info(f' => Added CTA overlay: "{cta_text}" (starts at {cta_start:.1f}s, {cta_duration:.1f}s)')
         except Exception as e:
             warning(f"Failed to create CTA overlay, continuing without it: {e}")
 
