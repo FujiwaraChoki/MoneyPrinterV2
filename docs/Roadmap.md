@@ -69,7 +69,7 @@ This layer is allowed, but it should finance the earlier layers rather than domi
 
 ## Phase 2: Intent-Driven Content Engine
 
-- [ ] Replace broad service-led prompts with monetizable-intent prompts
+- [x] Replace broad service-led prompts with monetizable-intent prompts
 - [ ] Create content variants for:
 - [ ] deployment intent
 - [ ] risk / hardening intent
@@ -143,11 +143,11 @@ If the answer to 1-3 is "no", it is probably off-strategy.
 ## Immediate Next Tasks
 
 - [x] Choose the first asset type to optimize for: free resource capture first, paid SOP/template second
-- [ ] Rewrite the current account profile system around asset destination, not only service offer
-- [ ] Draft the first 10 topic angles with monetizable intent
-- [ ] Define the first lead magnet
+- [x] Rewrite the current account profile system around asset destination, not only service offer
+- [x] Draft the first 10 topic angles with monetizable intent
+- [x] Define the first lead magnet
 - [ ] Define one homepage conversion block for `fzhang.dev` that points to an owned asset
-- [ ] Create one pilot downloadable asset and one article that leads into it
-- [ ] Design the second-stage paid SOP/template that the lead magnet should eventually feed into
+- [x] Create one pilot downloadable asset draft
+- [x] Design the second-stage paid SOP/template that the lead magnet should eventually feed into
 - [x] Update `origin` / `upstream` remotes so this fork can be pushed cleanly
 - [x] Add a dedicated upstream sync script for the fork workflow
