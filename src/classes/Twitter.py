@@ -8,6 +8,7 @@ from cache import *
 from config import *
 from status import *
 from llm_provider import generate_text
+from content_profile import build_profile_context, has_service_strategy, normalize_content_profile
 from typing import List, Optional
 from datetime import datetime
 from termcolor import colored
@@ -27,7 +28,12 @@ class Twitter:
     """
 
     def __init__(
-        self, account_uuid: str, account_nickname: str, fp_profile_path: str, topic: str
+        self,
+        account_uuid: str,
+        account_nickname: str,
+        fp_profile_path: str,
+        topic: str,
+        content_profile: dict | None = None,
     ) -> None:
         """
         Initializes the Twitter Bot.
@@ -44,6 +50,7 @@ class Twitter:
         self.account_nickname: str = account_nickname
         self.fp_profile_path: str = fp_profile_path
         self.topic: str = topic
+        self.content_profile = normalize_content_profile(content_profile)
 
         # Initialize the Firefox profile
         self.options: Options = Options()
@@ -202,10 +209,28 @@ class Twitter:
         Returns:
             post (str): The post
         """
-        completion = generate_text(
-            f"Generate a Twitter post about: {self.topic} in {get_twitter_language()}. "
-            "The Limit is 2 sentences. Choose a specific sub-topic of the provided topic."
-        )
+        if has_service_strategy(self.content_profile):
+            completion = generate_text(
+                f"""
+                Write a concise X post in {get_twitter_language()} for a technical service business.
+
+                Topic / angle: {self.topic}
+                {build_profile_context(self.content_profile)}
+
+                Requirements:
+                - Maximum 240 characters
+                - Sound like a calm operator, not a hype marketer
+                - Mention one concrete problem, one practical insight, and optionally a soft CTA
+                - Prefer deployment, security, workflow, or implementation lessons
+                - Avoid generic inspiration and vague AI hot takes
+                - Only return the post text
+                """
+            )
+        else:
+            completion = generate_text(
+                f"Generate a Twitter post about: {self.topic} in {get_twitter_language()}. "
+                "The Limit is 2 sentences. Choose a specific sub-topic of the provided topic."
+            )
 
         if get_verbose():
             info("Generating a post...")

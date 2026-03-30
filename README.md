@@ -1,5 +1,7 @@
 # MoneyPrinter V2
 
+Frank's fork turns MPV2 from a generic faceless-content tool into a client-acquisition engine for service-led AI work: case-study Shorts, cross-platform distribution, and targeted outreach for open-source AI / web deployment, hardening, and customization work.
+
 Sponsored by Post Bridge
 
 <a href="https://www.post-bridge.com/?ref=moneyprinter">
@@ -15,8 +17,8 @@ Sponsored by Post Bridge
 [![GitHub stars](https://img.shields.io/github/stars/FujiwaraChoki/MoneyPrinterV2?style=for-the-badge)](https://github.com/FujiwaraChoki/MoneyPrinterV2/stargazers)
 [![Discord](https://img.shields.io/discord/1134848537704804432?style=for-the-badge)](https://dsc.gg/fuji-community)
 
-An Application that automates the process of making money online.
-MPV2 (MoneyPrinter Version 2) is, as the name suggests, the second version of the MoneyPrinter project. It is a complete rewrite of the original project, with a focus on a wider range of features and a more modular architecture.
+An application that automates repetitive parts of online monetization.
+MPV2 (MoneyPrinter Version 2) is, as the name suggests, the second version of the MoneyPrinter project. This fork keeps the modular core, but specializes it around proof-driven marketing for technical services instead of generic traffic farming.
 
 > **Note:** MPV2 needs Python 3.12 to function effectively.
 > Watch the YouTube video [here](https://youtu.be/wAZ_ZSuIqfk)
@@ -27,6 +29,19 @@ MPV2 (MoneyPrinter Version 2) is, as the name suggests, the second version of th
 - [x] YouTube Shorts Automator (with CRON Jobs => `scheduler`)
 - [x] Affiliate Marketing (Amazon + Twitter)
 - [x] Find local businesses & cold outreach
+- [x] Service-led content profiles for case-study style YouTube / X accounts
+- [x] Cross-post YouTube uploads to TikTok / Instagram via Post Bridge
+
+## This Fork's Goal
+
+This fork is optimized for a narrower business model:
+
+- attract founders, indie hackers, and small teams
+- publish technical case-study content instead of generic faceless clips
+- turn real delivery work into proof assets
+- use outreach to find buyers for deployment, hardening, and customization services
+
+See [docs/FrankMoneyPrinter.md](docs/FrankMoneyPrinter.md) for the specialization strategy and [docs/Roadmap.md](docs/Roadmap.md) for the implementation phases.
 
 ## Versions
 

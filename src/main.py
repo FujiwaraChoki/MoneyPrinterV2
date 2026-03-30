@@ -18,6 +18,57 @@ from classes.AFM import AffiliateMarketing
 from llm_provider import list_models, select_model, get_active_model
 from post_bridge_integration import maybe_crosspost_youtube_short
 
+
+def prompt_content_profile(default_topic: str, account_type: str) -> dict:
+    """
+    Collects optional service-led content settings for an account.
+
+    Args:
+        default_topic (str): Fallback niche/topic for the account
+        account_type (str): Human-readable account type label
+
+    Returns:
+        profile (dict): Content profile stored in the account cache
+    """
+    info(
+        "\nOptional: configure a service-led content profile for this account.",
+        False,
+    )
+    use_strategy = question(
+        " => Use personalized case-study content prompts? (Yes/No, default Yes): "
+    ).strip().lower()
+
+    if use_strategy in {"no", "n"}:
+        return {"content_mode": "legacy"}
+
+    target_customer = question(
+        " => Target customer (e.g. indie hackers, founders, small teams): "
+    ).strip()
+    offer_name = question(
+        f" => Main offer promoted by this {account_type} account: "
+    ).strip()
+    primary_problem = question(" => Main problem you solve for them: ").strip()
+    desired_outcome = question(" => Desired customer outcome: ").strip()
+    cta_url = question(" => CTA URL (optional): ").strip()
+    proof_points = question(
+        " => Proof points, comma-separated (optional): "
+    ).strip()
+    content_pillars = question(
+        f" => Content pillars for '{default_topic}', comma-separated (optional): "
+    ).strip()
+
+    return {
+        "content_mode": "service_case_study",
+        "target_customer": target_customer,
+        "offer_name": offer_name,
+        "primary_problem": primary_problem,
+        "desired_outcome": desired_outcome,
+        "cta_url": cta_url,
+        "proof_points": proof_points,
+        "content_pillars": content_pillars,
+    }
+
+
 def main():
     """Main entry point for the application, providing a menu-driven interface
     to manage YouTube, Twitter bots, Affiliate Marketing, and Outreach tasks.
@@ -82,6 +133,7 @@ def main():
                 fp_profile = question(" => Enter the path to the Firefox profile: ")
                 niche = question(" => Enter the account niche: ")
                 language = question(" => Enter the account language: ")
+                content_profile = prompt_content_profile(niche, "YouTube")
 
                 account_data = {
                     "id": generated_uuid,
@@ -89,6 +141,7 @@ def main():
                     "firefox_profile": fp_profile,
                     "niche": niche,
                     "language": language,
+                    "content_profile": content_profile,
                     "videos": [],
                 }
 
@@ -97,10 +150,17 @@ def main():
                 success("Account configured successfully!")
         else:
             table = PrettyTable()
-            table.field_names = ["ID", "UUID", "Nickname", "Niche"]
+            table.field_names = ["ID", "UUID", "Nickname", "Niche", "Offer"]
 
             for account in cached_accounts:
-                table.add_row([cached_accounts.index(account) + 1, colored(account["id"], "cyan"), colored(account["nickname"], "blue"), colored(account["niche"], "green")])
+                offer_name = account.get("content_profile", {}).get("offer_name", "")
+                table.add_row([
+                    cached_accounts.index(account) + 1,
+                    colored(account["id"], "cyan"),
+                    colored(account["nickname"], "blue"),
+                    colored(account["niche"], "green"),
+                    colored((offer_name or "-")[:32], "yellow"),
+                ])
 
             print(table)
             info("Type 'd' to delete an account.", False)
@@ -144,7 +204,8 @@ def main():
                     selected_account["nickname"],
                     selected_account["firefox_profile"],
                     selected_account["niche"],
-                    selected_account["language"]
+                    selected_account["language"],
+                    selected_account.get("content_profile"),
                 )
 
                 while True:
@@ -238,20 +299,29 @@ def main():
                 nickname = question(" => Enter a nickname for this account: ")
                 fp_profile = question(" => Enter the path to the Firefox profile: ")
                 topic = question(" => Enter the account topic: ")
+                content_profile = prompt_content_profile(topic, "Twitter / X")
 
                 add_account("twitter", {
                     "id": generated_uuid,
                     "nickname": nickname,
                     "firefox_profile": fp_profile,
                     "topic": topic,
+                    "content_profile": content_profile,
                     "posts": []
                 })
         else:
             table = PrettyTable()
-            table.field_names = ["ID", "UUID", "Nickname", "Account Topic"]
+            table.field_names = ["ID", "UUID", "Nickname", "Account Topic", "Offer"]
 
             for account in cached_accounts:
-                table.add_row([cached_accounts.index(account) + 1, colored(account["id"], "cyan"), colored(account["nickname"], "blue"), colored(account["topic"], "green")])
+                offer_name = account.get("content_profile", {}).get("offer_name", "")
+                table.add_row([
+                    cached_accounts.index(account) + 1,
+                    colored(account["id"], "cyan"),
+                    colored(account["nickname"], "blue"),
+                    colored(account["topic"], "green"),
+                    colored((offer_name or "-")[:32], "yellow"),
+                ])
 
             print(table)
             info("Type 'd' to delete an account.", False)
@@ -290,7 +360,13 @@ def main():
                 error("Invalid account selected. Please try again.", "red")
                 main()
             else:
-                twitter = Twitter(selected_account["id"], selected_account["nickname"], selected_account["firefox_profile"], selected_account["topic"])
+                twitter = Twitter(
+                    selected_account["id"],
+                    selected_account["nickname"],
+                    selected_account["firefox_profile"],
+                    selected_account["topic"],
+                    selected_account.get("content_profile"),
+                )
 
                 while True:
                     

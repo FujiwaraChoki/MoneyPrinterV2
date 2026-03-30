@@ -13,6 +13,7 @@ from llm_provider import generate_text
 from config import *
 from status import *
 from uuid import uuid4
+from content_profile import build_profile_context, has_service_strategy, normalize_content_profile
 from constants import *
 from typing import List
 from moviepy.editor import *
@@ -54,6 +55,7 @@ class YouTube:
         fp_profile_path: str,
         niche: str,
         language: str,
+        content_profile: dict | None = None,
     ) -> None:
         """
         Constructor for YouTube Class.
@@ -73,6 +75,7 @@ class YouTube:
         self._fp_profile_path: str = fp_profile_path
         self._niche: str = niche
         self._language: str = language
+        self.content_profile = normalize_content_profile(content_profile)
 
         self.images = []
 
@@ -138,9 +141,29 @@ class YouTube:
         Returns:
             topic (str): The generated topic.
         """
-        completion = self.generate_response(
-            f"Please generate a specific video idea that takes about the following topic: {self.niche}. Make it exactly one sentence. Only return the topic, nothing else."
-        )
+        if has_service_strategy(self.content_profile):
+            completion = self.generate_response(
+                f"""
+                You are planning a short-form educational video that attracts qualified leads to a technical service.
+
+                Domain / niche: {self.niche}
+                Language: {self.language}
+                {build_profile_context(self.content_profile)}
+
+                Generate one concrete short-video angle in exactly one sentence.
+
+                Requirements:
+                - Make it practical, credibility-first, and case-study oriented.
+                - Prefer deployment lessons, security pitfalls, implementation trade-offs, or client-facing outcomes.
+                - Avoid vague motivation, generic AI news, and broad listicles.
+                - The angle should feel like something a founder or small team would actually click because it solves a real problem.
+                - Only return the topic sentence.
+                """
+            )
+        else:
+            completion = self.generate_response(
+                f"Please generate a specific video idea that takes about the following topic: {self.niche}. Make it exactly one sentence. Only return the topic, nothing else."
+            )
 
         if not completion:
             error("Failed to generate Topic.")
@@ -157,28 +180,55 @@ class YouTube:
             script (str): The script of the video.
         """
         sentence_length = get_script_sentence_length()
-        prompt = f"""
-        Generate a script for a video in {sentence_length} sentences, depending on the subject of the video.
+        if has_service_strategy(self.content_profile):
+            prompt = f"""
+            Write a short-form video script in {sentence_length} short sentences.
 
-        The script is to be returned as a string with the specified number of paragraphs.
+            Subject: {self.subject}
+            Language: {self.language}
+            Domain / niche: {self.niche}
+            {build_profile_context(self.content_profile)}
 
-        Here is an example of a string:
-        "This is an example string."
+            Script goals:
+            - Attract the right prospect, not broad entertainment traffic.
+            - Sound like a calm technical operator explaining a real-world lesson.
+            - Make the audience feel "this person can probably solve my problem".
 
-        Do not under any circumstance reference this prompt in your response.
+            Structure:
+            - Sentence 1: Name a concrete problem, failure mode, or costly mistake.
+            - Sentence 2: Explain why it happens or what most people miss.
+            - Sentence 3: Show the practical fix, principle, or workflow.
+            - Sentence 4: Describe the business/technical outcome or a soft CTA.
 
-        Get straight to the point, don't start with unnecessary things like, "welcome to this video".
+            Rules:
+            - No markdown, no title, no bullet points.
+            - No hype, no empty inspiration, no "welcome back".
+            - Do not mention the prompt or the sentence count.
+            - Only return the raw script.
+            """
+        else:
+            prompt = f"""
+            Generate a script for a video in {sentence_length} sentences, depending on the subject of the video.
 
-        Obviously, the script should be related to the subject of the video.
-        
-        YOU MUST NOT EXCEED THE {sentence_length} SENTENCES LIMIT. MAKE SURE THE {sentence_length} SENTENCES ARE SHORT.
-        YOU MUST NOT INCLUDE ANY TYPE OF MARKDOWN OR FORMATTING IN THE SCRIPT, NEVER USE A TITLE.
-        YOU MUST WRITE THE SCRIPT IN THE LANGUAGE SPECIFIED IN [LANGUAGE].
-        ONLY RETURN THE RAW CONTENT OF THE SCRIPT. DO NOT INCLUDE "VOICEOVER", "NARRATOR" OR SIMILAR INDICATORS OF WHAT SHOULD BE SPOKEN AT THE BEGINNING OF EACH PARAGRAPH OR LINE. YOU MUST NOT MENTION THE PROMPT, OR ANYTHING ABOUT THE SCRIPT ITSELF. ALSO, NEVER TALK ABOUT THE AMOUNT OF PARAGRAPHS OR LINES. JUST WRITE THE SCRIPT
-        
-        Subject: {self.subject}
-        Language: {self.language}
-        """
+            The script is to be returned as a string with the specified number of paragraphs.
+
+            Here is an example of a string:
+            "This is an example string."
+
+            Do not under any circumstance reference this prompt in your response.
+
+            Get straight to the point, don't start with unnecessary things like, "welcome to this video".
+
+            Obviously, the script should be related to the subject of the video.
+            
+            YOU MUST NOT EXCEED THE {sentence_length} SENTENCES LIMIT. MAKE SURE THE {sentence_length} SENTENCES ARE SHORT.
+            YOU MUST NOT INCLUDE ANY TYPE OF MARKDOWN OR FORMATTING IN THE SCRIPT, NEVER USE A TITLE.
+            YOU MUST WRITE THE SCRIPT IN THE LANGUAGE SPECIFIED IN [LANGUAGE].
+            ONLY RETURN THE RAW CONTENT OF THE SCRIPT. DO NOT INCLUDE "VOICEOVER", "NARRATOR" OR SIMILAR INDICATORS OF WHAT SHOULD BE SPOKEN AT THE BEGINNING OF EACH PARAGRAPH OR LINE. YOU MUST NOT MENTION THE PROMPT, OR ANYTHING ABOUT THE SCRIPT ITSELF. ALSO, NEVER TALK ABOUT THE AMOUNT OF PARAGRAPHS OR LINES. JUST WRITE THE SCRIPT
+            
+            Subject: {self.subject}
+            Language: {self.language}
+            """
         completion = self.generate_response(prompt)
 
         # Apply regex to remove *
@@ -204,18 +254,56 @@ class YouTube:
         Returns:
             metadata (dict): The generated metadata.
         """
-        title = self.generate_response(
-            f"Please generate a YouTube Video Title for the following subject, including hashtags: {self.subject}. Only return the title, nothing else. Limit the title under 100 characters."
-        )
+        if has_service_strategy(self.content_profile):
+            title = self.generate_response(
+                f"""
+                Generate a YouTube Shorts title for this technical service-led video.
+
+                Subject: {self.subject}
+                Domain / niche: {self.niche}
+                {build_profile_context(self.content_profile)}
+
+                Requirements:
+                - Under 90 characters
+                - Specific and useful, not clickbait
+                - May use 1-2 targeted hashtags if they help
+                - Should signal a real deployment, security, automation, or implementation lesson
+                - Only return the title
+                """
+            )
+        else:
+            title = self.generate_response(
+                f"Please generate a YouTube Video Title for the following subject, including hashtags: {self.subject}. Only return the title, nothing else. Limit the title under 100 characters."
+            )
 
         if len(title) > 100:
             if get_verbose():
                 warning("Generated Title is too long. Retrying...")
             return self.generate_metadata()
 
-        description = self.generate_response(
-            f"Please generate a YouTube Video Description for the following script: {self.script}. Only return the description, nothing else."
-        )
+        if has_service_strategy(self.content_profile):
+            description = self.generate_response(
+                f"""
+                Generate a concise YouTube video description for a technical case-study short.
+
+                Subject: {self.subject}
+                Script: {self.script}
+                Domain / niche: {self.niche}
+                {build_profile_context(self.content_profile)}
+
+                Requirements:
+                - Summarize the lesson in 2-4 short lines
+                - Sound practical and trustworthy
+                - Mention the target outcome for the audience
+                - Include a soft CTA to contact or learn more
+                - If a CTA URL is present in the context, include it naturally
+                - Only return the description
+                """
+            )
+        else:
+            description = self.generate_response(
+                f"Please generate a YouTube Video Description for the following script: {self.script}. Only return the description, nothing else."
+            )
 
         self.metadata = {"title": title, "description": description}
 
@@ -230,31 +318,55 @@ class YouTube:
         """
         n_prompts = len(self.script) / 3
 
-        prompt = f"""
-        Generate {n_prompts} Image Prompts for AI Image Generation,
-        depending on the subject of a video.
-        Subject: {self.subject}
+        if has_service_strategy(self.content_profile):
+            prompt = f"""
+            Generate {int(n_prompts)} vertical image prompts for an AI-generated technical case-study short.
 
-        The image prompts are to be returned as
-        a JSON-Array of strings.
+            Subject: {self.subject}
+            Script: {self.script}
+            Domain / niche: {self.niche}
+            {build_profile_context(self.content_profile)}
 
-        Each search term should consist of a full sentence,
-        always add the main subject of the video.
+            Visual direction:
+            - product UI mockups
+            - terminal / dashboard / architecture visuals
+            - secure infrastructure scenes
+            - founder workflow, deployment workflow, before/after states
+            - realistic modern SaaS or engineering imagery
 
-        Be emotional and use interesting adjectives to make the
-        Image Prompt as detailed as possible.
+            Rules:
+            - Return a JSON array of strings only
+            - Each prompt should be a full sentence
+            - Keep prompts grounded, professional, and visually coherent
+            - Avoid fantasy art, surrealism, and generic motivational imagery
+            - Do not repeat the script verbatim
+            """
+        else:
+            prompt = f"""
+            Generate {n_prompts} Image Prompts for AI Image Generation,
+            depending on the subject of a video.
+            Subject: {self.subject}
 
-        YOU MUST ONLY RETURN THE JSON-ARRAY OF STRINGS.
-        YOU MUST NOT RETURN ANYTHING ELSE.
-        YOU MUST NOT RETURN THE SCRIPT.
+            The image prompts are to be returned as
+            a JSON-Array of strings.
 
-        The search terms must be related to the subject of the video.
-        Here is an example of a JSON-Array of strings:
-        ["image prompt 1", "image prompt 2", "image prompt 3"]
+            Each search term should consist of a full sentence,
+            always add the main subject of the video.
 
-        For context, here is the full text:
-        {self.script}
-        """
+            Be emotional and use interesting adjectives to make the
+            Image Prompt as detailed as possible.
+
+            YOU MUST ONLY RETURN THE JSON-ARRAY OF STRINGS.
+            YOU MUST NOT RETURN ANYTHING ELSE.
+            YOU MUST NOT RETURN THE SCRIPT.
+
+            The search terms must be related to the subject of the video.
+            Here is an example of a JSON-Array of strings:
+            ["image prompt 1", "image prompt 2", "image prompt 3"]
+
+            For context, here is the full text:
+            {self.script}
+            """
 
         completion = (
             str(self.generate_response(prompt))
