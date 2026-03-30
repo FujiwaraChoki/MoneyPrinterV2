@@ -32,6 +32,33 @@ class Twitter:
     Class for the Bot, that grows a Twitter account.
     """
 
+    def _variant_instruction(self) -> str:
+        """
+        Returns a specialized instruction block for the selected service variant.
+
+        Returns:
+            instruction (str): Variant-specific prompt guidance
+        """
+        variant = self.content_profile.get("content_variant", "general")
+
+        if variant == "deployment":
+            return (
+                "Focus on shipping a real project from repo to running environment. "
+                "Prefer setup pitfalls, environment mismatches, hosting choices, or launch blockers."
+            )
+        if variant == "hardening":
+            return (
+                "Focus on security, auth, exposure, secret handling, backup gaps, or operational risk reduction."
+            )
+        if variant == "customization":
+            return (
+                "Focus on adapting an existing project to a workflow, client need, UI change, or integration requirement."
+            )
+
+        return (
+            "Focus on practical implementation lessons that can lead into deployment, hardening, or customization work."
+        )
+
     def __init__(
         self,
         account_uuid: str,
@@ -224,6 +251,8 @@ class Twitter:
                 {build_profile_context(self.content_profile)}
                 Reusable case brief:
                 {self.case_brief or "None"}
+                Variant guidance:
+                {self._variant_instruction()}
 
                 Requirements:
                 - Maximum 240 characters
@@ -282,6 +311,8 @@ class Twitter:
             {build_profile_context(self.content_profile)}
             Reusable case brief:
             {self.case_brief or "None"}
+            Variant guidance:
+            {self._variant_instruction()}
 
             Requirements:
             - Keep the core meaning

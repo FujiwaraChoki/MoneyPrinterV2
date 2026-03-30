@@ -185,3 +185,16 @@ Before building anything new in this repo, ask:
 3. Does it reduce delivery time on repeated service work?
 
 If not, it is probably distraction, not leverage.
+
+## Operating Notes
+
+When using this fork as a service-led lead engine, keep these constraints in mind:
+
+- Do not promise greenfield custom software if the real offer is deployment, hardening, or adaptation on top of existing projects.
+- Do not publish sensitive client details. Use sanitized case briefs and remove secrets, domains, credentials, and private architecture specifics.
+- Do not let content drift into generic AI commentary. Every post should point back to a real technical problem and a service-relevant outcome.
+- Do not optimize for vanity metrics first. A post with 300 qualified impressions is better than 30,000 irrelevant views.
+- Do not underprice by default. Low pricing can help cold start, but the long-term positioning depends on clarity, trust, and operational competence.
+- Do not skip review. Generated content should be checked for hype, hallucinated certainty, and misalignment with the actual offer.
+- Do not let outreach overrun delivery. The system only works if public proof comes from real work, not from fabricated expertise.
+- Do not treat every upstream feature as useful. If it does not improve client acquisition, proof generation, or delivery reuse, it is probably out of scope for this fork.

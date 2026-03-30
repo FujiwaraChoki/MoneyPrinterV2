@@ -44,6 +44,9 @@ def prompt_content_profile(default_topic: str, account_type: str) -> dict:
     target_customer = question(
         " => Target customer (e.g. indie hackers, founders, small teams): "
     ).strip()
+    content_variant = question(
+        " => Content variant (deployment/hardening/customization/general): "
+    ).strip().lower()
     offer_name = question(
         f" => Main offer promoted by this {account_type} account: "
     ).strip()
@@ -65,6 +68,7 @@ def prompt_content_profile(default_topic: str, account_type: str) -> dict:
 
     return {
         "content_mode": "service_case_study",
+        "content_variant": content_variant or "general",
         "target_customer": target_customer,
         "offer_name": offer_name,
         "primary_problem": primary_problem,

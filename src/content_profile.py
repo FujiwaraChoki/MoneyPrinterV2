@@ -44,6 +44,7 @@ def normalize_content_profile(content_profile: dict | None) -> dict:
 
     profile = {
         "content_mode": str(raw.get("content_mode", "") or "").strip().lower(),
+        "content_variant": str(raw.get("content_variant", "") or "").strip().lower(),
         "target_customer": str(raw.get("target_customer", "") or "").strip(),
         "offer_name": str(raw.get("offer_name", "") or "").strip(),
         "primary_problem": str(raw.get("primary_problem", "") or "").strip(),
@@ -70,6 +71,9 @@ def normalize_content_profile(content_profile: dict | None) -> dict:
             ]
         )
         profile["content_mode"] = "service_case_study" if has_strategy_data else "legacy"
+
+    if not profile["content_variant"]:
+        profile["content_variant"] = "general"
 
     return profile
 
@@ -103,6 +107,8 @@ def build_profile_context(content_profile: dict | None) -> str:
     lines = []
     if profile["target_customer"]:
         lines.append(f"Target customer: {profile['target_customer']}")
+    if profile["content_variant"]:
+        lines.append(f"Content variant: {profile['content_variant']}")
     if profile["offer_name"]:
         lines.append(f"Offer: {profile['offer_name']}")
     if profile["primary_problem"]:

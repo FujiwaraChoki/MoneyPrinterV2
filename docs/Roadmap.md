@@ -46,7 +46,7 @@ Primary monetization order:
 - [x] Make X posts calm, practical, and problem-solution driven
 - [x] Add support for loading reusable case briefs from files
 - [x] Add a review step before publishing generated content
-- [ ] Add content variants for `deployment`, `hardening`, and `customization`
+- [x] Add content variants for `deployment`, `hardening`, and `customization`
 
 ## Phase 3: Offer Packaging
 
@@ -90,6 +90,15 @@ Before adding any new feature, ask:
 2. Does this create public proof of real technical work?
 3. Does this reduce delivery friction or improve reuse?
 4. If the answer is "no", it is probably off-strategy for this fork.
+
+## Execution Guardrails
+
+- Keep one primary offer active at a time. Do not let the repo generate content for multiple unrelated services in parallel.
+- Keep content tied to real delivery evidence. Do not manufacture authority with generic AI opinions.
+- Treat security claims conservatively. "Basic hardening" is easier to defend than broad "security expert" positioning.
+- Prefer sanitized case studies over abstract promises.
+- Review generated assets before publishing, especially CTAs, technical claims, and screenshots.
+- Protect working capital: prefer activities that shorten the path to the next paid conversation.
 
 ## Immediate Next Tasks
 

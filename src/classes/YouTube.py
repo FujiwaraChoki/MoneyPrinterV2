@@ -53,6 +53,32 @@ class YouTube:
     7. Combine Concatenated Images with the Text-to-Speech [DONE]
     """
 
+    def _variant_instruction(self) -> str:
+        """
+        Returns specialized guidance for the selected service-led content variant.
+
+        Returns:
+            instruction (str): Variant-specific prompt guidance
+        """
+        variant = self.content_profile.get("content_variant", "general")
+
+        if variant == "deployment":
+            return (
+                "Emphasize repo-to-production setup, environment mismatches, hosting trade-offs, and why local success often fails after deployment."
+            )
+        if variant == "hardening":
+            return (
+                "Emphasize auth, exposed surfaces, secret handling, backup gaps, abuse prevention, and practical risk reduction."
+            )
+        if variant == "customization":
+            return (
+                "Emphasize adapting an existing project to a workflow, buyer requirement, UI change, or integration path."
+            )
+
+        return (
+            "Emphasize concrete implementation lessons that can naturally lead into deployment, hardening, or customization work."
+        )
+
     def __init__(
         self,
         account_uuid: str,
@@ -157,6 +183,8 @@ class YouTube:
                 {build_profile_context(self.content_profile)}
                 Reusable case brief:
                 {self.case_brief or "None"}
+                Variant guidance:
+                {self._variant_instruction()}
 
                 Generate one concrete short-video angle in exactly one sentence.
 
@@ -198,6 +226,8 @@ class YouTube:
             {build_profile_context(self.content_profile)}
             Reusable case brief:
             {self.case_brief or "None"}
+            Variant guidance:
+            {self._variant_instruction()}
 
             Script goals:
             - Attract the right prospect, not broad entertainment traffic.
@@ -277,6 +307,8 @@ class YouTube:
                 {build_profile_context(self.content_profile)}
                 Reusable case brief:
                 {self.case_brief or "None"}
+                Variant guidance:
+                {self._variant_instruction()}
 
                 Requirements:
                 - Under 90 characters
@@ -307,6 +339,8 @@ class YouTube:
                 {build_profile_context(self.content_profile)}
                 Reusable case brief:
                 {self.case_brief or "None"}
+                Variant guidance:
+                {self._variant_instruction()}
 
                 Requirements:
                 - Summarize the lesson in 2-4 short lines
@@ -348,6 +382,8 @@ class YouTube:
             {build_profile_context(self.content_profile)}
             Reusable case brief:
             {self.case_brief or "None"}
+            Variant guidance:
+            {self._variant_instruction()}
 
             Visual direction:
             - product UI mockups
@@ -452,6 +488,8 @@ class YouTube:
             {build_profile_context(self.content_profile)}
             Reusable case brief:
             {self.case_brief or "None"}
+            Variant guidance:
+            {self._variant_instruction()}
 
             Requirements:
             - Keep it concise and practical
@@ -488,6 +526,8 @@ class YouTube:
             {build_profile_context(self.content_profile)}
             Reusable case brief:
             {self.case_brief or "None"}
+            Variant guidance:
+            {self._variant_instruction()}
 
             Return valid JSON only with this schema:
             {{
