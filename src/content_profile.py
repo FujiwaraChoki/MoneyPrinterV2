@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import os
+
 from typing import Any
+
+from config import ROOT_DIR
 
 
 def _split_items(value: Any) -> list[str]:
@@ -45,6 +49,8 @@ def normalize_content_profile(content_profile: dict | None) -> dict:
         "primary_problem": str(raw.get("primary_problem", "") or "").strip(),
         "desired_outcome": str(raw.get("desired_outcome", "") or "").strip(),
         "cta_url": str(raw.get("cta_url", "") or "").strip(),
+        "case_brief_file": str(raw.get("case_brief_file", "") or "").strip(),
+        "review_notes": str(raw.get("review_notes", "") or "").strip(),
         "proof_points": _split_items(raw.get("proof_points")),
         "content_pillars": _split_items(raw.get("content_pillars")),
     }
@@ -57,6 +63,8 @@ def normalize_content_profile(content_profile: dict | None) -> dict:
                 profile["primary_problem"],
                 profile["desired_outcome"],
                 profile["cta_url"],
+                profile["case_brief_file"],
+                profile["review_notes"],
                 profile["proof_points"],
                 profile["content_pillars"],
             ]
@@ -107,5 +115,50 @@ def build_profile_context(content_profile: dict | None) -> str:
         lines.append("Content pillars: " + "; ".join(profile["content_pillars"]))
     if profile["cta_url"]:
         lines.append(f"CTA URL: {profile['cta_url']}")
+    if profile["case_brief_file"]:
+        lines.append(f"Case brief file: {profile['case_brief_file']}")
+    if profile["review_notes"]:
+        lines.append(f"Review notes: {profile['review_notes']}")
 
     return "\n".join(lines)
+
+
+def resolve_case_brief_path(content_profile: dict | None) -> str:
+    """
+    Resolves an optional case brief file path relative to the repo root.
+
+    Args:
+        content_profile (dict | None): Account content profile
+
+    Returns:
+        path (str): Absolute case brief path or empty string
+    """
+    profile = normalize_content_profile(content_profile)
+    raw_path = profile["case_brief_file"]
+
+    if not raw_path:
+        return ""
+
+    if os.path.isabs(raw_path):
+        return raw_path
+
+    return os.path.join(ROOT_DIR, raw_path)
+
+
+def load_case_brief(content_profile: dict | None) -> str:
+    """
+    Loads an optional reusable case brief from disk.
+
+    Args:
+        content_profile (dict | None): Account content profile
+
+    Returns:
+        brief (str): Case brief text or empty string
+    """
+    resolved = resolve_case_brief_path(content_profile)
+
+    if not resolved or not os.path.exists(resolved):
+        return ""
+
+    with open(resolved, "r", errors="ignore") as handle:
+        return handle.read().strip()

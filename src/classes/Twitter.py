@@ -8,7 +8,12 @@ from cache import *
 from config import *
 from status import *
 from llm_provider import generate_text
-from content_profile import build_profile_context, has_service_strategy, normalize_content_profile
+from content_profile import (
+    build_profile_context,
+    has_service_strategy,
+    load_case_brief,
+    normalize_content_profile,
+)
 from typing import List, Optional
 from datetime import datetime
 from termcolor import colored
@@ -51,6 +56,7 @@ class Twitter:
         self.fp_profile_path: str = fp_profile_path
         self.topic: str = topic
         self.content_profile = normalize_content_profile(content_profile)
+        self.case_brief = load_case_brief(self.content_profile)
 
         # Initialize the Firefox profile
         self.options: Options = Options()
@@ -216,6 +222,8 @@ class Twitter:
 
                 Topic / angle: {self.topic}
                 {build_profile_context(self.content_profile)}
+                Reusable case brief:
+                {self.case_brief or "None"}
 
                 Requirements:
                 - Maximum 240 characters
@@ -242,9 +250,47 @@ class Twitter:
         # Apply Regex to remove all *
         completion = re.sub(r"\*", "", completion).replace('"', "")
 
+        if has_service_strategy(self.content_profile):
+            completion = self.review_post(completion)
+
         if get_verbose():
             info(f"Length of post: {len(completion)}")
         if len(completion) >= 260:
             return completion[:257].rsplit(" ", 1)[0] + "..."
 
         return completion
+
+    def review_post(self, draft: str) -> str:
+        """
+        Reviews the generated post against service-led quality constraints.
+
+        Args:
+            draft (str): Initial generated post
+
+        Returns:
+            post (str): Reviewed post
+        """
+        reviewed = generate_text(
+            f"""
+            Review and improve this X post for a technical service operator.
+
+            Draft:
+            {draft}
+
+            Context:
+            Topic / angle: {self.topic}
+            {build_profile_context(self.content_profile)}
+            Reusable case brief:
+            {self.case_brief or "None"}
+
+            Requirements:
+            - Keep the core meaning
+            - Remove hype, fluff, and generic AI phrasing
+            - Make it sound specific, credible, and useful
+            - Keep it under 240 characters
+            - Only return the final post
+            """
+        )
+
+        cleaned = re.sub(r"\*", "", reviewed).replace('"', "").strip()
+        return cleaned or draft

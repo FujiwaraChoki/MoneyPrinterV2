@@ -13,7 +13,12 @@ from llm_provider import generate_text
 from config import *
 from status import *
 from uuid import uuid4
-from content_profile import build_profile_context, has_service_strategy, normalize_content_profile
+from content_profile import (
+    build_profile_context,
+    has_service_strategy,
+    load_case_brief,
+    normalize_content_profile,
+)
 from constants import *
 from typing import List
 from moviepy.editor import *
@@ -76,6 +81,7 @@ class YouTube:
         self._niche: str = niche
         self._language: str = language
         self.content_profile = normalize_content_profile(content_profile)
+        self.case_brief = load_case_brief(self.content_profile)
 
         self.images = []
 
@@ -149,6 +155,8 @@ class YouTube:
                 Domain / niche: {self.niche}
                 Language: {self.language}
                 {build_profile_context(self.content_profile)}
+                Reusable case brief:
+                {self.case_brief or "None"}
 
                 Generate one concrete short-video angle in exactly one sentence.
 
@@ -188,6 +196,8 @@ class YouTube:
             Language: {self.language}
             Domain / niche: {self.niche}
             {build_profile_context(self.content_profile)}
+            Reusable case brief:
+            {self.case_brief or "None"}
 
             Script goals:
             - Attract the right prospect, not broad entertainment traffic.
@@ -245,7 +255,10 @@ class YouTube:
 
         self.script = completion
 
-        return completion
+        if has_service_strategy(self.content_profile):
+            self.script = self.review_script(self.script)
+
+        return self.script
 
     def generate_metadata(self) -> dict:
         """
@@ -262,6 +275,8 @@ class YouTube:
                 Subject: {self.subject}
                 Domain / niche: {self.niche}
                 {build_profile_context(self.content_profile)}
+                Reusable case brief:
+                {self.case_brief or "None"}
 
                 Requirements:
                 - Under 90 characters
@@ -290,6 +305,8 @@ class YouTube:
                 Script: {self.script}
                 Domain / niche: {self.niche}
                 {build_profile_context(self.content_profile)}
+                Reusable case brief:
+                {self.case_brief or "None"}
 
                 Requirements:
                 - Summarize the lesson in 2-4 short lines
@@ -306,6 +323,9 @@ class YouTube:
             )
 
         self.metadata = {"title": title, "description": description}
+
+        if has_service_strategy(self.content_profile):
+            self.metadata = self.review_metadata(self.metadata)
 
         return self.metadata
 
@@ -326,6 +346,8 @@ class YouTube:
             Script: {self.script}
             Domain / niche: {self.niche}
             {build_profile_context(self.content_profile)}
+            Reusable case brief:
+            {self.case_brief or "None"}
 
             Visual direction:
             - product UI mockups
@@ -405,6 +427,89 @@ class YouTube:
         success(f"Generated {len(image_prompts)} Image Prompts.")
 
         return image_prompts
+
+    def review_script(self, draft: str) -> str:
+        """
+        Reviews a generated script before publishing.
+
+        Args:
+            draft (str): Initial script
+
+        Returns:
+            script (str): Reviewed script
+        """
+        reviewed = self.generate_response(
+            f"""
+            Review and improve this short-form technical service script.
+
+            Draft:
+            {draft}
+
+            Context:
+            Subject: {self.subject}
+            Language: {self.language}
+            Domain / niche: {self.niche}
+            {build_profile_context(self.content_profile)}
+            Reusable case brief:
+            {self.case_brief or "None"}
+
+            Requirements:
+            - Keep it concise and practical
+            - Remove hype, filler, and vague wording
+            - Keep the tone calm and operator-like
+            - Make the value to the prospect obvious
+            - Only return the final script
+            """
+        )
+
+        cleaned = re.sub(r"\*", "", reviewed).strip()
+        return cleaned or draft
+
+    def review_metadata(self, draft_metadata: dict) -> dict:
+        """
+        Reviews title and description before publishing.
+
+        Args:
+            draft_metadata (dict): Draft metadata
+
+        Returns:
+            metadata (dict): Reviewed metadata
+        """
+        reviewed = self.generate_response(
+            f"""
+            Review this YouTube Shorts metadata for a technical service-led video.
+
+            Draft title: {draft_metadata.get("title", "")}
+            Draft description: {draft_metadata.get("description", "")}
+
+            Context:
+            Subject: {self.subject}
+            Domain / niche: {self.niche}
+            {build_profile_context(self.content_profile)}
+            Reusable case brief:
+            {self.case_brief or "None"}
+
+            Return valid JSON only with this schema:
+            {{
+              "title": "reviewed title",
+              "description": "reviewed description"
+            }}
+
+            Requirements:
+            - Specific, credible, no hype
+            - Keep title under 90 characters
+            - Keep description concise and CTA-aware
+            """
+        )
+
+        cleaned = reviewed.replace("```json", "").replace("```", "").strip()
+        try:
+            parsed = json.loads(cleaned)
+            title = str(parsed.get("title", "")).strip() or draft_metadata.get("title", "")
+            description = str(parsed.get("description", "")).strip() or draft_metadata.get("description", "")
+            return {"title": title, "description": description}
+        except Exception:
+            return draft_metadata
 
     def _persist_image(self, image_bytes: bytes, provider_label: str) -> str:
         """

@@ -50,11 +50,17 @@ def prompt_content_profile(default_topic: str, account_type: str) -> dict:
     primary_problem = question(" => Main problem you solve for them: ").strip()
     desired_outcome = question(" => Desired customer outcome: ").strip()
     cta_url = question(" => CTA URL (optional): ").strip()
+    case_brief_file = question(
+        " => Case brief file path relative to repo (optional): "
+    ).strip()
     proof_points = question(
         " => Proof points, comma-separated (optional): "
     ).strip()
     content_pillars = question(
         f" => Content pillars for '{default_topic}', comma-separated (optional): "
+    ).strip()
+    review_notes = question(
+        " => Review notes / guardrails for generated content (optional): "
     ).strip()
 
     return {
@@ -64,8 +70,10 @@ def prompt_content_profile(default_topic: str, account_type: str) -> dict:
         "primary_problem": primary_problem,
         "desired_outcome": desired_outcome,
         "cta_url": cta_url,
+        "case_brief_file": case_brief_file,
         "proof_points": proof_points,
         "content_pillars": content_pillars,
+        "review_notes": review_notes,
     }
 
 

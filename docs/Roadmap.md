@@ -44,8 +44,8 @@ Primary monetization order:
 - [x] Make YouTube scripts attract qualified prospects instead of generic viewers
 - [x] Make metadata and descriptions include soft service CTAs
 - [x] Make X posts calm, practical, and problem-solution driven
-- [ ] Add support for loading reusable case briefs from files
-- [ ] Add a review step before publishing generated content
+- [x] Add support for loading reusable case briefs from files
+- [x] Add a review step before publishing generated content
 - [ ] Add content variants for `deployment`, `hardening`, and `customization`
 
 ## Phase 3: Offer Packaging
