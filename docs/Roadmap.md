@@ -97,4 +97,5 @@ Before adding any new feature, ask:
 - [ ] Define a single target customer and one offer name
 - [ ] Create 3 content angles from real delivery experience
 - [ ] Publish one short, one X post, and one site article from the same proof asset
-- [ ] Update `origin` / `upstream` remotes so this fork can be pushed cleanly
+- [x] Update `origin` / `upstream` remotes so this fork can be pushed cleanly
+- [x] Add a dedicated upstream sync script for the fork workflow
