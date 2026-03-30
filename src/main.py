@@ -35,7 +35,7 @@ def prompt_content_profile(default_topic: str, account_type: str) -> dict:
         False,
     )
     use_strategy = question(
-        " => Use personalized case-study content prompts? (Yes/No, default Yes): "
+        " => Use personalized asset-led content prompts? (Yes/No, default Yes): "
     ).strip().lower()
 
     if use_strategy in {"no", "n"}:
@@ -45,10 +45,22 @@ def prompt_content_profile(default_topic: str, account_type: str) -> dict:
         " => Target customer (e.g. indie hackers, founders, small teams): "
     ).strip()
     content_variant = question(
-        " => Content variant (deployment/hardening/customization/general): "
+        " => Content variant (deployment/hardening/comparison/cost/general): "
     ).strip().lower()
+    asset_type = question(
+        " => Primary asset type (newsletter/checklist/template/sop/affiliate/article): "
+    ).strip().lower()
+    capture_type = question(
+        " => Capture type (subscribe/download/waitlist/clickthrough/none): "
+    ).strip().lower()
+    monetization_type = question(
+        " => Monetization type (paid_template/paid_sop/affiliate/low_touch_service/none): "
+    ).strip().lower()
+    asset_name = question(
+        f" => Asset name for this {account_type} account (optional): "
+    ).strip()
     offer_name = question(
-        f" => Main offer promoted by this {account_type} account: "
+        f" => Optional supporting offer promoted by this {account_type} account: "
     ).strip()
     primary_problem = question(" => Main problem you solve for them: ").strip()
     desired_outcome = question(" => Desired customer outcome: ").strip()
@@ -67,10 +79,14 @@ def prompt_content_profile(default_topic: str, account_type: str) -> dict:
     ).strip()
 
     return {
-        "content_mode": "service_case_study",
+        "content_mode": "asset_printer",
         "content_variant": content_variant or "general",
+        "asset_type": asset_type,
+        "capture_type": capture_type,
+        "monetization_type": monetization_type,
         "target_customer": target_customer,
         "offer_name": offer_name,
+        "asset_name": asset_name,
         "primary_problem": primary_problem,
         "desired_outcome": desired_outcome,
         "cta_url": cta_url,

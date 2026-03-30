@@ -45,8 +45,12 @@ def normalize_content_profile(content_profile: dict | None) -> dict:
     profile = {
         "content_mode": str(raw.get("content_mode", "") or "").strip().lower(),
         "content_variant": str(raw.get("content_variant", "") or "").strip().lower(),
+        "asset_type": str(raw.get("asset_type", "") or "").strip().lower(),
+        "capture_type": str(raw.get("capture_type", "") or "").strip().lower(),
+        "monetization_type": str(raw.get("monetization_type", "") or "").strip().lower(),
         "target_customer": str(raw.get("target_customer", "") or "").strip(),
         "offer_name": str(raw.get("offer_name", "") or "").strip(),
+        "asset_name": str(raw.get("asset_name", "") or "").strip(),
         "primary_problem": str(raw.get("primary_problem", "") or "").strip(),
         "desired_outcome": str(raw.get("desired_outcome", "") or "").strip(),
         "cta_url": str(raw.get("cta_url", "") or "").strip(),
@@ -61,6 +65,10 @@ def normalize_content_profile(content_profile: dict | None) -> dict:
             [
                 profile["target_customer"],
                 profile["offer_name"],
+                profile["asset_type"],
+                profile["capture_type"],
+                profile["monetization_type"],
+                profile["asset_name"],
                 profile["primary_problem"],
                 profile["desired_outcome"],
                 profile["cta_url"],
@@ -70,7 +78,7 @@ def normalize_content_profile(content_profile: dict | None) -> dict:
                 profile["content_pillars"],
             ]
         )
-        profile["content_mode"] = "service_case_study" if has_strategy_data else "legacy"
+        profile["content_mode"] = "asset_printer" if has_strategy_data else "legacy"
 
     if not profile["content_variant"]:
         profile["content_variant"] = "general"
@@ -89,7 +97,7 @@ def has_service_strategy(content_profile: dict | None) -> bool:
         enabled (bool): True when service-led prompts should be used
     """
     profile = normalize_content_profile(content_profile)
-    return profile["content_mode"] == "service_case_study"
+    return profile["content_mode"] in {"service_case_study", "asset_printer"}
 
 
 def build_profile_context(content_profile: dict | None) -> str:
@@ -109,8 +117,16 @@ def build_profile_context(content_profile: dict | None) -> str:
         lines.append(f"Target customer: {profile['target_customer']}")
     if profile["content_variant"]:
         lines.append(f"Content variant: {profile['content_variant']}")
+    if profile["asset_type"]:
+        lines.append(f"Primary asset type: {profile['asset_type']}")
+    if profile["capture_type"]:
+        lines.append(f"Capture type: {profile['capture_type']}")
+    if profile["monetization_type"]:
+        lines.append(f"Monetization type: {profile['monetization_type']}")
     if profile["offer_name"]:
         lines.append(f"Offer: {profile['offer_name']}")
+    if profile["asset_name"]:
+        lines.append(f"Asset name: {profile['asset_name']}")
     if profile["primary_problem"]:
         lines.append(f"Primary problem solved: {profile['primary_problem']}")
     if profile["desired_outcome"]:

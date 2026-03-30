@@ -76,7 +76,27 @@ class YouTube:
             )
 
         return (
-            "Emphasize concrete implementation lessons that can naturally lead into deployment, hardening, or customization work."
+            "Emphasize concrete implementation lessons that can naturally lead into reusable content assets, downloadable resources, or low-touch monetization."
+        )
+
+    def _asset_instruction(self) -> str:
+        """
+        Returns specialized guidance for the selected asset destination.
+
+        Returns:
+            instruction (str): Asset-specific prompt guidance
+        """
+        asset_type = self.content_profile.get("asset_type", "")
+        capture_type = self.content_profile.get("capture_type", "")
+        monetization_type = self.content_profile.get("monetization_type", "")
+        asset_name = self.content_profile.get("asset_name", "")
+
+        return (
+            f"Primary asset type: {asset_type or 'general content asset'}. "
+            f"Capture type: {capture_type or 'none'}. "
+            f"Monetization type: {monetization_type or 'none'}. "
+            f"Asset name: {asset_name or 'none'}. "
+            "The video should help build reusable audience and asset value before pushing direct services."
         )
 
     def __init__(
@@ -176,7 +196,7 @@ class YouTube:
         if has_service_strategy(self.content_profile):
             completion = self.generate_response(
                 f"""
-                You are planning a short-form educational video that attracts qualified leads to a technical service.
+                You are planning a short-form educational video that grows durable content assets and owned audience around technical workflows.
 
                 Domain / niche: {self.niche}
                 Language: {self.language}
@@ -185,14 +205,16 @@ class YouTube:
                 {self.case_brief or "None"}
                 Variant guidance:
                 {self._variant_instruction()}
+                Asset guidance:
+                {self._asset_instruction()}
 
                 Generate one concrete short-video angle in exactly one sentence.
 
                 Requirements:
-                - Make it practical, credibility-first, and case-study oriented.
-                - Prefer deployment lessons, security pitfalls, implementation trade-offs, or client-facing outcomes.
+                - Make it practical, credibility-first, and useful enough to support long-tail discovery.
+                - Prefer deployment lessons, security pitfalls, implementation trade-offs, cost trade-offs, or reusable workflow outcomes.
                 - Avoid vague motivation, generic AI news, and broad listicles.
-                - The angle should feel like something a founder or small team would actually click because it solves a real problem.
+                - The angle should feel like something a builder would search, save, or subscribe for.
                 - Only return the topic sentence.
                 """
             )
@@ -228,17 +250,19 @@ class YouTube:
             {self.case_brief or "None"}
             Variant guidance:
             {self._variant_instruction()}
+            Asset guidance:
+            {self._asset_instruction()}
 
             Script goals:
-            - Attract the right prospect, not broad entertainment traffic.
+            - Attract the right reader/viewer, not broad entertainment traffic.
             - Sound like a calm technical operator explaining a real-world lesson.
-            - Make the audience feel "this person can probably solve my problem".
+            - Make the audience feel "this is worth saving or subscribing for".
 
             Structure:
             - Sentence 1: Name a concrete problem, failure mode, or costly mistake.
             - Sentence 2: Explain why it happens or what most people miss.
             - Sentence 3: Show the practical fix, principle, or workflow.
-            - Sentence 4: Describe the business/technical outcome or a soft CTA.
+            - Sentence 4: Describe the reusable outcome, next step, or soft asset CTA.
 
             Rules:
             - No markdown, no title, no bullet points.
@@ -309,12 +333,15 @@ class YouTube:
                 {self.case_brief or "None"}
                 Variant guidance:
                 {self._variant_instruction()}
+                Asset guidance:
+                {self._asset_instruction()}
 
                 Requirements:
                 - Under 90 characters
                 - Specific and useful, not clickbait
                 - May use 1-2 targeted hashtags if they help
                 - Should signal a real deployment, security, automation, or implementation lesson
+                - Prefer searchable clarity over generic persuasion
                 - Only return the title
                 """
             )
@@ -341,12 +368,14 @@ class YouTube:
                 {self.case_brief or "None"}
                 Variant guidance:
                 {self._variant_instruction()}
+                Asset guidance:
+                {self._asset_instruction()}
 
                 Requirements:
                 - Summarize the lesson in 2-4 short lines
                 - Sound practical and trustworthy
                 - Mention the target outcome for the audience
-                - Include a soft CTA to contact or learn more
+                - Include a soft CTA to subscribe, download, or learn more
                 - If a CTA URL is present in the context, include it naturally
                 - Only return the description
                 """
@@ -384,12 +413,14 @@ class YouTube:
             {self.case_brief or "None"}
             Variant guidance:
             {self._variant_instruction()}
+            Asset guidance:
+            {self._asset_instruction()}
 
             Visual direction:
             - product UI mockups
             - terminal / dashboard / architecture visuals
             - secure infrastructure scenes
-            - founder workflow, deployment workflow, before/after states
+            - workflow diagrams, checklists, resource-pack style visuals
             - realistic modern SaaS or engineering imagery
 
             Rules:
@@ -490,12 +521,14 @@ class YouTube:
             {self.case_brief or "None"}
             Variant guidance:
             {self._variant_instruction()}
+            Asset guidance:
+            {self._asset_instruction()}
 
             Requirements:
             - Keep it concise and practical
             - Remove hype, filler, and vague wording
             - Keep the tone calm and operator-like
-            - Make the value to the prospect obvious
+            - Make the reusable value to the reader obvious
             - Only return the final script
             """
         )
@@ -528,6 +561,8 @@ class YouTube:
             {self.case_brief or "None"}
             Variant guidance:
             {self._variant_instruction()}
+            Asset guidance:
+            {self._asset_instruction()}
 
             Return valid JSON only with this schema:
             {{
@@ -539,6 +574,7 @@ class YouTube:
             - Specific, credible, no hype
             - Keep title under 90 characters
             - Keep description concise and CTA-aware
+            - Prefer owned asset capture over direct service selling
             """
         )
 

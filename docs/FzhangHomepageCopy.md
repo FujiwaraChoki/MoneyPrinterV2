@@ -25,8 +25,7 @@ Primary job:
 
 Recommended primary action:
 
-- `订阅更新`
-- or `领取一份免费资源`
+- `领取一份免费资源`
 
 Recommended secondary action:
 
@@ -79,9 +78,9 @@ Add one lightweight block below the hero and above recent posts.
 
 ### CTA options
 
-- Primary: `订阅更新`
+- Primary: `领取免费清单`
 - Secondary: `查看文章归档`
-- Optional: `领取免费清单`
+- Optional: `订阅更新`
 
 ## Stronger Version If You Want One Resource CTA
 
@@ -147,9 +146,9 @@ That keeps the site aligned with the new MoneyPrinter direction:
 
 ## Recommended Homepage CTA Hierarchy
 
-1. `订阅更新`
+1. `领取免费清单`
 2. `查看文章归档`
-3. `领取免费清单` or `了解更多`
+3. `订阅更新` or `了解更多`
 4. optional service link, but not primary
 
 ## Meta Direction

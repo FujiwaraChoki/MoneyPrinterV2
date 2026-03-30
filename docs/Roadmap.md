@@ -65,7 +65,7 @@ This layer is allowed, but it should finance the earlier layers rather than domi
 - [x] Rewrite the fork strategy around asset compounding
 - [x] Rewrite the roadmap around owned audience and reusable assets
 - [ ] Remove or reframe old service-led messaging where it creates strategic confusion
-- [ ] Define the first primary asset type this fork will print
+- [x] Define the first primary asset type this fork will print
 
 ## Phase 2: Intent-Driven Content Engine
 
@@ -142,14 +142,12 @@ If the answer to 1-3 is "no", it is probably off-strategy.
 
 ## Immediate Next Tasks
 
-- [ ] Choose the first asset type to optimize for:
-- [ ] newsletter growth
-- [ ] affiliate content
-- [ ] resource packs
-- [ ] paid templates / SOPs
+- [x] Choose the first asset type to optimize for: free resource capture first, paid SOP/template second
 - [ ] Rewrite the current account profile system around asset destination, not only service offer
 - [ ] Draft the first 10 topic angles with monetizable intent
+- [ ] Define the first lead magnet
 - [ ] Define one homepage conversion block for `fzhang.dev` that points to an owned asset
 - [ ] Create one pilot downloadable asset and one article that leads into it
+- [ ] Design the second-stage paid SOP/template that the lead magnet should eventually feed into
 - [x] Update `origin` / `upstream` remotes so this fork can be pushed cleanly
 - [x] Add a dedicated upstream sync script for the fork workflow

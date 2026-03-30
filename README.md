@@ -41,7 +41,7 @@ This fork is being re-optimized around long-term monetizable assets:
 - direct attention toward assets such as newsletters, resource packs, templates, and selective affiliate offers
 - treat service revenue as optional bootstrap fuel, not the end state
 
-See [docs/FrankMoneyPrinter.md](docs/FrankMoneyPrinter.md) for the specialization strategy and [docs/Roadmap.md](docs/Roadmap.md) for the implementation phases.
+See [docs/FrankMoneyPrinter.md](docs/FrankMoneyPrinter.md) for the specialization strategy, [docs/FinancialFreedomPath.md](docs/FinancialFreedomPath.md) for the staged monetization path, [docs/FirstAssetSpec.md](docs/FirstAssetSpec.md) for the first asset decision, and [docs/Roadmap.md](docs/Roadmap.md) for the implementation phases.
 
 ## Versions
 

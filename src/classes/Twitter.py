@@ -56,7 +56,25 @@ class Twitter:
             )
 
         return (
-            "Focus on practical implementation lessons that can lead into deployment, hardening, or customization work."
+            "Focus on practical implementation lessons that can become reusable content, downloadable resources, or low-touch monetizable assets."
+        )
+
+    def _asset_instruction(self) -> str:
+        """
+        Returns specialized guidance for the selected asset type.
+
+        Returns:
+            instruction (str): Asset-specific prompt guidance
+        """
+        asset_type = self.content_profile.get("asset_type", "")
+        capture_type = self.content_profile.get("capture_type", "")
+        monetization_type = self.content_profile.get("monetization_type", "")
+
+        return (
+            f"Primary asset type: {asset_type or 'general content asset'}. "
+            f"Capture type: {capture_type or 'none'}. "
+            f"Monetization type: {monetization_type or 'none'}. "
+            "The post should nudge the reader toward a reusable asset or owned relationship, not only a direct service sale."
         )
 
     def __init__(
@@ -245,7 +263,7 @@ class Twitter:
         if has_service_strategy(self.content_profile):
             completion = generate_text(
                 f"""
-                Write a concise X post in {get_twitter_language()} for a technical service business.
+                Write a concise X post in {get_twitter_language()} for a technical content and audience-building business.
 
                 Topic / angle: {self.topic}
                 {build_profile_context(self.content_profile)}
@@ -253,13 +271,16 @@ class Twitter:
                 {self.case_brief or "None"}
                 Variant guidance:
                 {self._variant_instruction()}
+                Asset guidance:
+                {self._asset_instruction()}
 
                 Requirements:
                 - Maximum 240 characters
                 - Sound like a calm operator, not a hype marketer
-                - Mention one concrete problem, one practical insight, and optionally a soft CTA
-                - Prefer deployment, security, workflow, or implementation lessons
-                - Avoid generic inspiration and vague AI hot takes
+                - Mention one concrete problem and one practical insight
+                - Prefer deployment, security, workflow, cost, or implementation lessons
+                - Avoid generic inspiration, vague AI hot takes, and empty engagement bait
+                - If there is a CTA, point to a reusable asset, subscription, download, or owned destination before direct selling
                 - Only return the post text
                 """
             )
@@ -301,7 +322,7 @@ class Twitter:
         """
         reviewed = generate_text(
             f"""
-            Review and improve this X post for a technical service operator.
+            Review and improve this X post for a technical asset-building operator.
 
             Draft:
             {draft}
@@ -313,11 +334,14 @@ class Twitter:
             {self.case_brief or "None"}
             Variant guidance:
             {self._variant_instruction()}
+            Asset guidance:
+            {self._asset_instruction()}
 
             Requirements:
             - Keep the core meaning
             - Remove hype, fluff, and generic AI phrasing
             - Make it sound specific, credible, and useful
+            - Prefer owned-audience or reusable-asset direction over hard selling
             - Keep it under 240 characters
             - Only return the final post
             """

@@ -247,3 +247,25 @@ If the answer to 1-3 is "no", be skeptical.
 For Frank, `MoneyPrinterV2` should become:
 
 > A content-asset production and distribution system that compounds into owned audience, monetizable pages, and low-touch revenue streams.
+
+## Current First Bet
+
+The first concrete bet is no longer open-ended.
+
+The fork should optimize first for:
+
+- free resource capture
+- then paid SOPs / templates
+
+This is a better match than:
+
+- affiliate-first
+- service-first
+- newsletter-without-asset-first
+
+because it fits the current strengths:
+
+- structured thinking
+- written explanation
+- technical documentation
+- repeatable process extraction
