@@ -30,6 +30,7 @@ The following work is already represented in committed docs or repo changes:
   - first 10 long-tail topics
   - first paid SOP draft
 - homepage direction and CTA hierarchy are drafted, but site implementation is still pending
+- a cross-project execution summary now exists in `docs/FinancialFreedomExecutionStack.md`
 
 Current gap summary:
 
@@ -202,3 +203,17 @@ If the answer to 1-3 is "no", it is probably off-strategy.
 1. Upgrade the checklist landing page so visitors immediately understand it is an execution asset, not a gated copy of a public article.
 2. Ship the first real email capture system: immediate resource delivery, confirmed follow-up sequence, and ongoing site updates.
 3. Add first-pass measurement for the checklist funnel: page views, submits, confirmed subscribers, and downstream clicks.
+
+## Portfolio Rule
+
+This fork is not the entire financial-freedom system by itself.
+
+It is the current main execution repo inside a broader stack:
+
+- `MoneyPrinterV2` = asset printer
+- `fzhang.dev` = trust + long-tail traffic + owned capture
+- knowledge base = source material + evidence ledger + decision filters
+- `social-auto-upload` = distribution multiplier
+- `paperclip` = later-stage product optionality, not the current short-term cash engine
+
+If future work starts to blur these roles, use `docs/FinancialFreedomExecutionStack.md` as the reset point.
