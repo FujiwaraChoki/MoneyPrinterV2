@@ -22,6 +22,30 @@
   - `docs/FinancialFreedomPath.md`
   - `docs/FzhangHomepageCopy.md`
 
+## Cross-Project Financial Freedom Context
+- This repo should be evaluated as one lane inside Frank's broader financial-freedom system, not in isolation.
+- Canonical cross-project references for that system:
+  - `docs/FinancialFreedomExecutionStack.md`
+  - `docs/Roadmap.md`
+  - `/Users/frank_zhang/Documents/文稿 - Frank's MacBook Air/Github项目/paperclip/doc/plans/2026-03-31-paperclip-financial-freedom-positioning.md`
+  - `/Users/frank_zhang/Library/Mobile Documents/com~apple~CloudDocs/Obsidian 库/5.知识库/07个人成长/08财务自由之路/1当前财务自由系统的项目分工与顺序（2026-03-31）.md`
+- When work touches monetization order, project prioritization, `fzhang.dev`, asset funnels, paid SOPs/templates, bootstrap services, or possible `paperclip` integration, consult the references above before making strategic changes.
+- Current cross-project operating model:
+  - `cash flow survival layer + asset compounding layer + product optionality layer`
+  - `MoneyPrinterV2` is the current main execution repo for the asset-compounding layer.
+  - `fzhang.dev` is the trust, traffic, and owned-audience surface.
+  - The knowledge base is a source-material and evidence ledger, not just storage.
+  - `paperclip` is currently later-stage product optionality, not the main short-term monetization engine.
+- Guardrail:
+  - Do not let `paperclip` or other product bets consume execution budget needed for the current asset loop:
+    - close the checklist funnel
+    - verify email delivery and tagging
+    - publish monetizable long-tail content
+    - validate paid SOP / template demand
+    - build proof from real traffic, downloads, replies, and purchases
+- Promotion rule:
+  - Larger product bets should be activated by repeated external proof, not by excitement alone.
+
 ## Project Structure & Module Organization
 - `src/` contains the application code. Use `src/main.py` as the interactive entrypoint.
 - `src/classes/` holds provider-specific components (for example `YouTube.py`, `Twitter.py`, `Tts.py`, `AFM.py`, `Outreach.py`).
