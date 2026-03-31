@@ -185,7 +185,12 @@ class Twitter:
         Returns:
             None
         """
-        with open(get_twitter_cache_path(), "r") as file:
+        cache_path = get_twitter_cache_path()
+        if not os.path.exists(cache_path):
+            with open(cache_path, "w") as file:
+                json.dump({"accounts": []}, file, indent=4)
+
+        with open(cache_path, "r") as file:
             previous_json = json.loads(file.read())
 
         # Find our account
