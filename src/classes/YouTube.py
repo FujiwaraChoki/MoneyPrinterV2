@@ -743,7 +743,7 @@ class YouTube:
             # Go to youtube.com/upload
             driver.get("https://www.youtube.com/upload")
 
-            # Set video file -- wait for the file picker to appear
+            # Set video file - wait for the file picker to appear
             if verbose:
                 info("\t=> Waiting for file picker...")
             file_picker = self._wait_and_find(By.TAG_NAME, "ytcp-uploads-file-picker")

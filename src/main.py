@@ -453,7 +453,7 @@ if __name__ == "__main__":
     # Fetch MP3 Files
     fetch_songs()
 
-    # Select Ollama model — use config value if set, otherwise pick interactively
+    # Select Ollama model - use config value if set, otherwise pick interactively
     configured_model = get_ollama_model()
     if configured_model:
         select_model(configured_model)

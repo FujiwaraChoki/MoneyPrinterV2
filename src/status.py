@@ -14,13 +14,13 @@ _logger.setLevel(logging.DEBUG)
 
 # Prevent duplicate handlers when the module is re-imported
 if not _logger.handlers:
-    # Console handler -- always INFO+ with color handled by the functions below
+    # Console handler - always INFO+ with color handled by the functions below
     _console_handler = logging.StreamHandler(sys.stdout)
     _console_handler.setLevel(logging.DEBUG)
     _console_handler.setFormatter(logging.Formatter("%(message)s"))
     _logger.addHandler(_console_handler)
 
-    # File handler -- rotates at 5 MB, keeps 3 backups
+    # File handler - rotates at 5 MB, keeps 3 backups
     try:
         os.makedirs(_LOG_DIR, exist_ok=True)
         _file_handler = RotatingFileHandler(
