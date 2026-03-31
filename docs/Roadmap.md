@@ -80,18 +80,14 @@ This layer is allowed, but it should finance the earlier layers rather than domi
 
 ## Phase 3: Asset Expansion Pipeline
 
-- [ ] Turn one topic into short + post + article + capture hook
+- [x] Turn one topic into short + post + article + capture hook
 - [ ] Add support for article-outline generation from the same brief
-- [ ] Add support for downloadable asset hooks such as checklists or templates
+- [x] Add support for downloadable asset hooks such as checklists or templates
 - [ ] Create reusable asset-brief templates instead of only case-study briefs
 
 ## Phase 4: Owned Capture
 
-- [ ] Define one primary capture target:
-- [ ] newsletter
-- [ ] free resource pack
-- [ ] checklist download
-- [ ] waiting list for paid resources
+- [x] Define one primary capture target: checklist download first
 - [ ] Add CTA variants that point to owned capture instead of direct call booking
 - [ ] Add measurement for capture conversion by topic type
 
@@ -148,6 +144,7 @@ If the answer to 1-3 is "no", it is probably off-strategy.
 - [x] Define the first lead magnet
 - [ ] Define one homepage conversion block for `fzhang.dev` that points to an owned asset
 - [x] Create one pilot downloadable asset draft
+- [x] Create one pilot article draft and one short-content pack that lead into it
 - [x] Design the second-stage paid SOP/template that the lead magnet should eventually feed into
 - [x] Update `origin` / `upstream` remotes so this fork can be pushed cleanly
 - [x] Add a dedicated upstream sync script for the fork workflow

@@ -6,7 +6,10 @@ Current scope:
 
 - free lead magnets
 - download page copy
+- post-submit / follow-up copy
+- long-form article drafts
 - first-wave content topic clusters
+- short-form content packs
 - future SOP / template drafts
 
 These files are intentionally written as working assets, not just abstract strategy notes.
