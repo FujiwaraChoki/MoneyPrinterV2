@@ -86,12 +86,17 @@ class Twitter:
         bot.get("https://x.com/compose/post")
 
         post_content: str = text if text is not None else self.generate_post()
+
+        if not post_content:
+            error("Failed to generate post content.")
+            return
+
         now: datetime = datetime.now()
 
         print(colored(" => Posting to Twitter:", "blue"), post_content[:30] + "...")
         body = post_content
 
-        text_box = None
+        text_sent = False
         text_box_selectors = [
             (By.CSS_SELECTOR, "div[data-testid='tweetTextarea_0'][role='textbox']"),
             (By.XPATH, "//div[@data-testid='tweetTextarea_0']//div[@role='textbox']"),
@@ -103,11 +108,12 @@ class Twitter:
                 text_box = self.wait.until(EC.element_to_be_clickable(selector))
                 text_box.click()
                 text_box.send_keys(body)
+                text_sent = True
                 break
             except Exception:
                 continue
 
-        if text_box is None:
+        if not text_sent:
             raise RuntimeError(
                 "Could not find tweet text box. Ensure you are logged into X in this Firefox profile."
             )
@@ -179,21 +185,31 @@ class Twitter:
         Returns:
             None
         """
-        posts = self.get_posts()
-        posts.append(post)
-
         with open(get_twitter_cache_path(), "r") as file:
             previous_json = json.loads(file.read())
 
-            # Find our account
-            accounts = previous_json["accounts"]
-            for account in accounts:
-                if account["id"] == self.account_uuid:
-                    account["posts"].append(post)
+        # Find our account
+        account_found = False
+        accounts = previous_json["accounts"]
+        for account in accounts:
+            if account["id"] == self.account_uuid:
+                account["posts"].append(post)
+                account_found = True
+                break
 
-            # Commit changes
-            with open(get_twitter_cache_path(), "w") as f:
-                f.write(json.dumps(previous_json))
+        # If account not in cache, create it
+        if not account_found:
+            accounts.append({
+                "id": self.account_uuid,
+                "nickname": self.account_nickname,
+                "firefox_profile": self.fp_profile_path,
+                "topic": self.topic,
+                "posts": [post]
+            })
+
+        # Commit changes
+        with open(get_twitter_cache_path(), "w") as f:
+            f.write(json.dumps(previous_json, indent=4))
 
     def generate_post(self) -> str:
         """
@@ -219,7 +235,7 @@ class Twitter:
 
         if get_verbose():
             info(f"Length of post: {len(completion)}")
-        if len(completion) >= 260:
-            return completion[:257].rsplit(" ", 1)[0] + "..."
+        if len(completion) >= 280:
+            return completion[:277].rsplit(" ", 1)[0] + "..."
 
         return completion
