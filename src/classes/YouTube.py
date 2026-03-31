@@ -201,6 +201,7 @@ class YouTube:
                     warning("Generated Script is too long. Retrying...")
                 return self.generate_script()
 
+        self._script_retries = 0
         self.script = completion
 
         return completion
@@ -233,6 +234,7 @@ class YouTube:
             f"Please generate a YouTube Video Description for the following script: {self.script}. Only return the description, nothing else."
         )
 
+        self._metadata_retries = 0
         self.metadata = {"title": title, "description": description}
 
         return self.metadata
@@ -311,6 +313,7 @@ class YouTube:
         if len(image_prompts) > n_prompts:
             image_prompts = image_prompts[:n_prompts]
 
+        self._prompts_retries = 0
         self.image_prompts = image_prompts
 
         success(f"Generated {len(image_prompts)} Image Prompts.")
