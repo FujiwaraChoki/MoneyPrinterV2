@@ -10,6 +10,6 @@ Current scope:
 - long-form article drafts
 - first-wave content topic clusters
 - short-form content packs
-- future SOP / template drafts
+- SOP / template drafts
 
 These files are intentionally written as working assets, not just abstract strategy notes.

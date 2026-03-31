@@ -94,7 +94,7 @@ This layer is allowed, but it should finance the earlier layers rather than domi
 ## Phase 5: Monetization Experiments
 
 - [ ] Define the first affiliate-safe topic cluster
-- [ ] Define the first paid digital asset to test
+- [x] Define the first paid digital asset to test
 - [ ] Define the first low-touch offer, only if needed as bootstrap revenue
 - [ ] Map which content types should lead to which monetization type
 
@@ -146,5 +146,6 @@ If the answer to 1-3 is "no", it is probably off-strategy.
 - [x] Create one pilot downloadable asset draft
 - [x] Create one pilot article draft and one short-content pack that lead into it
 - [x] Design the second-stage paid SOP/template that the lead magnet should eventually feed into
+- [x] Draft the first paid SOP body
 - [x] Update `origin` / `upstream` remotes so this fork can be pushed cleanly
 - [x] Add a dedicated upstream sync script for the fork workflow
