@@ -13,6 +13,11 @@ class TTS:
         self._voice = get_tts_voice()
 
     def synthesize(self, text, output_file=os.path.join(ROOT_DIR, ".mp", "audio.wav")):
-        audio = self._model.generate(text, voice=self._voice)
-        sf.write(output_file, audio, KITTEN_SAMPLE_RATE)
+        if not text or not text.strip():
+            raise ValueError("Cannot synthesize empty text.")
+        try:
+            audio = self._model.generate(text, voice=self._voice)
+            sf.write(output_file, audio, KITTEN_SAMPLE_RATE)
+        except Exception as e:
+            raise RuntimeError(f"TTS synthesis failed: {e}") from e
         return output_file
