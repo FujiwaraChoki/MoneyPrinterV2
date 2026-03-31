@@ -6,6 +6,38 @@ This roadmap is now aligned to a different end state:
 
 The fork is no longer primarily optimized around "more client work".
 
+## Progress Snapshot
+
+As of 2026-03-31, the first strategy pass is no longer just a discussion thread.
+
+The following decisions are now effectively locked unless a later strategy reset overrides them:
+
+- this fork is optimizing for `Asset Printer` first, `Lead Printer` second, and `Cash Printer` only as bootstrap support
+- the first capture path is a free deployment checklist, not a hard service CTA
+- `fzhang.dev` should remain content-first rather than turning into a generic agency homepage
+- the first monetization bridge is: free asset -> owned audience -> paid SOP / template -> later affiliate or low-touch offers
+
+The following work is already represented in committed docs or repo changes:
+
+- strategy docs exist for the overall specialization, monetization path, and first asset choice
+- the content profile system has been reframed around asset-led prompts instead of only service-led positioning
+- the first asset funnel has draft assets:
+  - free checklist
+  - download page copy
+  - post-submit copy
+  - first article draft
+  - first short-content pack
+  - first 10 long-tail topics
+  - first paid SOP draft
+- homepage direction and CTA hierarchy are drafted, but site implementation is still pending
+
+Current gap summary:
+
+- measurement is not wired yet
+- topic scoring is not implemented yet
+- affiliate-safe comparison / recommendation clusters are not defined yet
+- email delivery, tagging, and sequence timing still need true inbox verification
+
 ## North Star
 
 The system should gradually make it easier to produce:
@@ -71,8 +103,8 @@ This layer is allowed, but it should finance the earlier layers rather than domi
 
 - [x] Replace broad service-led prompts with monetizable-intent prompts
 - [ ] Create content variants for:
-- [ ] deployment intent
-- [ ] risk / hardening intent
+- [x] deployment intent
+- [x] risk / hardening intent
 - [ ] tool comparison intent
 - [ ] cost / trade-off intent
 - [ ] affiliate-safe recommendation intent
@@ -89,7 +121,14 @@ This layer is allowed, but it should finance the earlier layers rather than domi
 
 - [x] Define one primary capture target: checklist download first
 - [ ] Add CTA variants that point to owned capture instead of direct call booking
+- [ ] Turn resource capture into a mature email path instead of one-off form replies
 - [ ] Add measurement for capture conversion by topic type
+
+Implementation note:
+
+- live site now uses a custom `/api/subscribe` endpoint for the checklist flow
+- success page already frames the flow as confirmation-first, then resource delivery
+- still needs real inbox verification before this phase item can be closed
 
 ## Phase 5: Monetization Experiments
 
@@ -100,10 +139,18 @@ This layer is allowed, but it should finance the earlier layers rather than domi
 
 ## Phase 6: Site Integration
 
-- [ ] Keep `fzhang.dev` primarily as a content site
+- [x] Keep `fzhang.dev` primarily as a content site
 - [ ] Add a lightweight conversion path from homepage to owned assets
+- [x] Make resource pages clearly stronger than adjacent public articles
+- [x] Replace RSS-only subscription positioning with email + RSS dual paths
 - [ ] Add dedicated pages for resources, comparisons, or templates
 - [ ] Avoid turning the whole site into a generic service homepage
+
+Direction note:
+
+- content-first site positioning is agreed and documented
+- homepage conversion copy is drafted
+- actual site implementation is still pending
 
 ## Phase 7: Measurement
 
@@ -142,10 +189,16 @@ If the answer to 1-3 is "no", it is probably off-strategy.
 - [x] Rewrite the current account profile system around asset destination, not only service offer
 - [x] Draft the first 10 topic angles with monetizable intent
 - [x] Define the first lead magnet
-- [ ] Define one homepage conversion block for `fzhang.dev` that points to an owned asset
+- [x] Define one homepage conversion block for `fzhang.dev` that points to an owned asset
 - [x] Create one pilot downloadable asset draft
 - [x] Create one pilot article draft and one short-content pack that lead into it
 - [x] Design the second-stage paid SOP/template that the lead magnet should eventually feed into
 - [x] Draft the first paid SOP body
 - [x] Update `origin` / `upstream` remotes so this fork can be pushed cleanly
 - [x] Add a dedicated upstream sync script for the fork workflow
+
+## Executable Shortlist
+
+1. Upgrade the checklist landing page so visitors immediately understand it is an execution asset, not a gated copy of a public article.
+2. Ship the first real email capture system: immediate resource delivery, confirmed follow-up sequence, and ongoing site updates.
+3. Add first-pass measurement for the checklist funnel: page views, submits, confirmed subscribers, and downstream clicks.

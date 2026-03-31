@@ -1,5 +1,27 @@
 # Repository Guidelines
 
+## Current Product Direction
+- This fork is Frank's custom `MoneyPrinter`, not a generic client-acquisition helper.
+- Prioritize business layers in this order:
+  - `Asset Printer`: reusable content assets, checklists, SOPs, templates, comparison pages.
+  - `Lead Printer`: owned audience, subscribers, repeat traffic, search/social entry points.
+  - `Cash Printer`: selective service revenue only as bootstrap support.
+- Strategy test for new work:
+  - Prefer features and content that create reusable assets, strengthen owned audience, or improve low-touch monetization.
+  - Avoid changes that mainly optimize for selling more hours or turning the repo into a generic agency machine.
+- Current first asset path:
+  - free asset first: `开源 AI 项目部署前检查清单`
+  - then paid asset: launch / hardening SOPs, templates, or other low-touch digital products
+- Site positioning:
+  - `fzhang.dev` should remain content-first.
+  - Homepage CTA should bias toward owned-asset capture, not hard service selling.
+- Canonical strategy docs:
+  - `docs/FrankMoneyPrinter.md`
+  - `docs/Roadmap.md`
+  - `docs/FirstAssetSpec.md`
+  - `docs/FinancialFreedomPath.md`
+  - `docs/FzhangHomepageCopy.md`
+
 ## Project Structure & Module Organization
 - `src/` contains the application code. Use `src/main.py` as the interactive entrypoint.
 - `src/classes/` holds provider-specific components (for example `YouTube.py`, `Twitter.py`, `Tts.py`, `AFM.py`, `Outreach.py`).
