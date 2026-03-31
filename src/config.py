@@ -203,7 +203,8 @@ def get_scraper_timeout() -> int:
     Returns:
         timeout (int): The timeout
     """
-    return _load_config().get("scraper_timeout", 300) or 300
+    timeout = _load_config().get("scraper_timeout")
+    return timeout if timeout is not None else 300
 
 def get_outreach_message_subject() -> str:
     """
