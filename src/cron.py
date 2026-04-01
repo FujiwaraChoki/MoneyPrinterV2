@@ -8,6 +8,7 @@ from classes.Tts import TTS
 from classes.Twitter import Twitter
 from classes.YouTube import YouTube
 from llm_provider import select_model
+from post_bridge_integration import maybe_crosspost_youtube_short
 
 def main():
     """Main function to post content to Twitter or upload videos to YouTube.
@@ -79,9 +80,17 @@ def main():
                     acc["language"]
                 )
                 youtube.generate_video(tts)
-                youtube.upload_video()
-                if verbose:
-                    success("Uploaded Short.")
+                upload_success = youtube.upload_video()
+                if upload_success:
+                    if verbose:
+                        success("Uploaded Short.")
+                    maybe_crosspost_youtube_short(
+                        video_path=youtube.video_path,
+                        title=youtube.metadata.get("title", ""),
+                        interactive=False,
+                    )
+                else:
+                    warning("YouTube upload failed. Skipping Post Bridge cross-post.")
                 break
     else:
         error("Invalid Purpose, exiting...")
