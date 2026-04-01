@@ -1,5 +1,14 @@
 # 给另一个 AI 的站点改造提示词
 
+> Historical note:
+> this prompt was written before the current site implementation landed.
+> Treat it as an archive of the original build brief, not as the current source of truth.
+> For current email / subscription reality, prefer:
+> - `docs/FzhangEmailAutomationBlueprint.md`
+> - `docs/FzhangSiteAcceptanceAudit.md`
+> - `docs/FzhangButtondownUnsubscribeAuditPrompt.md`
+> - `docs/FzhangButtondownFollowupAutomationPrompt.md`
+
 你现在要修改 `fzhang.dev` 的站点源码。不要泛泛给建议，直接完成实现。
 
 ## 背景

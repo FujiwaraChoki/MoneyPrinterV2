@@ -297,31 +297,31 @@
 
 这样不会破坏你喜欢 RSS 的站点气质，同时也能承接资源用户。
 
-## 实现步骤
+## 当前实现步骤
 
-### 方案 A：Formspree + Buttondown
+### 当前现实链路
 
-1. 在 Formspree 开启 autoresponse
-2. 交付第一封资源邮件
-3. 若你的 Formspree 计划支持 Webhooks，则配置 webhook
-4. webhook 把 `email/name/resource/source_page` 发到你的同步服务
-5. 同步服务调用 Buttondown API，创建 subscriber 并打标签
-6. 在 Buttondown 中创建：
-   - welcome / nurture automation
-   - RSS-to-email automation
+1. 用户提交资源页表单
+2. 资源在站内即时解锁
+3. 站点 API 把订阅者写入 Buttondown
+4. 订阅者完成 confirmation
+5. Buttondown 发送 Welcome Email
+6. 后续只在 deployment 主题下有真正值得发的更新时，再低频分群发送
 
-### 方案 B：Serverless + Buttondown
+### 未来升级步骤
 
-1. 前端表单发到 `/api/resource-signup`
-2. 后端验证 Turnstile
-3. 后端发送资源交付邮件
-4. 后端调用 Buttondown API 创建 subscriber
-5. subscriber 打上：
-   - `lead-magnet`
-   - `resource-checklist`
-   - `topic-deployment`
-   - `source-fzhang-dev`
-6. Buttondown 负责后续 automation 和 RSS-to-email
+只有在下面任一条件成立时，再考虑升级：
+
+- 你确认当前 Buttondown 计划已包含 automations
+- 你确认当前 Buttondown 计划已包含 RSS-to-email
+- checklist funnel 已稳定跑通，且你真的需要更固定的 cadence
+
+升级方向：
+
+1. 保留站内即时解锁，不改回邮件交付
+2. 在 Welcome 之后补 2 到 3 封 short follow-up
+3. 或对 `topic-deployment` 订阅者开启 weekly / digest 更新
+4. 仍避免对所有零散文章做自动逐篇发送
 
 ## 关键优化点
 
@@ -344,18 +344,19 @@
 
 RSS 应该保留，但不该继续独占“订阅”入口。
 
-### 4. 把资源交付和长期订阅分层
+### 4. 把站内交付和长期订阅分层
 
 这是成熟方案最重要的区别之一。
 
-- 资源交付邮件：事务型
+- 资源交付：站内即时完成
 - 后续更新邮件：订阅型
 
 ## 官方文档依据
 
-- Formspree autoresponse: https://help.formspree.io/hc/en-us/articles/360025007233-Sending-a-confirmation-or-response-email
-- Formspree webhooks: https://help.formspree.io/hc/en-us/articles/360015234873-Webhooks
 - Buttondown automations: https://docs.buttondown.com/automations-introduction
 - Buttondown create subscriber API: https://docs.buttondown.com/api-subscribers-create
 - Buttondown RSS-to-email: https://docs.buttondown.com/rss-to-email
 - Buttondown subscriber base / embed form / metadata: https://docs.buttondown.com/building-your-subscriber-base
+- Buttondown confirmation email: https://docs.buttondown.com/transactional-emails-confirmation
+- Buttondown welcome email: https://docs.buttondown.com/transactional-emails-welcome
+- Buttondown portal: https://docs.buttondown.com/portal

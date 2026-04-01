@@ -115,7 +115,7 @@
 
 ### 路径 A
 
-文章 -> checklist -> follow-up email -> SOP
+文章 -> checklist -> welcome / 低频主题邮件 -> SOP
 
 ### 路径 B
 

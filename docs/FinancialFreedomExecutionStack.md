@@ -246,7 +246,7 @@ This means:
 
 - true email delivery verification
 - tagging and sequence verification
-- resource delivery verification
+- resource unlock / welcome flow verification
 - basic measurement
 
 ### Priority 2: Publish monetizable long-tail content

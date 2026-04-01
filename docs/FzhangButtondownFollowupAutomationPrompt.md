@@ -16,8 +16,8 @@
 
 之后希望实现：
 
-- 先发资源交付邮件
-- 再发少量后续邮件
+- 资源先站内即时解锁
+- 再发少量订阅后续邮件
 - 后续如果这条主题下扩展出新文章、资源、SOP，也能优先发给这批人
 
 但前提是：
@@ -26,7 +26,7 @@
 - 不能每发一篇内容就手工给这批人发一封
 - 不能把整个系统做成很重的 CRM
 
-## 你必须先核对的 Buttondown 官方能力
+## 你必须先核对的 Buttondown 官方能力与计划边界
 
 请检查并利用这些能力：
 
@@ -41,6 +41,11 @@
   - 每月汇总发
 - Create subscriber API 默认 double opt-in
 
+同时请核对一个现实前提：
+
+- 当前 Frank 使用的 Buttondown 方案不一定已经包含 `Automations` 或 `RSS-to-email`
+- 请不要把付费功能当作已可用能力直接假设
+
 ## 当前判断方向
 
 请围绕下面这个判断做验证或修正：
@@ -51,9 +56,10 @@
 
 1. 提交资源表单
 2. double opt-in 确认
-3. 立即收到资源交付邮件
-4. 再进入一个短 welcome / nurture sequence
-5. 后续通过 RSS-to-email 或定期 digest 自动接收相关更新
+3. 资源站内即时解锁
+4. 确认后收到 Welcome 邮件
+5. 后续按 `topic-deployment` 做低频分群发送
+6. 如果未来升级方案，再补 short welcome sequence 或 RSS digest
 
 这比：
 
@@ -85,8 +91,9 @@
 
 我更偏向的目标是：
 
-- 资源领取后 2 到 3 封自动后续邮件
-- 之后进入主题相关的 digest 更新
+- 当前先跑稳 `confirmation + welcome + 低频分群发送`
+- 以后若升级能力，再加 2 到 3 封自动后续邮件
+- 之后再考虑主题相关的 digest 更新
 - 不做高频手工运营
 
 ### 任务 3：设计标签与过滤逻辑
@@ -117,7 +124,7 @@
 
 例如：
 
-`资源页 -> API -> Buttondown subscriber + tags -> confirmation -> welcome/resource email -> 2-step follow-up -> weekly RSS digest`
+`资源页 -> 站内即时解锁 -> API -> Buttondown subscriber + tags -> confirmation -> welcome email -> 按 topic-deployment 低频分群发送`
 
 ## 输出要求
 
@@ -147,4 +154,5 @@
 
 - 不要默认推荐复杂 CRM
 - 不要把“后续优先发给我”设计成必须人工一封一封维护
+- 不要把“资源站内即时交付”误写成“必须邮件交付”
 - 优先给出“当前阶段够用、未来可扩展”的方案
