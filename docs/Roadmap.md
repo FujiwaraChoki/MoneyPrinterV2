@@ -38,7 +38,7 @@ Current gap summary:
 - measurement is not wired yet
 - topic scoring is not implemented yet
 - affiliate-safe comparison / recommendation clusters are not defined yet
-- email delivery, tagging, and sequence timing still need true inbox verification
+- welcome email, unsubscribe visibility, tagging, and low-frequency topic sends still need final verification
 
 ## North Star
 
@@ -128,13 +128,14 @@ Execution note:
 
 - [x] Define one primary capture target: checklist download first
 - [ ] Add CTA variants that point to owned capture instead of direct call booking
-- [ ] Turn resource capture into a mature email path instead of one-off form replies
+- [ ] Turn resource capture and subscription follow-up into a stable, low-overhead email path
 - [ ] Add measurement for capture conversion by topic type
 
 Implementation note:
 
 - live site now uses a custom `/api/subscribe` endpoint for the checklist flow
-- success page already frames the flow as confirmation-first, then resource delivery
+- current reality is `site unlock + Buttondown confirmation + welcome + low-frequency topic sends`
+- resource delivery is not primarily email-driven in the current implementation
 - still needs real inbox verification before this phase item can be closed
 
 ## Phase 5: Monetization Experiments
@@ -211,7 +212,7 @@ If the answer to 1-3 is "no", it is probably off-strategy.
 ## Executable Shortlist
 
 1. Upgrade the checklist landing page so visitors immediately understand it is an execution asset, not a gated copy of a public article.
-2. Ship the first real email capture system: immediate resource delivery, confirmed follow-up sequence, and ongoing site updates.
+2. Stabilize the first real owned-audience path: confirmation, welcome email, visible subscription management, and low-frequency topic sends.
 3. Add first-pass measurement for the checklist funnel: page views, submits, confirmed subscribers, and downstream clicks.
 
 ## Portfolio Rule
