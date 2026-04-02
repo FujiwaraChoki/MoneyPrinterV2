@@ -22,6 +22,8 @@
   - `docs/FinancialFreedomPath.md`
   - `docs/FzhangHomepageCopy.md`
   - `docs/ShopPaymentArchitecture.md`
+- When work touches agent-facing site structure, AEO / GEO, AI citation visibility, or how `fzhang.dev` / `shop.fzhang.dev` should be optimized for agents and LLM discovery, also consult the upstream `GEO` repo at:
+  - `/Users/frank_zhang/Documents/文稿 - Frank's MacBook Air/Github项目/GEO`
 
 ## Cross-Project Financial Freedom Context
 - This repo should be evaluated as one lane inside Frank's broader financial-freedom system, not in isolation.
