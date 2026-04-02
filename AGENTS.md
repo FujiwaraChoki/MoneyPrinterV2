@@ -32,6 +32,7 @@
   - `/Users/frank_zhang/Library/Mobile Documents/com~apple~CloudDocs/Obsidian 库/5.知识库/07个人成长/08财务自由之路/1当前财务自由系统的项目分工与顺序（2026-03-31）.md`
 - When work touches monetization order, project prioritization, `fzhang.dev`, asset funnels, paid SOPs/templates, bootstrap services, or possible `paperclip` integration, consult the references above before making strategic changes.
 - When work touches `shop.fzhang.dev`, payment processors, subscriptions, refunds, billing, entitlement sync, or order mirrors, consult `docs/ShopPaymentArchitecture.md` first.
+- `InsForge` should not be introduced by default. Re-evaluate it only if `shop.fzhang.dev` later needs a real internal backend for entitlements, order mirrors, admin operations, and repeated backend iteration after payment integration is already stable.
 - Current cross-project operating model:
   - `cash flow survival layer + asset compounding layer + product optionality layer`
   - `MoneyPrinterV2` is the current main execution repo for the asset-compounding layer.

@@ -41,6 +41,7 @@ Current gap summary:
 - affiliate-safe comparison / recommendation clusters are not defined yet
 - welcome email, unsubscribe visibility, tagging, and low-frequency topic sends still need final verification
 - `shop.fzhang.dev` payment architecture is now decided in principle, but not yet implemented in code
+- `InsForge` is intentionally deferred unless the shop backend becomes a real bottleneck after payment integration
 
 ## North Star
 
@@ -157,6 +158,7 @@ Current payment architecture rule:
 - `shop.fzhang.dev` should use a payment / billing platform plus internal order mirror model
 - do not use `Payoneer receiving account` as the primary checkout solution
 - current preferred direction is `Paddle` first, `Lemon Squeezy` second, `Stripe` later if deeper control becomes necessary
+- re-evaluate `InsForge` only after payment integration and first paid-asset traction make backend coordination the bottleneck
 
 ## Phase 6: Site Integration
 

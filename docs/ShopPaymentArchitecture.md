@@ -238,6 +238,44 @@
 3. 再补 subscriptions / portal / cancellation flows
 4. 最后再考虑更复杂的自定义后台或 billing abstraction
 
+## InsForge Re-Evaluation Condition
+
+Current judgment:
+
+- do not introduce `InsForge` now
+
+Why:
+
+- the current bottleneck is not backend infrastructure
+- the near-term priority is still:
+  - prove the asset loop
+  - validate paid digital assets
+  - choose and integrate a payment platform
+- adding a new agent-native backend now would likely increase coordination cost before it creates real leverage
+
+Re-evaluate `InsForge` only when most of the following become true:
+
+- `shop.fzhang.dev` needs a real internal backend beyond static pages and payment-hosted flows
+- you already have a chosen payment platform and stable webhook model
+- you need a persistent internal system for:
+  - user accounts
+  - entitlement state
+  - order / subscription mirrors
+  - admin operations
+  - support lookup
+- you expect repeated backend changes where an agent-friendly backend stack would save meaningful time
+- the first paid asset is already selling or the shop backend has become an active execution bottleneck
+
+Do not re-evaluate `InsForge` merely because:
+
+- it looks promising
+- it could maybe speed up future backend work
+- it feels more modern than the current stack
+
+One-sentence rule:
+
+> Only reconsider `InsForge` after payment integration and the first paid asset path are real enough that backend coordination becomes the bottleneck.
+
 ## 这条决策对当前系统的影响
 
 它意味着：
