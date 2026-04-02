@@ -32,6 +32,7 @@ The following work is already represented in committed docs or repo changes:
 - homepage direction and CTA hierarchy are drafted, but site implementation is still pending
 - the first content batch and paid SOP path now have execution specs in `docs/assets/`
 - a cross-project execution summary now exists in `docs/FinancialFreedomExecutionStack.md`
+- a first-pass topic ledger / measurement spec now exists in `docs/TopicLedgerMeasurementSpec.md`
 
 Current gap summary:
 
@@ -182,6 +183,10 @@ Direction note:
 - [ ] product interest
 - [ ] optional service conversations
 - [ ] Maintain a topic ledger of outputs vs downstream value
+
+Execution note:
+
+- first-pass measurement spec: `docs/TopicLedgerMeasurementSpec.md`
 
 ## Decision Filters
 
