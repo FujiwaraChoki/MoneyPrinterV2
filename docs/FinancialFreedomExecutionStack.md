@@ -110,6 +110,27 @@ Its job is to:
 - convert some readers into subscribers or downloaders
 - support later monetization pages
 
+### `shop.fzhang.dev`
+
+Primary role:
+
+- checkout surface
+- entitlement trigger surface
+- monetization surface for paid digital assets
+
+Its job is not to become a full custom billing platform first.
+
+Its job is to:
+
+- let the right readers buy paid assets with low friction
+- hand payment / billing complexity to a payment platform where possible
+- mirror orders and access into Frank's own database and admin tooling
+
+Current rule:
+
+- do not use `Payoneer receiving account` as the primary checkout solution
+- prefer a billing platform plus internal order / entitlement mirror model
+
 ### Knowledge Base
 
 Primary role:
@@ -212,6 +233,17 @@ The current recommended order is:
 4. affiliate-safe comparison or recommendation assets
 5. low-touch productized help only if useful as bootstrap revenue
 6. larger software product only after strong repeated proof
+
+### Payment Architecture Rule
+
+For paid digital assets sold through `shop.fzhang.dev`:
+
+- payment platform = source of truth for payment, billing, refunds, and subscriptions
+- internal database = mirror for user mapping, entitlement, order state, and unlock state
+
+Do not invert this into:
+
+- self-built order truth with `Payoneer receiving account` as the main checkout layer
 
 This order should come before:
 

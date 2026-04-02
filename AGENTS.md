@@ -21,6 +21,7 @@
   - `docs/FirstAssetSpec.md`
   - `docs/FinancialFreedomPath.md`
   - `docs/FzhangHomepageCopy.md`
+  - `docs/ShopPaymentArchitecture.md`
 
 ## Cross-Project Financial Freedom Context
 - This repo should be evaluated as one lane inside Frank's broader financial-freedom system, not in isolation.
@@ -30,6 +31,7 @@
   - `/Users/frank_zhang/Documents/文稿 - Frank's MacBook Air/Github项目/paperclip/doc/plans/2026-03-31-paperclip-financial-freedom-positioning.md`
   - `/Users/frank_zhang/Library/Mobile Documents/com~apple~CloudDocs/Obsidian 库/5.知识库/07个人成长/08财务自由之路/1当前财务自由系统的项目分工与顺序（2026-03-31）.md`
 - When work touches monetization order, project prioritization, `fzhang.dev`, asset funnels, paid SOPs/templates, bootstrap services, or possible `paperclip` integration, consult the references above before making strategic changes.
+- When work touches `shop.fzhang.dev`, payment processors, subscriptions, refunds, billing, entitlement sync, or order mirrors, consult `docs/ShopPaymentArchitecture.md` first.
 - Current cross-project operating model:
   - `cash flow survival layer + asset compounding layer + product optionality layer`
   - `MoneyPrinterV2` is the current main execution repo for the asset-compounding layer.
