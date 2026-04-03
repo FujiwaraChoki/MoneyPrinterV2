@@ -303,6 +303,11 @@ When the ledger is first created, seed at least:
 
 Then add Batch 1 article #2 when published.
 
+Current status:
+
+- initial ledger file has now been seeded at `docs/topic-ledger.csv`
+- next work should update it with real numbers instead of creating a second tracking format
+
 ## Review Cadence
 
 ### Weekly
@@ -349,7 +354,7 @@ Do not overbuild the ledger before using it.
 
 The correct next move after this spec is:
 
-1. create the first ledger file
-2. seed the existing pages and content
+1. keep `docs/topic-ledger.csv` as the single source of truth for the current funnel
+2. update the seeded rows with real numbers
 3. publish Batch 1 content with explicit CTA mapping
 4. review weekly

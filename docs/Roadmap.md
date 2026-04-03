@@ -189,6 +189,7 @@ Direction note:
 Execution note:
 
 - first-pass measurement spec: `docs/TopicLedgerMeasurementSpec.md`
+- seeded ledger file: `docs/topic-ledger.csv`
 
 ## Decision Filters
 
