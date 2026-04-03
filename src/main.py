@@ -1,6 +1,10 @@
 import schedule
 import subprocess
-
+import json
+from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.service import Service
+from webdriver_manager.firefox import GeckoDriverManager
 from art import *
 from cache import *
 from utils import *
@@ -17,6 +21,8 @@ from classes.Outreach import Outreach
 from classes.AFM import AffiliateMarketing
 from llm_provider import list_models, select_model, get_active_model
 from post_bridge_integration import maybe_crosspost_youtube_short
+
+from twitter_reply import TwitterReplyBot
 
 def main():
     """Main entry point for the application, providing a menu-driven interface
@@ -427,6 +433,40 @@ def main():
 
         outreach.start()
     elif user_input == 5:
+        info("Starting Twitter Reply Automation...")
+
+        try:
+            # Load your new config file directly
+            with open("config.json", "r") as f:
+                config_data = json.load(f)
+
+            keywords = config_data.get("twitter_reply_automation", {}).get("search_keywords", [])
+            
+            if not keywords:
+                error("[-] No keywords found in config.json! Please add them.", "red")
+            else:
+                info(" => Opening authenticated Firefox browser...")
+                options = Options()
+                if config_data.get("headless", False):
+                    options.add_argument("--headless")
+                if config_data.get("firefox_profile", ""):
+                    options.add_argument("-profile")
+                    options.add_argument(config_data["firefox_profile"])
+                
+                # Start standard Selenium with the user's Firefox profile
+                driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()), options=options)
+                
+                # Run your custom bot!
+                bot = TwitterReplyBot(driver, keywords)
+                bot.run(config_data)
+                
+        except Exception as e:
+            error(f"[-] An error occurred: {e}", "red")
+        finally:
+            if 'driver' in locals():
+                driver.quit()
+
+    elif user_input == 6:
         if get_verbose():
             print(colored(" => Quitting...", "blue"))
         sys.exit(0)
