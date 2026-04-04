@@ -59,6 +59,19 @@ cfg.setdefault("whisper_model", "base")
 cfg.setdefault("whisper_device", "auto")
 cfg.setdefault("whisper_compute_type", "int8")
 
+video_publishing = cfg.setdefault("video_publishing", {})
+video_publishing.setdefault("profile_name", "Default Publisher")
+video_publishing.setdefault("niche", "")
+video_publishing.setdefault("language", "English")
+
+post_bridge = cfg.setdefault("post_bridge", {})
+post_bridge.setdefault("enabled", False)
+post_bridge.setdefault("api_key", "")
+post_bridge.setdefault("platforms", ["youtube", "tiktok", "instagram"])
+post_bridge.setdefault("account_ids", [])
+if "auto_publish" not in post_bridge:
+    post_bridge["auto_publish"] = bool(post_bridge.pop("auto_crosspost", False))
+
 magick_path = os.environ.get("MAGICK_PATH", "")
 if magick_path:
     cfg["imagemagick_path"] = magick_path
@@ -109,6 +122,7 @@ print(f"[setup] Updated {cfg_path}")
 print(f"[setup] llm_provider={cfg.get('llm_provider')} model={cfg.get('ollama_model')}")
 print(f"[setup] image_provider={cfg.get('image_provider')}")
 print(f"[setup] stt_provider={cfg.get('stt_provider')}")
+print(f"[setup] video_publishing platforms={post_bridge.get('platforms')}")
 PY
 
 echo "[setup] Running local preflight..."

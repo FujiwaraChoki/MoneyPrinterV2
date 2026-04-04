@@ -16,15 +16,144 @@ from prettytable import PrettyTable
 from classes.Outreach import Outreach
 from classes.AFM import AffiliateMarketing
 from llm_provider import list_models, select_model, get_active_model
-from post_bridge_integration import maybe_crosspost_youtube_short
+from post_bridge_integration import ensure_post_bridge_publishing_ready
+from post_bridge_integration import get_publish_history
+from post_bridge_integration import publish_video
+from post_bridge_integration import run_post_bridge_setup_wizard
+
+
+def build_video_generator() -> YouTube:
+    """
+    Build a generator instance from config-backed video publishing settings.
+
+    Returns:
+        generator (YouTube): Video generator instance.
+    """
+    video_config = get_video_publishing_config()
+    return YouTube(
+        "post-bridge-publisher",
+        video_config["profile_name"],
+        "",
+        video_config["niche"],
+        video_config["language"],
+    )
+
+
+def show_publish_history() -> None:
+    """
+    Display recent Post Bridge publish history.
+
+    Returns:
+        None
+    """
+    try:
+        history = get_publish_history()
+    except Exception as exc:
+        warning(f"Could not load publish history: {exc}")
+        return
+
+    if len(history) == 0:
+        warning("No recent publishes found.")
+        return
+
+    history_table = PrettyTable()
+    history_table.field_names = ["ID", "Created", "Status", "Platforms", "URLs"]
+
+    for item in history:
+        urls = "\n".join(item["urls"][:2]) if item["urls"] else "-"
+        history_table.add_row(
+            [
+                colored(item["id"], "cyan"),
+                colored(item["created_at"] or "-", "blue"),
+                colored(item["status"], "green"),
+                colored(", ".join(item["platforms"]), "magenta"),
+                colored(urls, "yellow"),
+            ]
+        )
+
+    print(history_table)
+
+
+def run_video_publishing_menu() -> None:
+    """
+    Run the PostBridge-first video publishing menu.
+
+    Returns:
+        None
+    """
+    info("Starting Video Publishing...")
+
+    while True:
+        rem_temp_files()
+        info("\n============ OPTIONS ============", False)
+
+        for idx, video_option in enumerate(VIDEO_OPTIONS):
+            print(colored(f" {idx + 1}. {video_option}", "cyan"))
+
+        info("=================================\n", False)
+
+        user_input = int(question("Select an option: "))
+
+        if user_input == 1:
+            run_post_bridge_setup_wizard()
+        elif user_input == 2:
+            if not ensure_post_bridge_publishing_ready(interactive=True):
+                continue
+
+            video_generator = build_video_generator()
+            tts = TTS()
+            video_generator.generate_video(tts)
+            publish_video(
+                video_path=video_generator.video_path,
+                title=video_generator.metadata.get("title", ""),
+                description=video_generator.metadata.get("description", ""),
+                interactive=True,
+            )
+        elif user_input == 3:
+            show_publish_history()
+        elif user_input == 4:
+            info("How often do you want to publish?")
+
+            info("\n============ OPTIONS ============", False)
+            for idx, cron_option in enumerate(VIDEO_CRON_OPTIONS):
+                print(colored(f" {idx + 1}. {cron_option}", "cyan"))
+
+            info("=================================\n", False)
+
+            user_input = int(question("Select an Option: "))
+
+            cron_script_path = os.path.join(ROOT_DIR, "src", "cron.py")
+            command = ["python", cron_script_path, "publish", get_active_model()]
+
+            def job():
+                subprocess.run(command)
+
+            if user_input == 1:
+                schedule.every(1).day.do(job)
+                success("Set up CRON Job.")
+            elif user_input == 2:
+                schedule.every().day.at("10:00").do(job)
+                schedule.every().day.at("16:00").do(job)
+                success("Set up CRON Job.")
+            elif user_input == 3:
+                schedule.every().day.at("08:00").do(job)
+                schedule.every().day.at("12:00").do(job)
+                schedule.every().day.at("18:00").do(job)
+                success("Set up CRON Job.")
+            else:
+                break
+        elif user_input == 5:
+            if get_verbose():
+                info(" => Climbing Options Ladder...", False)
+            break
 
 def main():
     """Main entry point for the application, providing a menu-driven interface
-    to manage YouTube, Twitter bots, Affiliate Marketing, and Outreach tasks.
+    to manage video publishing, Twitter bots, Affiliate Marketing, and Outreach tasks.
 
     This function allows users to:
-    1. Start the YouTube Shorts Automater to manage YouTube accounts, 
-       generate and upload videos, and set up CRON jobs.
+    1. Start the Video Publishing flow to configure Post Bridge,
+       generate videos, publish them, and set up CRON jobs.
     2. Start a Twitter Bot to manage Twitter accounts, post tweets, and 
        schedule posts using CRON jobs.
     3. Manage Affiliate Marketing by creating pitches and sharing them via 
@@ -66,162 +195,7 @@ def main():
 
     # Start the selected option
     if user_input == 1:
-        info("Starting YT Shorts Automater...")
-
-        cached_accounts = get_accounts("youtube")
-
-        if len(cached_accounts) == 0:
-            warning("No accounts found in cache. Create one now?")
-            user_input = question("Yes/No: ")
-
-            if user_input.lower() == "yes":
-                generated_uuid = str(uuid4())
-
-                success(f" => Generated ID: {generated_uuid}")
-                nickname = question(" => Enter a nickname for this account: ")
-                fp_profile = question(" => Enter the path to the Firefox profile: ")
-                niche = question(" => Enter the account niche: ")
-                language = question(" => Enter the account language: ")
-
-                account_data = {
-                    "id": generated_uuid,
-                    "nickname": nickname,
-                    "firefox_profile": fp_profile,
-                    "niche": niche,
-                    "language": language,
-                    "videos": [],
-                }
-
-                add_account("youtube", account_data)
-
-                success("Account configured successfully!")
-        else:
-            table = PrettyTable()
-            table.field_names = ["ID", "UUID", "Nickname", "Niche"]
-
-            for account in cached_accounts:
-                table.add_row([cached_accounts.index(account) + 1, colored(account["id"], "cyan"), colored(account["nickname"], "blue"), colored(account["niche"], "green")])
-
-            print(table)
-            info("Type 'd' to delete an account.", False)
-
-            user_input = question("Select an account to start (or 'd' to delete): ").strip()
-
-            if user_input.lower() == "d":
-                delete_input = question("Enter account number to delete: ").strip()
-                account_to_delete = None
-
-                for account in cached_accounts:
-                    if str(cached_accounts.index(account) + 1) == delete_input:
-                        account_to_delete = account
-                        break
-
-                if account_to_delete is None:
-                    error("Invalid account selected. Please try again.", "red")
-                else:
-                    confirm = question(f"Are you sure you want to delete '{account_to_delete['nickname']}'? (Yes/No): ").strip().lower()
-
-                    if confirm == "yes":
-                        remove_account("youtube", account_to_delete["id"])
-                        success("Account removed successfully!")
-                    else:
-                        warning("Account deletion canceled.", False)
-
-                return
-
-            selected_account = None
-
-            for account in cached_accounts:
-                if str(cached_accounts.index(account) + 1) == user_input:
-                    selected_account = account
-
-            if selected_account is None:
-                error("Invalid account selected. Please try again.", "red")
-                main()
-            else:
-                youtube = YouTube(
-                    selected_account["id"],
-                    selected_account["nickname"],
-                    selected_account["firefox_profile"],
-                    selected_account["niche"],
-                    selected_account["language"]
-                )
-
-                while True:
-                    rem_temp_files()
-                    info("\n============ OPTIONS ============", False)
-
-                    for idx, youtube_option in enumerate(YOUTUBE_OPTIONS):
-                        print(colored(f" {idx + 1}. {youtube_option}", "cyan"))
-
-                    info("=================================\n", False)
-
-                    # Get user input
-                    user_input = int(question("Select an option: "))
-                    tts = TTS()
-
-                    if user_input == 1:
-                        youtube.generate_video(tts)
-                        upload_to_yt = question("Do you want to upload this video to YouTube? (Yes/No): ")
-                        if upload_to_yt.lower() == "yes":
-                            upload_success = youtube.upload_video()
-                            if upload_success:
-                                maybe_crosspost_youtube_short(
-                                    video_path=youtube.video_path,
-                                    title=youtube.metadata.get("title", ""),
-                                    interactive=True,
-                                )
-                            else:
-                                warning("YouTube upload failed. Skipping Post Bridge cross-post.")
-                    elif user_input == 2:
-                        videos = youtube.get_videos()
-
-                        if len(videos) > 0:
-                            videos_table = PrettyTable()
-                            videos_table.field_names = ["ID", "Date", "Title"]
-
-                            for video in videos:
-                                videos_table.add_row([
-                                    videos.index(video) + 1,
-                                    colored(video["date"], "blue"),
-                                    colored(video["title"][:60] + "...", "green")
-                                ])
-
-                            print(videos_table)
-                        else:
-                            warning(" No videos found.")
-                    elif user_input == 3:
-                        info("How often do you want to upload?")
-
-                        info("\n============ OPTIONS ============", False)
-                        for idx, cron_option in enumerate(YOUTUBE_CRON_OPTIONS):
-                            print(colored(f" {idx + 1}. {cron_option}", "cyan"))
-
-                        info("=================================\n", False)
-
-                        user_input = int(question("Select an Option: "))
-
-                        cron_script_path = os.path.join(ROOT_DIR, "src", "cron.py")
-                        command = ["python", cron_script_path, "youtube", selected_account['id'], get_active_model()]
-
-                        def job():
-                            subprocess.run(command)
-
-                        if user_input == 1:
-                            # Upload Once
-                            schedule.every(1).day.do(job)
-                            success("Set up CRON Job.")
-                        elif user_input == 2:
-                            # Upload Twice a day
-                            schedule.every().day.at("10:00").do(job)
-                            schedule.every().day.at("16:00").do(job)
-                            success("Set up CRON Job.")
-                        else:
-                            break
-                    elif user_input == 4:
-                        if get_verbose():
-                            info(" => Climbing Options Ladder...", False)
-                        break
+        run_video_publishing_menu()
     elif user_input == 2:
         info("Starting Twitter Bot...")
 

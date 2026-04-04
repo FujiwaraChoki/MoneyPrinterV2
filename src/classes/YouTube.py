@@ -75,29 +75,9 @@ class YouTube:
         self._language: str = language
 
         self.images = []
-
-        # Initialize the Firefox profile
-        self.options: Options = Options()
-
-        # Set headless state of browser
-        if get_headless():
-            self.options.add_argument("--headless")
-
-        if not os.path.isdir(self._fp_profile_path):
-            raise ValueError(
-                f"Firefox profile path does not exist or is not a directory: {self._fp_profile_path}"
-            )
-
-        self.options.add_argument("-profile")
-        self.options.add_argument(self._fp_profile_path)
-
-        # Set the service
-        self.service: Service = Service(GeckoDriverManager().install())
-
-        # Initialize the browser
-        self.browser: webdriver.Firefox = webdriver.Firefox(
-            service=self.service, options=self.options
-        )
+        self.options: Options | None = None
+        self.service: Service | None = None
+        self.browser: webdriver.Firefox | None = None
 
     @property
     def niche(self) -> str:
@@ -692,7 +672,7 @@ class YouTube:
         Returns:
             channel_id (str): The Channel ID.
         """
-        driver = self.browser
+        driver = self._ensure_browser()
         driver.get("https://studio.youtube.com")
         time.sleep(2)
         channel_id = driver.current_url.split("/")[-1]
@@ -710,7 +690,7 @@ class YouTube:
         try:
             self.get_channel_id()
 
-            driver = self.browser
+            driver = self._ensure_browser()
             verbose = get_verbose()
 
             # Go to youtube.com/upload
@@ -849,7 +829,8 @@ class YouTube:
 
             return True
         except:
-            self.browser.quit()
+            if self.browser is not None:
+                self.browser.quit()
             return False
 
     def get_videos(self) -> List[dict]:
@@ -876,3 +857,32 @@ class YouTube:
                     videos = account["videos"]
 
         return videos
+
+    def _ensure_browser(self) -> webdriver.Firefox:
+        """
+        Lazily initialize the Firefox browser only when legacy upload behavior is used.
+
+        Returns:
+            browser (webdriver.Firefox): Initialized Firefox webdriver.
+        """
+        if self.browser is not None:
+            return self.browser
+
+        if not self._fp_profile_path or not os.path.isdir(self._fp_profile_path):
+            raise ValueError(
+                "Legacy browser-based YouTube upload requires a valid firefox_profile."
+            )
+
+        self.options = Options()
+        if get_headless():
+            self.options.add_argument("--headless")
+
+        self.options.add_argument("-profile")
+        self.options.add_argument(self._fp_profile_path)
+
+        self.service = Service(GeckoDriverManager().install())
+        self.browser = webdriver.Firefox(
+            service=self.service,
+            options=self.options,
+        )
+        return self.browser

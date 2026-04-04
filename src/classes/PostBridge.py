@@ -60,30 +60,80 @@ class PostBridge:
             for platform in platforms:
                 params.append(("platform", platform))
 
-        url = f"{self.API_BASE}/social-accounts"
-        accounts = []
-        is_first_request = True
+        return self._list_paginated_request(
+            f"{self.API_BASE}/social-accounts",
+            params=params,
+            invalid_payload_message="Post Bridge returned an invalid social accounts payload.",
+            max_items=None,
+        )
 
-        while url:
-            response_json = self._request_json(
-                "GET",
-                url,
-                params=params if is_first_request else None,
-            )
-            is_first_request = False
+    def list_posts(
+        self,
+        platforms: Optional[Sequence[str]] = None,
+        statuses: Optional[Sequence[str]] = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> list[dict]:
+        """
+        Fetch posts with optional platform and status filters.
 
-            page_accounts = response_json.get("data", response_json)
-            if not isinstance(page_accounts, list):
-                raise PostBridgeClientError(
-                    "Post Bridge returned an invalid social accounts payload."
-                )
+        Args:
+            platforms (Sequence[str] | None): Optional platform filters.
+            statuses (Sequence[str] | None): Optional post status filters.
+            limit (int): Max number of posts to return.
+            offset (int): Initial pagination offset.
 
-            accounts.extend(page_accounts)
+        Returns:
+            posts (list[dict]): Post data.
+        """
+        params = [("limit", limit), ("offset", offset)]
+        if platforms:
+            for platform in platforms:
+                params.append(("platform", platform))
+        if statuses:
+            for status in statuses:
+                params.append(("status", status))
 
-            meta = response_json.get("meta", {})
-            url = meta.get("next") if isinstance(meta, dict) else None
+        return self._list_paginated_request(
+            f"{self.API_BASE}/posts",
+            params=params,
+            invalid_payload_message="Post Bridge returned an invalid posts payload.",
+            max_items=limit,
+        )
 
-        return accounts
+    def list_post_results(
+        self,
+        post_ids: Optional[Sequence[str]] = None,
+        platforms: Optional[Sequence[str]] = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> list[dict]:
+        """
+        Fetch post results with optional post ID and platform filters.
+
+        Args:
+            post_ids (Sequence[str] | None): Optional post IDs.
+            platforms (Sequence[str] | None): Optional platform filters.
+            limit (int): Max number of results to return.
+            offset (int): Initial pagination offset.
+
+        Returns:
+            post_results (list[dict]): Post result data.
+        """
+        params = [("limit", limit), ("offset", offset)]
+        if post_ids:
+            for post_id in post_ids:
+                params.append(("post_id", post_id))
+        if platforms:
+            for platform in platforms:
+                params.append(("platform", platform))
+
+        return self._list_paginated_request(
+            f"{self.API_BASE}/post-results",
+            params=params,
+            invalid_payload_message="Post Bridge returned an invalid post results payload.",
+            max_items=limit,
+        )
 
     def upload_media(self, file_path: str) -> str:
         """
@@ -174,6 +224,53 @@ class PostBridge:
             f"{self.API_BASE}/posts",
             json=payload,
         )
+
+    def _list_paginated_request(
+        self,
+        url: str,
+        *,
+        params: Optional[list[tuple[str, object]]] = None,
+        invalid_payload_message: str,
+        max_items: Optional[int],
+    ) -> list[dict]:
+        """
+        Fetch list endpoints that use the standard paginated response shape.
+
+        Args:
+            url (str): Endpoint URL.
+            params (list[tuple[str, object]] | None): Query params for the first page.
+            invalid_payload_message (str): Error message for invalid payloads.
+            max_items (int | None): Optional max number of items to return.
+
+        Returns:
+            items (list[dict]): Collected items.
+        """
+        items = []
+        next_url = url
+        is_first_request = True
+
+        while next_url and (max_items is None or len(items) < max_items):
+            response_json = self._request_json(
+                "GET",
+                next_url,
+                params=params if is_first_request else None,
+            )
+            is_first_request = False
+
+            page_items = response_json.get("data", response_json)
+            if not isinstance(page_items, list):
+                raise PostBridgeClientError(invalid_payload_message)
+
+            if max_items is None:
+                items.extend(page_items)
+            else:
+                remaining = max_items - len(items)
+                items.extend(page_items[:remaining])
+
+            meta = response_json.get("meta", {})
+            next_url = meta.get("next") if isinstance(meta, dict) else None
+
+        return items
 
     def _guess_mime_type(self, file_path: str) -> str:
         guessed_type = mimetypes.guess_type(file_path)[0]
