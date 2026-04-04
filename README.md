@@ -18,7 +18,7 @@ Sponsored by Post Bridge
 An Application that automates the process of making money online.
 MPV2 (MoneyPrinter Version 2) is, as the name suggests, the second version of the MoneyPrinter project. It is a complete rewrite of the original project, with a focus on a wider range of features and a more modular architecture.
 
-> **Note:** MPV2 needs Python 3.12 to function effectively.
+> **Note:** MPV2 targets Python 3.12 and uses OpenRouter for text generation. No local model server is required.
 > Watch the YouTube video [here](https://youtu.be/wAZ_ZSuIqfk)
 
 ## Features
@@ -40,30 +40,73 @@ If you would like to submit your own version/fork of MoneyPrinter, please open a
 
 > ⚠️ If you are planning to reach out to scraped businesses per E-Mail, please first install the [Go Programming Language](https://golang.org/).
 
+### Manual setup
+
 ```bash
 git clone https://github.com/FujiwaraChoki/MoneyPrinterV2.git
-
 cd MoneyPrinterV2
-# Copy Example Configuration and fill out values in config.json
+
 cp config.example.json config.json
 
-# Create a virtual environment
-python -m venv venv
-
-# Activate the virtual environment - Windows
-.\venv\Scripts\activate
-
-# Activate the virtual environment - Unix
+python3.12 -m venv venv
 source venv/bin/activate
-
-# Install the requirements
-pip install -r requirements.txt
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
+
+Then update `config.json` with the values your workflow needs. At minimum, configure:
+
+- `openrouter_api_key`
+- `openrouter_model`
+
+`openrouter_base_url` is optional and defaults to `https://openrouter.ai/api/v1`.
+You can also provide `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` as fallbacks, but the app still expects an OpenRouter-backed setup.
+
+### macOS convenience setup
+
+```bash
+bash scripts/setup_local.sh
+```
+
+`scripts/setup_local.sh` is a convenience script for local development. It will:
+
+- create `config.json` from `config.example.json` when needed
+- create `venv/` if it does not exist
+- install Python dependencies
+- seed local defaults such as `openrouter_base_url`, `imagemagick_path`, and a detected Firefox profile when available
+- run `scripts/preflight_local.py`
+
+It does **not** provision OpenRouter credentials or choose a model for you. You still need to set `openrouter_api_key` and `openrouter_model` before starting the CLI. If you want `scripts/preflight_local.py` to pass, also configure Nano Banana 2 credentials (`nanobanana2_api_key` or `GEMINI_API_KEY`) and make sure the selected STT provider dependencies are installed.
 
 ## Usage
 
+Run everything from the project root:
+
 ```bash
-# Run the application
+source venv/bin/activate
+python scripts/preflight_local.py
+python src/main.py
+```
+
+`python scripts/preflight_local.py` validates more than OpenRouter: it also checks ImageMagick, Firefox profile, Nano Banana 2 credentials, and local Whisper imports when `stt_provider` is `local_whisper`.
+
+A minimal OpenRouter-backed text-generation setup looks like this:
+
+```json
+{
+  "openrouter_api_key": "your-openrouter-api-key",
+  "openrouter_model": "openai/gpt-4.1-mini",
+  "openrouter_base_url": "https://openrouter.ai/api/v1"
+}
+```
+
+If you prefer environment fallbacks for local testing:
+
+```bash
+export OPENROUTER_API_KEY="your-openrouter-api-key"
+export OPENROUTER_MODEL="openai/gpt-4.1-mini"
+source venv/bin/activate
+python scripts/preflight_local.py
 python src/main.py
 ```
 

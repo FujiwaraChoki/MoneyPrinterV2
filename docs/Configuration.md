@@ -7,8 +7,9 @@ All your configurations will be in a file in the root directory, called `config.
 - `verbose`: `boolean` - If `true`, the application will print out more information.
 - `firefox_profile`: `string` - The path to your Firefox profile. This is used to use your Social Media Accounts without having to log in every time you run the application.
 - `headless`: `boolean` - If `true`, the application will run in headless mode. This means that the browser will not be visible.
-- `ollama_base_url`: `string` - Base URL of your local Ollama server (default: `http://127.0.0.1:11434`).
-- `ollama_model`: `string` - Ollama model to use for text generation (e.g. `llama3.2:3b`). If empty, the app queries Ollama at startup and lets you pick from the available models interactively.
+- `openrouter_api_key`: `string` - OpenRouter API key for text generation. Resolution order: `config.json` first, then `OPENROUTER_API_KEY`.
+- `openrouter_base_url`: `string` - Base URL for OpenRouter requests. Resolution order: `config.json` first, otherwise `https://openrouter.ai/api/v1`.
+- `openrouter_model`: `string` - OpenRouter model to use for text generation (for example `openai/gpt-4.1-mini`). Resolution order: `config.json` first, then `OPENROUTER_MODEL`.
 - `twitter_language`: `string` - The language that will be used to generate & post tweets.
 - `nanobanana2_api_base_url`: `string` - Nano Banana 2 API base URL (default: `https://generativelanguage.googleapis.com/v1beta`).
 - `nanobanana2_api_key`: `string` - API key for Nano Banana 2 (Gemini image API). If empty, MPV2 falls back to environment variable `GEMINI_API_KEY`.
@@ -52,8 +53,9 @@ All your configurations will be in a file in the root directory, called `config.
   "verbose": true,
   "firefox_profile": "",
   "headless": false,
-  "ollama_base_url": "http://127.0.0.1:11434",
-  "ollama_model": "",
+  "openrouter_api_key": "",
+  "openrouter_base_url": "https://openrouter.ai/api/v1",
+  "openrouter_model": "",
   "twitter_language": "English",
   "nanobanana2_api_base_url": "https://generativelanguage.googleapis.com/v1beta",
   "nanobanana2_api_key": "",
@@ -94,12 +96,17 @@ All your configurations will be in a file in the root directory, called `config.
 
 ## Environment Variable Fallbacks
 
+- `OPENROUTER_API_KEY`: used when `openrouter_api_key` is empty.
+- `OPENROUTER_MODEL`: used when `openrouter_model` is empty.
+- `openrouter_base_url` does not read from an environment variable; if it is empty, MPV2 uses `https://openrouter.ai/api/v1`.
 - `GEMINI_API_KEY`: used when `nanobanana2_api_key` is empty.
 - `POST_BRIDGE_API_KEY`: used when `post_bridge.api_key` is empty.
 
 Example:
 
 ```bash
+export OPENROUTER_API_KEY="your_openrouter_api_key_here"
+export OPENROUTER_MODEL="openai/gpt-4.1-mini"
 export GEMINI_API_KEY="your_api_key_here"
 export POST_BRIDGE_API_KEY="your_post_bridge_api_key_here"
 ```
