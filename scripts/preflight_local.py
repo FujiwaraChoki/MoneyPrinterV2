@@ -9,6 +9,7 @@ import requests
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_PATH = os.path.join(ROOT_DIR, "config.json")
+DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 
 def ok(msg: str) -> None:
@@ -23,9 +24,29 @@ def fail(msg: str) -> None:
     print(f"[FAIL] {msg}")
 
 
+def load_config() -> dict:
+    with open(CONFIG_PATH, "r", encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def resolve_openrouter_api_key(cfg: dict) -> str:
+    configured = cfg.get("openrouter_api_key", "")
+    return str(configured or os.environ.get("OPENROUTER_API_KEY", ""))
+
+
+def resolve_openrouter_model(cfg: dict) -> str:
+    configured = cfg.get("openrouter_model", "")
+    return str(configured or os.environ.get("OPENROUTER_MODEL", ""))
+
+
+def resolve_openrouter_base_url(cfg: dict) -> str:
+    return str(cfg.get("openrouter_base_url", "") or DEFAULT_OPENROUTER_BASE_URL)
+
+
 def check_url(url: str, timeout: int = 3) -> Tuple[bool, str]:
     try:
         response = requests.get(url, timeout=timeout)
+        response.raise_for_status()
         return True, f"HTTP {response.status_code}"
     except Exception as exc:
         return False, str(exc)
@@ -36,8 +57,7 @@ def main() -> int:
         fail(f"Missing config file: {CONFIG_PATH}")
         return 1
 
-    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-        cfg = json.load(f)
+    cfg = load_config()
 
     failures = 0
 
@@ -63,23 +83,27 @@ def main() -> int:
     else:
         warn("firefox_profile is empty. Twitter/YouTube automation requires this.")
 
-    # Ollama (LLM)
-    base = str(cfg.get("ollama_base_url", "http://127.0.0.1:11434")).rstrip("/")
-    reachable, detail = check_url(f"{base}/api/tags")
+    openrouter_api_key = resolve_openrouter_api_key(cfg)
+    if openrouter_api_key:
+        ok("OpenRouter API key is set")
+    else:
+        fail("No OpenRouter API key configured. Set openrouter_api_key or OPENROUTER_API_KEY.")
+        failures += 1
+
+    openrouter_model = resolve_openrouter_model(cfg)
+    if openrouter_model:
+        ok(f"OpenRouter model configured: {openrouter_model}")
+    else:
+        fail("No OpenRouter model configured. Set openrouter_model or OPENROUTER_MODEL.")
+        failures += 1
+
+    base = resolve_openrouter_base_url(cfg).rstrip("/")
+    reachable, detail = check_url(f"{base}/models")
     if not reachable:
-        fail(f"Ollama is not reachable at {base}: {detail}")
+        fail(f"OpenRouter is not reachable at {base}: {detail}")
         failures += 1
     else:
-        ok(f"Ollama reachable at {base}")
-        try:
-            tags = requests.get(f"{base}/api/tags", timeout=5).json()
-            models = [m.get("name") for m in tags.get("models", [])]
-            if models:
-                ok(f"Ollama models available: {', '.join(models[:10])}")
-            else:
-                warn("No models found on Ollama. Pull a model first (e.g. 'ollama pull llama3.2:3b').")
-        except Exception as exc:
-            warn(f"Could not validate Ollama model list: {exc}")
+        ok(f"OpenRouter reachable at {base}")
 
     # Nano Banana 2 (image generation)
     api_key = cfg.get("nanobanana2_api_key", "") or os.environ.get("GEMINI_API_KEY", "")
