@@ -49,7 +49,16 @@ cd MoneyPrinterV2
 cp config.example.json config.json
 
 python3.12 -m venv venv
-source venv/bin/activate
+```
+
+Activate the virtual environment:
+
+- Windows (PowerShell): `.\venv\Scripts\Activate.ps1`
+- macOS / Linux: `source venv/bin/activate`
+
+Then install dependencies:
+
+```bash
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
