@@ -8,3 +8,4 @@ niche.txt
 *.exe
 auto.sh
 .DS_Store
+tests/.config-fixtures/

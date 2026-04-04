@@ -116,7 +116,7 @@ def get_openrouter_base_url() -> str:
     Gets the OpenRouter base URL.
 
     Returns:
-        url (str): The OpenRouter base URL
+        url (str): The OpenRouter base URL, or the default OpenRouter API URL.
     """
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file).get("openrouter_base_url", "") or "https://openrouter.ai/api/v1"

@@ -112,7 +112,8 @@ class OpenRouterConfigTests(ConfigTestCase):
     def test_api_key_falls_back_to_empty_string_when_missing_everywhere(self) -> None:
         self.write_config({})
 
-        with self.patch_root_dir(), patch.dict(os.environ, {}, clear=True):
+        with self.patch_root_dir(), patch.dict(os.environ, {"OPENROUTER_API_KEY": "env-key"}, clear=False):
+            os.environ.pop("OPENROUTER_API_KEY", None)
             api_key = config.get_openrouter_api_key()
 
         self.assertEqual(api_key, "")
@@ -138,7 +139,8 @@ class OpenRouterConfigTests(ConfigTestCase):
     def test_model_falls_back_to_empty_string_when_missing_everywhere(self) -> None:
         self.write_config({})
 
-        with self.patch_root_dir(), patch.dict(os.environ, {}, clear=True):
+        with self.patch_root_dir(), patch.dict(os.environ, {"OPENROUTER_MODEL": "env-model"}, clear=False):
+            os.environ.pop("OPENROUTER_MODEL", None)
             model = config.get_openrouter_model()
 
         self.assertEqual(model, "")
