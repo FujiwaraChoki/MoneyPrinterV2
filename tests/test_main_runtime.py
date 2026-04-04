@@ -155,11 +155,11 @@ class MainRuntimeTests(unittest.TestCase):
         )
         select_model_mock.assert_not_called()
 
-    def test_build_cron_command_defaults_to_configured_runtime_model(self) -> None:
+    def test_build_cron_command_uses_default_two_arg_path(self) -> None:
         self.assertEqual(
             self.main.build_cron_command("youtube", "yt-1"),
             [
-                "python",
+                sys.executable,
                 os.path.join(self.main.ROOT_DIR, "src", "cron.py"),
                 "youtube",
                 "yt-1",
@@ -170,7 +170,7 @@ class MainRuntimeTests(unittest.TestCase):
         self.assertEqual(
             self.main.build_cron_command("twitter", "tw-1", "override/model"),
             [
-                "python",
+                sys.executable,
                 os.path.join(self.main.ROOT_DIR, "src", "cron.py"),
                 "twitter",
                 "tw-1",

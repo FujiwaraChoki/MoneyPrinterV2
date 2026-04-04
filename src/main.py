@@ -1,4 +1,5 @@
 import os
+import sys
 
 import schedule
 import subprocess
@@ -36,7 +37,7 @@ def bootstrap_runtime() -> None:
 def build_cron_command(
     purpose: str, account_id: str, model: str | None = None
 ) -> list[str]:
-    command = ["python", os.path.join(ROOT_DIR, "src", "cron.py"), purpose, account_id]
+    command = [sys.executable, os.path.join(ROOT_DIR, "src", "cron.py"), purpose, account_id]
     if model:
         command.append(model)
     return command
