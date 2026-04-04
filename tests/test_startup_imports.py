@@ -1,8 +1,8 @@
 import importlib
 import json
 import os
+import shutil
 import sys
-import tempfile
 import unittest
 
 
@@ -17,15 +17,47 @@ import config
 
 class StartupImportTests(unittest.TestCase):
     def setUp(self) -> None:
+        self.config_dir = os.path.join(
+            ROOT_DIR,
+            "tests",
+            ".config-fixtures",
+            self.__class__.__name__,
+            self._testMethodName,
+        )
+        shutil.rmtree(self.config_dir, ignore_errors=True)
+        os.makedirs(self.config_dir, exist_ok=True)
+        self.addCleanup(shutil.rmtree, self.config_dir, True)
+
+        with open(
+            os.path.join(ROOT_DIR, "config.example.json"),
+            "r",
+            encoding="utf-8",
+        ) as handle:
+            example_config = json.load(handle)
+
+        example_config["imagemagick_path"] = "/opt/homebrew/bin/magick"
+
+        with open(
+            os.path.join(self.config_dir, "config.json"),
+            "w",
+            encoding="utf-8",
+        ) as handle:
+            json.dump(example_config, handle)
+
         self._modules_to_reset = [
             "main",
+            "art",
+            "cache",
+            "utils",
+            "status",
             "llm_provider",
             "kittentts",
-            "ollama",
             "classes.Tts",
             "classes.YouTube",
             "classes.Twitter",
+            "classes.Outreach",
             "classes.AFM",
+            "post_bridge_integration",
         ]
         self._original_modules = {}
 
@@ -34,34 +66,18 @@ class StartupImportTests(unittest.TestCase):
                 self._original_modules[module_name] = sys.modules[module_name]
             sys.modules.pop(module_name, None)
 
+        self._original_root_dir = config.ROOT_DIR
+        config.ROOT_DIR = self.config_dir
+        self.addCleanup(self.restore_modules)
+
+    def restore_modules(self) -> None:
+        config.ROOT_DIR = self._original_root_dir
+        for module_name in self._modules_to_reset:
+            sys.modules.pop(module_name, None)
+        sys.modules.update(self._original_modules)
+
     def test_main_imports_with_example_config(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            with open(
-                os.path.join(ROOT_DIR, "config.example.json"),
-                "r",
-                encoding="utf-8",
-            ) as handle:
-                example_config = json.load(handle)
-
-            example_config["imagemagick_path"] = "/opt/homebrew/bin/magick"
-
-            with open(
-                os.path.join(temp_dir, "config.json"),
-                "w",
-                encoding="utf-8",
-            ) as handle:
-                json.dump(example_config, handle)
-
-            original_root_dir = config.ROOT_DIR
-            config.ROOT_DIR = temp_dir
-
-            try:
-                importlib.import_module("main")
-            finally:
-                config.ROOT_DIR = original_root_dir
-                for module_name in self._modules_to_reset:
-                    sys.modules.pop(module_name, None)
-                sys.modules.update(self._original_modules)
+        importlib.import_module("main")
 
 
 if __name__ == "__main__":
