@@ -6,10 +6,10 @@ kittentts @ https://github.com/KittenML/KittenTTS/releases/download/0.8.1/kitten
 soundfile
 prettytable
 webdriver_manager
-selenium_firefox
 selenium
+art
 ollama
-moviepy
+moviepy<2
 Pillow>=10.0.0
 yagmail
 assemblyai
