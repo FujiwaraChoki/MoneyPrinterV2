@@ -1,7 +1,7 @@
 import json
 import os
+import shutil
 import sys
-import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -15,69 +15,149 @@ if SRC_DIR not in sys.path:
 import config
 
 
-class PostBridgeConfigTests(unittest.TestCase):
-    def write_config(self, directory: str, payload: dict) -> None:
-        with open(os.path.join(directory, "config.json"), "w", encoding="utf-8") as handle:
+class ConfigTestCase(unittest.TestCase):
+    def setUp(self) -> None:
+        self.config_dir = os.path.join(
+            ROOT_DIR,
+            "tests",
+            ".config-fixtures",
+            self.__class__.__name__,
+            self._testMethodName,
+        )
+        shutil.rmtree(self.config_dir, ignore_errors=True)
+        os.makedirs(self.config_dir, exist_ok=True)
+        self.addCleanup(shutil.rmtree, self.config_dir, True)
+
+    def write_config(self, payload: dict) -> None:
+        with open(os.path.join(self.config_dir, "config.json"), "w", encoding="utf-8") as handle:
             json.dump(payload, handle)
 
-    def test_missing_platforms_uses_defaults(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            self.write_config(temp_dir, {"post_bridge": {"enabled": True}})
+    def patch_root_dir(self):
+        return patch.object(config, "ROOT_DIR", self.config_dir)
 
-            with patch.object(config, "ROOT_DIR", temp_dir):
-                post_bridge_config = config.get_post_bridge_config()
+
+class PostBridgeConfigTests(ConfigTestCase):
+    def test_missing_platforms_uses_defaults(self) -> None:
+        self.write_config({"post_bridge": {"enabled": True}})
+
+        with self.patch_root_dir():
+            post_bridge_config = config.get_post_bridge_config()
 
         self.assertEqual(post_bridge_config["platforms"], ["tiktok", "instagram"])
 
     def test_invalid_or_empty_platforms_do_not_expand_to_defaults(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            self.write_config(
-                temp_dir,
-                {
-                    "post_bridge": {
-                        "enabled": True,
-                        "platforms": ["youtube", "tik-tok"],
-                    }
-                },
-            )
+        self.write_config(
+            {
+                "post_bridge": {
+                    "enabled": True,
+                    "platforms": ["youtube", "tik-tok"],
+                }
+            }
+        )
 
-            with patch.object(config, "ROOT_DIR", temp_dir):
-                post_bridge_config = config.get_post_bridge_config()
+        with self.patch_root_dir():
+            post_bridge_config = config.get_post_bridge_config()
 
         self.assertEqual(post_bridge_config["platforms"], [])
 
     def test_non_list_platforms_fail_closed(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            self.write_config(
-                temp_dir,
-                {
-                    "post_bridge": {
-                        "enabled": True,
-                        "platforms": "tiktok",
-                    }
-                },
-            )
+        self.write_config(
+            {
+                "post_bridge": {
+                    "enabled": True,
+                    "platforms": "tiktok",
+                }
+            }
+        )
 
-            with patch.object(config, "ROOT_DIR", temp_dir):
-                post_bridge_config = config.get_post_bridge_config()
+        with self.patch_root_dir():
+            post_bridge_config = config.get_post_bridge_config()
 
         self.assertEqual(post_bridge_config["platforms"], [])
 
     def test_non_object_post_bridge_config_falls_back_to_defaults(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            self.write_config(
-                temp_dir,
-                {
-                    "post_bridge": None,
-                },
-            )
+        self.write_config(
+            {
+                "post_bridge": None,
+            }
+        )
 
-            with patch.object(config, "ROOT_DIR", temp_dir):
-                post_bridge_config = config.get_post_bridge_config()
+        with self.patch_root_dir():
+            post_bridge_config = config.get_post_bridge_config()
 
         self.assertEqual(post_bridge_config["platforms"], ["tiktok", "instagram"])
         self.assertEqual(post_bridge_config["account_ids"], [])
         self.assertFalse(post_bridge_config["enabled"])
+
+
+class OpenRouterConfigTests(ConfigTestCase):
+    def test_api_key_prefers_config_value_over_env(self) -> None:
+        self.write_config({"openrouter_api_key": "config-key"})
+
+        with self.patch_root_dir(), patch.dict(os.environ, {"OPENROUTER_API_KEY": "env-key"}, clear=False):
+            api_key = config.get_openrouter_api_key()
+
+        self.assertEqual(api_key, "config-key")
+
+    def test_api_key_uses_env_when_config_empty_or_missing(self) -> None:
+        for payload in ({"openrouter_api_key": ""}, {}):
+            with self.subTest(payload=payload):
+                self.write_config(payload)
+
+                with self.patch_root_dir(), patch.dict(os.environ, {"OPENROUTER_API_KEY": "env-key"}, clear=False):
+                    api_key = config.get_openrouter_api_key()
+
+                self.assertEqual(api_key, "env-key")
+
+    def test_api_key_falls_back_to_empty_string_when_missing_everywhere(self) -> None:
+        self.write_config({})
+
+        with self.patch_root_dir(), patch.dict(os.environ, {}, clear=True):
+            api_key = config.get_openrouter_api_key()
+
+        self.assertEqual(api_key, "")
+
+    def test_model_prefers_config_value_over_env(self) -> None:
+        self.write_config({"openrouter_model": "config-model"})
+
+        with self.patch_root_dir(), patch.dict(os.environ, {"OPENROUTER_MODEL": "env-model"}, clear=False):
+            model = config.get_openrouter_model()
+
+        self.assertEqual(model, "config-model")
+
+    def test_model_uses_env_when_config_empty_or_missing(self) -> None:
+        for payload in ({"openrouter_model": ""}, {}):
+            with self.subTest(payload=payload):
+                self.write_config(payload)
+
+                with self.patch_root_dir(), patch.dict(os.environ, {"OPENROUTER_MODEL": "env-model"}, clear=False):
+                    model = config.get_openrouter_model()
+
+                self.assertEqual(model, "env-model")
+
+    def test_model_falls_back_to_empty_string_when_missing_everywhere(self) -> None:
+        self.write_config({})
+
+        with self.patch_root_dir(), patch.dict(os.environ, {}, clear=True):
+            model = config.get_openrouter_model()
+
+        self.assertEqual(model, "")
+
+    def test_base_url_uses_config_or_default(self) -> None:
+        test_cases = [
+            ({"openrouter_base_url": "https://custom.openrouter.test/api/v1"}, "https://custom.openrouter.test/api/v1"),
+            ({"openrouter_base_url": ""}, "https://openrouter.ai/api/v1"),
+            ({}, "https://openrouter.ai/api/v1"),
+        ]
+
+        for payload, expected in test_cases:
+            with self.subTest(payload=payload):
+                self.write_config(payload)
+
+                with self.patch_root_dir():
+                    base_url = config.get_openrouter_base_url()
+
+                self.assertEqual(base_url, expected)
 
 
 if __name__ == "__main__":

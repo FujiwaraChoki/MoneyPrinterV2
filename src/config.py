@@ -89,6 +89,38 @@ def get_ollama_model() -> str:
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file).get("ollama_model", "")
 
+def get_openrouter_api_key() -> str:
+    """
+    Gets the OpenRouter API key.
+
+    Returns:
+        key (str): The OpenRouter API key, or empty string if not set.
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        configured = json.load(file).get("openrouter_api_key", "")
+        return configured or os.environ.get("OPENROUTER_API_KEY", "")
+
+def get_openrouter_model() -> str:
+    """
+    Gets the OpenRouter model name.
+
+    Returns:
+        model (str): The OpenRouter model name, or empty string if not set.
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        configured = json.load(file).get("openrouter_model", "")
+        return configured or os.environ.get("OPENROUTER_MODEL", "")
+
+def get_openrouter_base_url() -> str:
+    """
+    Gets the OpenRouter base URL.
+
+    Returns:
+        url (str): The OpenRouter base URL
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("openrouter_base_url", "") or "https://openrouter.ai/api/v1"
+
 def get_twitter_language() -> str:
     """
     Gets the Twitter language from the config file.
