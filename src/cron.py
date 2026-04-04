@@ -3,7 +3,7 @@ import sys
 
 from status import *
 from cache import get_accounts
-from config import get_verbose
+from config import get_openrouter_api_key, get_openrouter_model, get_verbose
 from classes.Tts import TTS
 from classes.Twitter import Twitter
 from classes.YouTube import YouTube
@@ -30,13 +30,15 @@ def main():
         None. The function performs operations based on the purpose and account UUID and does not return any value."""
     purpose = str(sys.argv[1])
     account_id = str(sys.argv[2])
-    model = str(sys.argv[3]) if len(sys.argv) > 3 else None
+    model = str(sys.argv[3]) if len(sys.argv) > 3 else get_openrouter_model()
 
-    if model:
-        select_model(model)
-    else:
-        error("No Ollama model specified. Pass model name as third argument.")
+    if not get_openrouter_api_key():
+        error("No OpenRouter API key configured. Set openrouter_api_key or OPENROUTER_API_KEY.")
         sys.exit(1)
+    if not model:
+        error("No OpenRouter model configured. Set openrouter_model or OPENROUTER_MODEL.")
+        sys.exit(1)
+    select_model(model)
 
     verbose = get_verbose()
 

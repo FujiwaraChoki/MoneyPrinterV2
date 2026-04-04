@@ -1,3 +1,5 @@
+import os
+
 import schedule
 import subprocess
 
@@ -15,7 +17,7 @@ from classes.YouTube import YouTube
 from prettytable import PrettyTable
 from classes.Outreach import Outreach
 from classes.AFM import AffiliateMarketing
-from llm_provider import select_model, get_active_model
+from llm_provider import select_model
 from post_bridge_integration import maybe_crosspost_youtube_short
 
 def bootstrap_runtime() -> None:
@@ -29,6 +31,16 @@ def bootstrap_runtime() -> None:
         sys.exit(1)
     select_model(configured_model)
     success(f"Using configured OpenRouter model: {configured_model}")
+
+
+def build_cron_command(
+    purpose: str, account_id: str, model: str | None = None
+) -> list[str]:
+    command = ["python", os.path.join(ROOT_DIR, "src", "cron.py"), purpose, account_id]
+    if model:
+        command.append(model)
+    return command
+
 
 def main():
     """Main entry point for the application, providing a menu-driven interface
@@ -213,8 +225,7 @@ def main():
 
                         user_input = int(question("Select an Option: "))
 
-                        cron_script_path = os.path.join(ROOT_DIR, "src", "cron.py")
-                        command = ["python", cron_script_path, "youtube", selected_account['id'], get_active_model()]
+                        command = build_cron_command("youtube", selected_account["id"])
 
                         def job():
                             subprocess.run(command)
@@ -344,8 +355,7 @@ def main():
 
                         user_input = int(question("Select an Option: "))
 
-                        cron_script_path = os.path.join(ROOT_DIR, "src", "cron.py")
-                        command = ["python", cron_script_path, "twitter", selected_account['id'], get_active_model()]
+                        command = build_cron_command("twitter", selected_account["id"])
 
                         def job():
                             subprocess.run(command)

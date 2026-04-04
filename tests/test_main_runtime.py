@@ -155,6 +155,29 @@ class MainRuntimeTests(unittest.TestCase):
         )
         select_model_mock.assert_not_called()
 
+    def test_build_cron_command_defaults_to_configured_runtime_model(self) -> None:
+        self.assertEqual(
+            self.main.build_cron_command("youtube", "yt-1"),
+            [
+                "python",
+                os.path.join(self.main.ROOT_DIR, "src", "cron.py"),
+                "youtube",
+                "yt-1",
+            ],
+        )
+
+    def test_build_cron_command_appends_override_model_when_provided(self) -> None:
+        self.assertEqual(
+            self.main.build_cron_command("twitter", "tw-1", "override/model"),
+            [
+                "python",
+                os.path.join(self.main.ROOT_DIR, "src", "cron.py"),
+                "twitter",
+                "tw-1",
+                "override/model",
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

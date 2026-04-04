@@ -2,7 +2,6 @@ import os
 import sys
 import types
 import unittest
-from unittest.mock import Mock
 from unittest.mock import patch
 
 
@@ -15,10 +14,6 @@ if SRC_DIR not in sys.path:
 fake_kittentts = types.ModuleType("kittentts")
 fake_kittentts.KittenTTS = object
 sys.modules.setdefault("kittentts", fake_kittentts)
-
-fake_ollama = types.ModuleType("ollama")
-fake_ollama.Client = object
-sys.modules.setdefault("ollama", fake_ollama)
 
 fake_llm_provider = types.ModuleType("llm_provider")
 fake_llm_provider.select_model = lambda model: None
@@ -40,6 +35,138 @@ import cron
 
 
 class CronPostBridgeTests(unittest.TestCase):
+    @patch("cron.Twitter")
+    @patch("cron.get_accounts")
+    @patch("cron.select_model")
+    def test_cron_uses_configured_model_when_cli_override_missing(
+        self,
+        select_model_mock,
+        get_accounts_mock,
+        twitter_cls_mock,
+    ) -> None:
+        get_accounts_mock.return_value = [
+            {
+                "id": "tw-1",
+                "nickname": "Account",
+                "firefox_profile": "/Users/example/profile",
+                "topic": "finance",
+            }
+        ]
+
+        with patch.object(cron, "get_openrouter_api_key", return_value="test-openrouter-key", create=True), patch.object(
+            cron,
+            "get_openrouter_model",
+            return_value="configured/model",
+            create=True,
+        ), patch.object(
+            cron,
+            "get_verbose",
+            return_value=False,
+        ), patch.object(
+            sys,
+            "argv",
+            ["cron.py", "twitter", "tw-1"],
+        ):
+            cron.main()
+
+        select_model_mock.assert_called_once_with("configured/model")
+        twitter_cls_mock.assert_called_once_with(
+            "tw-1",
+            "Account",
+            "/Users/example/profile",
+            "finance",
+        )
+        twitter_cls_mock.return_value.post.assert_called_once_with()
+
+    @patch("cron.Twitter")
+    @patch("cron.get_accounts")
+    @patch("cron.select_model")
+    def test_cli_override_wins_over_configured_model(
+        self,
+        select_model_mock,
+        get_accounts_mock,
+        twitter_cls_mock,
+    ) -> None:
+        get_accounts_mock.return_value = [
+            {
+                "id": "tw-1",
+                "nickname": "Account",
+                "firefox_profile": "/Users/example/profile",
+                "topic": "finance",
+            }
+        ]
+
+        with patch.object(cron, "get_openrouter_api_key", return_value="test-openrouter-key", create=True), patch.object(
+            cron,
+            "get_openrouter_model",
+            return_value="configured/model",
+            create=True,
+        ), patch.object(
+            cron,
+            "get_verbose",
+            return_value=False,
+        ), patch.object(
+            sys,
+            "argv",
+            ["cron.py", "twitter", "tw-1", "override/model"],
+        ):
+            cron.main()
+
+        select_model_mock.assert_called_once_with("override/model")
+        twitter_cls_mock.return_value.post.assert_called_once_with()
+
+    @patch("cron.error")
+    @patch("cron.select_model")
+    def test_missing_api_key_exits_with_exact_error_message(
+        self,
+        select_model_mock,
+        error_mock,
+    ) -> None:
+        with patch.object(cron, "get_openrouter_api_key", return_value="", create=True), patch.object(
+            cron,
+            "get_openrouter_model",
+            return_value="configured/model",
+            create=True,
+        ), patch.object(
+            sys,
+            "argv",
+            ["cron.py", "twitter", "tw-1"],
+        ):
+            with self.assertRaises(SystemExit) as raised:
+                cron.main()
+
+        self.assertEqual(raised.exception.code, 1)
+        error_mock.assert_called_once_with(
+            "No OpenRouter API key configured. Set openrouter_api_key or OPENROUTER_API_KEY."
+        )
+        select_model_mock.assert_not_called()
+
+    @patch("cron.error")
+    @patch("cron.select_model")
+    def test_missing_configured_model_exits_with_exact_error_message(
+        self,
+        select_model_mock,
+        error_mock,
+    ) -> None:
+        with patch.object(cron, "get_openrouter_api_key", return_value="test-openrouter-key", create=True), patch.object(
+            cron,
+            "get_openrouter_model",
+            return_value="",
+            create=True,
+        ), patch.object(
+            sys,
+            "argv",
+            ["cron.py", "twitter", "tw-1"],
+        ):
+            with self.assertRaises(SystemExit) as raised:
+                cron.main()
+
+        self.assertEqual(raised.exception.code, 1)
+        error_mock.assert_called_once_with(
+            "No OpenRouter model configured. Set openrouter_model or OPENROUTER_MODEL."
+        )
+        select_model_mock.assert_not_called()
+
     @patch("cron.maybe_crosspost_youtube_short")
     @patch("cron.YouTube")
     @patch("cron.TTS")
@@ -67,10 +194,10 @@ class CronPostBridgeTests(unittest.TestCase):
         ]
         youtube_instance = youtube_cls_mock.return_value
         youtube_instance.upload_video.return_value = False
-        youtube_instance.video_path = "/tmp/video.mp4"
+        youtube_instance.video_path = "/Users/example/video.mp4"
         youtube_instance.metadata = {"title": "Title"}
 
-        with patch.object(
+        with patch.object(cron, "get_openrouter_api_key", return_value="test-openrouter-key", create=True), patch.object(
             sys,
             "argv",
             ["cron.py", "youtube", "yt-1", "llama3.2:3b"],
