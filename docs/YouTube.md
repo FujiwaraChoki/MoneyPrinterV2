@@ -1,12 +1,14 @@
-# YouTube Shorts Automater
+# Legacy YouTube Automation
 
-MPV2 uses a similar implementation of V1 (see [MPV1](https://github.com/FujiwaraChoki/MoneyPrinter)), to generate Video-Files and upload them to YouTube Shorts.
+This document describes the older browser-driven YouTube workflow.
 
-In contrast to V1, V2 uses AI generated images as the visuals for the video, instead of using stock footage. This makes the videos more unique and less likely to be flagged by YouTube. V2 also supports music right from the get-go.
+MoneyPrinterV2 now uses Post Bridge as the primary publishing backend for generated videos. See [PostBridge.md](./PostBridge.md) for the current flow.
+
+The legacy implementation used a Firefox profile plus Selenium to upload videos directly to YouTube Shorts after generation.
 
 ## Relevant Configuration
 
-In your `config.json`, you need the following attributes filled out, so that the bot can function correctly.
+If you are still experimenting with the legacy code path, you need the following attributes filled out:
 
 ```json
 {

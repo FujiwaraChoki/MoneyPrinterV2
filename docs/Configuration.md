@@ -5,8 +5,12 @@ All your configurations will be in a file in the root directory, called `config.
 ## Values
 
 - `verbose`: `boolean` - If `true`, the application will print out more information.
-- `firefox_profile`: `string` - The path to your Firefox profile. This is used to use your Social Media Accounts without having to log in every time you run the application.
+- `firefox_profile`: `string` - The path to your Firefox profile. This is only needed for browser-based Twitter automation.
 - `headless`: `boolean` - If `true`, the application will run in headless mode. This means that the browser will not be visible.
+- `video_publishing`: `object`:
+    - `profile_name`: `string` - Friendly label for the configured publisher profile.
+    - `niche`: `string` - The topic or niche used for generated videos.
+    - `language`: `string` - The language used for generated videos.
 - `ollama_base_url`: `string` - Base URL of your local Ollama server (default: `http://127.0.0.1:11434`).
 - `ollama_model`: `string` - Ollama model to use for text generation (e.g. `llama3.2:3b`). If empty, the app queries Ollama at startup and lets you pick from the available models interactively.
 - `twitter_language`: `string` - The language that will be used to generate & post tweets.
@@ -39,11 +43,11 @@ All your configurations will be in a file in the root directory, called `config.
 - `imagemagick_path`: `string` - The path to the ImageMagick binary. This is used by MoviePy to manipulate images. Install ImageMagick from [here](https://imagemagick.org/script/download.php) and set the path to the `magick.exe` on Windows, or on Linux/MacOS the path to `convert` (usually /usr/bin/convert).
 - `script_sentence_length`: `number` - The number of sentences in the generated video script (default: `4`).
 - `post_bridge`: `object`:
-    - `enabled`: `boolean` - Enables Post Bridge cross-posting after successful YouTube uploads.
+    - `enabled`: `boolean` - Enables Post Bridge as the primary video publishing backend.
     - `api_key`: `string` - Your Post Bridge API key. If empty, MPV2 falls back to `POST_BRIDGE_API_KEY`.
-    - `platforms`: `string[]` - Platforms to target. Supported values in v1 are `tiktok` and `instagram`.
-    - `account_ids`: `number[]` - Optional fixed Post Bridge account IDs to avoid account-selection prompts.
-    - `auto_crosspost`: `boolean` - If `true`, cross-post automatically after a successful YouTube upload. If `false`, interactive runs ask and cron runs skip.
+    - `platforms`: `string[]` - Platforms to target. Supported values include `youtube`, `tiktok`, `instagram`, `facebook`, `twitter`, `threads`, `linkedin`, `bluesky`, and `pinterest`.
+    - `account_ids`: `number[]` - Fixed Post Bridge account IDs. The setup wizard stores one account ID per selected platform.
+    - `auto_publish`: `boolean` - If `true`, generated videos are published automatically. If `false`, interactive runs ask and cron runs skip.
 
 ## Example
 
@@ -52,6 +56,11 @@ All your configurations will be in a file in the root directory, called `config.
   "verbose": true,
   "firefox_profile": "",
   "headless": false,
+  "video_publishing": {
+    "profile_name": "Default Publisher",
+    "niche": "",
+    "language": "English"
+  },
   "ollama_base_url": "http://127.0.0.1:11434",
   "ollama_model": "",
   "twitter_language": "English",
@@ -85,9 +94,9 @@ All your configurations will be in a file in the root directory, called `config.
   "post_bridge": {
     "enabled": false,
     "api_key": "",
-    "platforms": ["tiktok", "instagram"],
+    "platforms": ["youtube", "tiktok", "instagram"],
     "account_ids": [],
-    "auto_crosspost": false
+    "auto_publish": false
   }
 }
 ```

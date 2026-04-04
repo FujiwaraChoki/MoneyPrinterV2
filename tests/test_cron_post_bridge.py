@@ -2,7 +2,6 @@ import os
 import sys
 import types
 import unittest
-from unittest.mock import Mock
 from unittest.mock import patch
 
 
@@ -40,48 +39,59 @@ import cron
 
 
 class CronPostBridgeTests(unittest.TestCase):
-    @patch("cron.maybe_crosspost_youtube_short")
+    @patch("cron.publish_video")
     @patch("cron.YouTube")
     @patch("cron.TTS")
-    @patch("cron.get_accounts")
+    @patch("cron.get_video_publishing_config")
+    @patch("cron.ensure_post_bridge_publishing_ready", return_value=True)
     @patch("cron.select_model")
     @patch("cron.get_verbose")
-    def test_crosspost_does_not_run_when_youtube_upload_fails(
+    def test_publish_mode_generates_and_publishes_video(
         self,
         get_verbose_mock,
         select_model_mock,
-        get_accounts_mock,
+        _ensure_ready_mock,
+        get_video_config_mock,
         tts_cls_mock,
         youtube_cls_mock,
-        crosspost_mock,
+        publish_video_mock,
     ) -> None:
         get_verbose_mock.return_value = False
-        get_accounts_mock.return_value = [
-            {
-                "id": "yt-1",
-                "nickname": "Channel",
-                "firefox_profile": "/tmp/profile",
-                "niche": "finance",
-                "language": "English",
-            }
-        ]
+        get_video_config_mock.return_value = {
+            "profile_name": "Default Publisher",
+            "niche": "finance",
+            "language": "English",
+        }
         youtube_instance = youtube_cls_mock.return_value
-        youtube_instance.upload_video.return_value = False
         youtube_instance.video_path = "/tmp/video.mp4"
-        youtube_instance.metadata = {"title": "Title"}
+        youtube_instance.metadata = {
+            "title": "Title",
+            "description": "Description",
+        }
+        publish_video_mock.return_value = True
 
-        with patch.object(
-            sys,
-            "argv",
-            ["cron.py", "youtube", "yt-1", "llama3.2:3b"],
-        ):
+        with patch.object(sys, "argv", ["cron.py", "publish", "llama3.2:3b"]):
             cron.main()
 
         select_model_mock.assert_called_once_with("llama3.2:3b")
         tts_cls_mock.assert_called_once()
         youtube_instance.generate_video.assert_called_once()
-        youtube_instance.upload_video.assert_called_once()
-        crosspost_mock.assert_not_called()
+        publish_video_mock.assert_called_once_with(
+            video_path="/tmp/video.mp4",
+            title="Title",
+            description="Description",
+            interactive=False,
+        )
+
+    def test_legacy_youtube_mode_exits_with_migration_message(self) -> None:
+        with patch.object(sys, "argv", ["cron.py", "youtube", "llama3.2:3b"]), patch(
+            "cron.get_ollama_model",
+            return_value="llama3.2:3b",
+        ), patch("cron.select_model"):
+            with self.assertRaises(SystemExit) as raised:
+                cron.main()
+
+        self.assertEqual(raised.exception.code, 1)
 
 
 if __name__ == "__main__":

@@ -1,33 +1,39 @@
-# Post Bridge Integration
+# Post Bridge Video Publishing
 
-MoneyPrinterV2 can optionally hand off a successfully uploaded YouTube Short to [Post Bridge](https://api.post-bridge.com/reference), which then publishes the same asset to connected TikTok and Instagram accounts.
+MoneyPrinterV2 now uses [Post Bridge](https://api.post-bridge.com/reference) as the primary backend for publishing generated videos.
 
 ## What Post Bridge Does
 
-Post Bridge is a publishing API for social platforms. In this integration, MoneyPrinterV2 uses it to:
+In the current flow, MoneyPrinterV2 still generates the video locally, but Post Bridge handles publishing:
 
-1. Look up your connected social accounts.
-2. Request a signed upload URL for the generated video.
-3. Upload the video asset to Post Bridge storage.
-4. Create a post for the selected TikTok and Instagram accounts.
+1. Fetch the connected social accounts that should receive the video.
+2. Request a signed upload URL for the generated media.
+3. Upload the local video asset to Post Bridge storage.
+4. Create a post for the selected platform accounts.
+5. Expose publish history and per-platform URLs through the Post Bridge API.
 
-MoneyPrinterV2 still owns video generation and the initial YouTube upload. Post Bridge only starts after YouTube upload succeeds.
+This replaces the old browser-driven YouTube upload path for normal usage.
 
 ## Setup
 
 1. Create a Post Bridge account.
-2. Connect the TikTok and Instagram accounts you want to publish to.
+2. Connect the social accounts you want to publish to.
 3. Generate an API key from Post Bridge.
-4. Add the `post_bridge` block to `config.json`, or set `POST_BRIDGE_API_KEY` in your environment.
+4. Run the in-app publisher setup wizard, or configure `video_publishing` and `post_bridge` manually in `config.json`.
 
 ```json
 {
+  "video_publishing": {
+    "profile_name": "Default Publisher",
+    "niche": "finance",
+    "language": "English"
+  },
   "post_bridge": {
     "enabled": true,
     "api_key": "pb_your_api_key_here",
-    "platforms": ["tiktok", "instagram"],
-    "account_ids": [],
-    "auto_crosspost": false
+    "platforms": ["youtube", "tiktok", "instagram"],
+    "account_ids": [101, 202, 303],
+    "auto_publish": false
   }
 }
 ```
@@ -36,45 +42,45 @@ MoneyPrinterV2 still owns video generation and the initial YouTube upload. Post 
 
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
-| `enabled` | `boolean` | `false` | Enables the Post Bridge integration. |
-| `api_key` | `string` | `""` | Post Bridge API key. Falls back to `POST_BRIDGE_API_KEY` when blank. |
-| `platforms` | `string[]` | `["tiktok", "instagram"]` when omitted | Platform filters used when looking up connected accounts. Unsupported values inside the list are ignored. |
-| `account_ids` | `number[]` | `[]` | Exact Post Bridge account IDs to post to. When provided, MoneyPrinterV2 uses these directly and skips account lookup. |
-| `auto_crosspost` | `boolean` | `false` | Automatically cross-post after a successful YouTube upload. |
+| `video_publishing.profile_name` | `string` | `"Default Publisher"` | Friendly label shown in the CLI wizard. |
+| `video_publishing.niche` | `string` | `""` | Topic or niche used for generated videos. |
+| `video_publishing.language` | `string` | `"English"` | Language used for generated videos. |
+| `post_bridge.enabled` | `boolean` | `false` | Enables Post Bridge publishing. |
+| `post_bridge.api_key` | `string` | `""` | Post Bridge API key. Falls back to `POST_BRIDGE_API_KEY` when blank. |
+| `post_bridge.platforms` | `string[]` | `["youtube", "tiktok", "instagram"]` when omitted | Platforms targeted for publishing. |
+| `post_bridge.account_ids` | `number[]` | `[]` | Exact Post Bridge account IDs to publish to. The setup wizard stores one account per selected platform. |
+| `post_bridge.auto_publish` | `boolean` | `false` | Automatically publish after generation. Interactive runs prompt when disabled; cron runs skip. |
 
-## How The Integration Works
+## Publish Flow
 
-### Interactive YouTube flow
+### Interactive publishing
 
-- If `enabled` is `false`, nothing happens.
-- If `enabled` is `true` and `auto_crosspost` is `false`, MoneyPrinterV2 asks whether to cross-post after a successful YouTube upload.
-- If `account_ids` is configured, those IDs are used directly.
-- If `account_ids` is empty, MoneyPrinterV2 fetches connected Post Bridge accounts for the configured platforms.
-- If there is exactly one connected account for a platform, it is selected automatically.
-- If there are multiple connected accounts for a platform, MoneyPrinterV2 prompts you to choose one.
-- After interactive selection, the chosen IDs are printed so you can copy them into `config.json`, but the app does not edit your config file for you.
+- Use the `Video Publishing` menu in `src/main.py`.
+- `Setup Publisher` runs the config-writing wizard.
+- `Publish Video` generates a video locally and publishes it through Post Bridge.
+- `Show Recent Publishes` fetches recent posts and post results live from the API.
 
-### Cron / scheduled uploads
+### Scheduled publishing
 
-- Cron uses the same integration after a successful YouTube upload.
-- If `auto_crosspost` is `false`, cron skips Post Bridge and logs why.
-- If `auto_crosspost` is `true`, cron cross-posts automatically.
-- If `account_ids` is empty and multiple connected accounts exist for a platform, cron skips cross-posting instead of hanging on an interactive prompt.
+- Cron now uses `publish` mode instead of `youtube`.
+- `scripts/publish_video.sh` runs the publish cron entrypoint directly.
+- If `post_bridge.auto_publish` is `false`, cron skips publishing and logs why.
 
-## Current v1 Behavior
+## Content Mapping
 
-- The generated YouTube title is used as the default caption.
-- TikTok receives the YouTube title as its platform-specific `title` override.
-- Post Bridge account lookup follows the API’s pagination.
-- Instagram cover-image customization is intentionally not included in this v1 integration.
-- Cross-posting only runs after `upload_video()` returns success.
+- Global caption: generated description
+- `youtube.title`: generated title
+- `youtube.caption`: generated description
+- `tiktok.title`: generated title
+
+Only configured platform overrides are sent.
 
 ## Troubleshooting
 
 | Issue | What to check |
 | --- | --- |
-| Cross-post prompt never appears | Verify `post_bridge.enabled` is `true`. |
-| Cross-post is skipped in cron | Set `auto_crosspost` to `true`. |
-| No accounts are found | Make sure the accounts are connected in Post Bridge and that `platforms` matches the accounts you connected. |
-| Cron skips because multiple accounts exist | Add the desired `account_ids` to `config.json` so cron does not need to prompt. |
-| API key seems ignored | Set `post_bridge.api_key`, or leave it blank and export `POST_BRIDGE_API_KEY`. |
+| The publisher wizard cannot continue | Verify `video_publishing.niche` and a Post Bridge API key are set. |
+| No accounts are found | Make sure the accounts are connected in Post Bridge and that `post_bridge.platforms` matches the connected accounts. |
+| Cron skips publishing | Set `post_bridge.auto_publish` to `true`. |
+| Publish history is empty | Confirm that posts exist for the configured platforms and that the API key has access. |
+| Old cron commands stopped working | Use `publish` mode instead of `youtube`. |

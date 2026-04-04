@@ -2,6 +2,11 @@
   "verbose": true,
   "firefox_profile": "",
   "headless": false,
+  "video_publishing": {
+    "profile_name": "Default Publisher",
+    "niche": "",
+    "language": "English"
+  },
   "ollama_base_url": "http://127.0.0.1:11434",
   "ollama_model": "",
   "twitter_language": "English",
@@ -35,8 +40,8 @@
   "post_bridge": {
     "enabled": false,
     "api_key": "",
-    "platforms": ["tiktok", "instagram"],
+    "platforms": ["youtube", "tiktok", "instagram"],
     "account_ids": [],
-    "auto_crosspost": false
+    "auto_publish": false
   }
 }

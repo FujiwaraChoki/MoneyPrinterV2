@@ -61,7 +61,40 @@ def main() -> int:
         else:
             warn(f"firefox_profile does not exist: {firefox_profile}")
     else:
-        warn("firefox_profile is empty. Twitter/YouTube automation requires this.")
+        warn("firefox_profile is empty. Twitter automation requires this.")
+
+    video_cfg = cfg.get("video_publishing", {})
+    if isinstance(video_cfg, dict):
+        niche = str(video_cfg.get("niche", "")).strip()
+        language = str(video_cfg.get("language", "")).strip()
+        if niche:
+            ok(f"video_publishing.niche is set: {niche}")
+        else:
+            warn("video_publishing.niche is empty. Video publishing setup is incomplete.")
+        if language:
+            ok(f"video_publishing.language is set: {language}")
+        else:
+            warn("video_publishing.language is empty. Defaulting to English at runtime.")
+    else:
+        warn("video_publishing config block is missing or invalid.")
+
+    post_bridge = cfg.get("post_bridge", {})
+    if isinstance(post_bridge, dict) and post_bridge.get("enabled"):
+        api_key = str(post_bridge.get("api_key", "")).strip() or os.environ.get(
+            "POST_BRIDGE_API_KEY",
+            "",
+        ).strip()
+        if api_key:
+            ok("Post Bridge API key is set")
+        else:
+            fail("Post Bridge is enabled but no API key is configured")
+            failures += 1
+
+        platforms = post_bridge.get("platforms", [])
+        if platforms:
+            ok(f"Post Bridge platforms configured: {', '.join(platforms)}")
+        else:
+            warn("Post Bridge is enabled but no platforms are configured.")
 
     # Ollama (LLM)
     base = str(cfg.get("ollama_base_url", "http://127.0.0.1:11434")).rstrip("/")

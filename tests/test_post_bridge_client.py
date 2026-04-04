@@ -80,6 +80,38 @@ class PostBridgeClientTests(unittest.TestCase):
         self.assertIsNone(second_call.kwargs["params"])
 
     @patch("classes.PostBridge.time.sleep")
+    def test_list_posts_uses_platform_and_status_filters(self, _sleep_mock) -> None:
+        session = Mock()
+        session.request.return_value = MockResponse(
+            200,
+            {
+                "data": [{"id": "post-1", "status": "posted"}],
+                "meta": {"next": None},
+            },
+        )
+        client = PostBridge("token", session=session)
+
+        posts = client.list_posts(
+            platforms=["youtube", "tiktok"],
+            statuses=["posted"],
+            limit=5,
+        )
+
+        self.assertEqual(posts, [{"id": "post-1", "status": "posted"}])
+        first_call = session.request.call_args_list[0]
+        self.assertEqual(first_call.args[1], "https://api.post-bridge.com/v1/posts")
+        self.assertEqual(
+            first_call.kwargs["params"],
+            [
+                ("limit", 5),
+                ("offset", 0),
+                ("platform", "youtube"),
+                ("platform", "tiktok"),
+                ("status", "posted"),
+            ],
+        )
+
+    @patch("classes.PostBridge.time.sleep")
     def test_create_post_retries_after_rate_limit(self, sleep_mock) -> None:
         session = Mock()
         session.request.side_effect = [

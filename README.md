@@ -24,7 +24,7 @@ MPV2 (MoneyPrinter Version 2) is, as the name suggests, the second version of th
 ## Features
 
 - [x] Twitter Bot (with CRON Jobs => `scheduler`)
-- [x] YouTube Shorts Automator (with CRON Jobs => `scheduler`)
+- [x] PostBridge-first Video Publishing (with CRON Jobs => `scheduler`)
 - [x] Affiliate Marketing (Amazon + Twitter)
 - [x] Find local businesses & cold outreach
 
@@ -75,7 +75,7 @@ All relevant documents can be found [here](docs/).
 
 For easier usage, there are some scripts in the `scripts` directory that can be used to directly access the core functionality of MPV2 without the need for user interaction.
 
-All scripts need to be run from the root directory of the project, e.g. `bash scripts/upload_video.sh`.
+All scripts need to be run from the root directory of the project, e.g. `bash scripts/publish_video.sh`.
 
 ## Contributing
 
