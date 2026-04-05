@@ -210,6 +210,14 @@ class OpenRouterConfigTests(ConfigTestCase):
 
 
 class VideoMotionConfigTests(ConfigTestCase):
+    def test_script_sentence_length_defaults_to_six(self) -> None:
+        self.write_config({})
+
+        with self.patch_root_dir():
+            sentence_length = config.get_script_sentence_length()
+
+        self.assertEqual(sentence_length, 6)
+
     def test_video_motion_style_defaults_to_static(self) -> None:
         self.write_config({})
 

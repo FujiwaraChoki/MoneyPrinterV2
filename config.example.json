@@ -34,7 +34,7 @@
   "tts_voice": "Jasper",
   "font": "BebasNeue-Regular.ttf",
   "imagemagick_path": "Path to magick.exe or on linux/macOS just /usr/bin/convert",
-  "script_sentence_length": 4,
+  "script_sentence_length": 6,
   "video_motion_style": "static",
   "video_zoom_intensity": 1.12,
   "video_pan_enabled": true,

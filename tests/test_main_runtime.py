@@ -187,6 +187,7 @@ class MainRuntimeTests(unittest.TestCase):
         self.assertIn("# MONEYPRINTER_V2 youtube yt-1 BEGIN", block)
         self.assertIn("0 10 * * *", block)
         self.assertIn("PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin", block)
+        self.assertIn("export PATH", block)
         self.assertIn(
             os.path.join(self.main.ROOT_DIR, "src", "cron.py"),
             block,

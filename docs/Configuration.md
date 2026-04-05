@@ -40,7 +40,7 @@ All your configurations will be in a file in the root directory, called `config.
 - `tts_voice`: `string` - Voice for KittenTTS text-to-speech. Default is `Jasper`. Options: `Bella`, `Jasper`, `Luna`, `Bruno`, `Rosie`, `Hugo`, `Kiki`, `Leo`.
 - `font`: `string` - The font that will be used to generate images. This should be a `.ttf` file in the `fonts/` directory.
 - `imagemagick_path`: `string` - The path to the ImageMagick binary. This is used by MoviePy to manipulate images. Install ImageMagick from [here](https://imagemagick.org/script/download.php) and set the path to the `magick.exe` on Windows, or on Linux/MacOS the path to `convert` (usually /usr/bin/convert).
-- `script_sentence_length`: `number` - The number of sentences in the generated video script (default: `4`).
+- `script_sentence_length`: `number` - The number of sentences in the generated video script (default: `6`).
 - `video_motion_style`: `string` - Motion treatment for rendered image clips. Options: `static`, `cinematic`. Invalid values fall back to `static`.
 - `video_zoom_intensity`: `number` - End zoom multiplier for cinematic mode. Invalid or too-small values fall back to `1.12`.
 - `video_pan_enabled`: `boolean` - Whether cinematic mode should add horizontal pan drift. Defaults to `true`.
@@ -91,7 +91,7 @@ All your configurations will be in a file in the root directory, called `config.
   "tts_voice": "Jasper",
   "font": "BebasNeue-Regular.ttf",
   "imagemagick_path": "Path to magick.exe or on linux/macOS just /usr/bin/convert",
-  "script_sentence_length": 4,
+  "script_sentence_length": 6,
   "video_motion_style": "static",
   "video_zoom_intensity": 1.12,
   "video_pan_enabled": true,
