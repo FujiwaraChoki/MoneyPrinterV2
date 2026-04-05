@@ -283,6 +283,30 @@ class YouTubePromptGenerationTests(unittest.TestCase):
 
         self.assertEqual(youtube.generate_response.call_count, 4)
 
+    def test_generate_metadata_requests_historical_impossibility_packaging(self) -> None:
+        youtube = self.youtube_module.YouTube.__new__(self.youtube_module.YouTube)
+        youtube.subject = "The storm that made telegraphs burst into flame"
+        youtube.script = "Operators watched sparks leap from their equipment as the sky lit up."
+        youtube.generate_response = Mock(
+            side_effect=[
+                "The Night the Sky Powered Telegraphs #history #mystery",
+                "The night the sky powered the grid.\nA real story about the storm that made telegraph lines come alive.",
+            ]
+        )
+
+        metadata = youtube.generate_metadata()
+
+        title_prompt = youtube.generate_response.call_args_list[0].args[0]
+        description_prompt = youtube.generate_response.call_args_list[1].args[0]
+
+        self.assertEqual(metadata, youtube.metadata)
+        self.assertIn("clean curiosity gap", title_prompt)
+        self.assertIn("historical impossibility", title_prompt)
+        self.assertIn("one story, one mystery, one payoff", title_prompt)
+        self.assertIn("high-contrast opening line", description_prompt)
+        self.assertIn("one story, one mystery, one payoff", description_prompt)
+        self.assertIn("why it matters", description_prompt)
+
     def test_generate_topic_requests_reported_background_rich_story_ideas(self) -> None:
         youtube = self.youtube_module.YouTube.__new__(self.youtube_module.YouTube)
         youtube._language = "english"
@@ -300,6 +324,9 @@ class YouTubePromptGenerationTests(unittest.TestCase):
             "enough verified background to explain who, where, when, and why it matters",
             prompt,
         )
+        self.assertIn("historical impossibility", prompt)
+        self.assertIn("one story, one mystery, one payoff", prompt)
+        self.assertIn("broad curiosity overlap", prompt)
         self.assertIn("reported documentary story", prompt)
         self.assertIn("not a vague teaser premise", prompt)
 
@@ -341,6 +368,9 @@ class YouTubePromptGenerationTests(unittest.TestCase):
             prompt,
         )
         self.assertIn("Do not invent facts", prompt)
+        self.assertIn('make the viewer think "wait, what?"', prompt)
+        self.assertIn("one story, one mystery, one payoff", prompt)
+        self.assertIn("35 to 45 second spoken short", prompt)
 
     def test_generate_script_prompt_preserves_raw_output_constraints(self) -> None:
         youtube = self.youtube_module.YouTube.__new__(self.youtube_module.YouTube)

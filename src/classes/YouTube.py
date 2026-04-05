@@ -273,6 +273,9 @@ class YouTube:
         Make it exactly one sentence.
         Prefer a fresh story that does not overlap with prior videos on this channel.{avoid_block}
         Choose a real story with enough verified background to explain who, where, when, and why it matters.
+        Prefer a historical impossibility angle: a familiar person, place, institution, expedition, disaster, or system colliding with a detail that sounds impossible but is true.
+        Prefer one story, one mystery, one payoff rather than a broad listicle, theme, or bundle of incidents.
+        Prefer broad curiosity overlap across history, mystery, disaster, science, and true crime instead of narrow academic obscurity.
         Prefer a reported documentary story, not a vague teaser premise.
         Favor cases with concrete people, places, dates, institutions, or records that can support a tightly reported short.
         Only return the topic, nothing else.
@@ -403,6 +406,10 @@ class YouTube:
         Write with the discipline of a reported newspaper feature and the narrative pull of a top true crime podcast.
         Every sentence must add a new concrete detail or move the story forward.
         Give enough background context for the viewer to understand why the story matters.
+        Open with a pattern-break fact or claim that would make the viewer think "wait, what?"
+        Keep the whole piece shaped like one story, one mystery, one payoff.
+        Pace it like a 35 to 45 second spoken short.
+        When the facts support it, frame the hook as a historical impossibility or unsettling contradiction.
         Clearly distinguish confirmed facts from rumor, legend, or theory.
         Do not invent facts or present speculation as certainty.
         Do not use filler, introductions, conclusions, listicles, or educational framing.
@@ -459,7 +466,14 @@ class YouTube:
         title = ""
         for _ in range(max_attempts):
             title = self.generate_response(
-                f"Please generate a YouTube Video Title for the following subject, including hashtags: {self.subject}. Only return the title, nothing else. Limit the title under 100 characters."
+                f"""
+                Generate a YouTube Shorts title for the following real story, including hashtags: {self.subject}.
+                Create a clean curiosity gap built around a historical impossibility, unsettling contradiction, or impossible-sounding true detail.
+                Keep it specific, emotionally charged, and narrow: one story, one mystery, one payoff.
+                Avoid generic educational phrasing, vague teaser language, or listicle framing.
+                Only return the title, nothing else.
+                Limit the title under 100 characters.
+                """
             )
 
             if len(title) <= 100:
@@ -474,7 +488,15 @@ class YouTube:
         description = ""
         for _ in range(max_attempts):
             description = self.generate_response(
-                f"Please generate a YouTube Video Description for the following script: {self.script}. Only return the description, nothing else. Limit the description under {max_description_length} characters."
+                f"""
+                Generate a YouTube Shorts description for the following script: {self.script}.
+                Start with a high-contrast opening line that feels cinematic and immediate.
+                Keep the description focused on one story, one mystery, one payoff.
+                Make the viewer understand why it matters without spoiling the entire curiosity gap.
+                If appropriate, hint at the unresolved tension or modern implication.
+                Only return the description, nothing else.
+                Limit the description under {max_description_length} characters.
+                """
             )
 
             if len(description) <= max_description_length:
