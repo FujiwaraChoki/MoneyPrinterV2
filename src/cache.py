@@ -4,6 +4,23 @@ import json
 from typing import List
 from config import ROOT_DIR
 
+
+def _load_cache_payload(cache_path: str, default_payload: dict) -> dict:
+    if not os.path.exists(cache_path):
+        with open(cache_path, 'w', encoding='utf-8') as file:
+            json.dump(default_payload, file, indent=4)
+        return default_payload
+
+    try:
+        with open(cache_path, 'r', encoding='utf-8') as file:
+            parsed = json.load(file)
+    except json.JSONDecodeError:
+        with open(cache_path, 'w', encoding='utf-8') as file:
+            json.dump(default_payload, file, indent=4)
+        return default_payload
+
+    return parsed if isinstance(parsed, dict) else default_payload
+
 def get_cache_path() -> str:
     """
     Gets the path to the cache file.
@@ -72,24 +89,16 @@ def get_accounts(provider: str) -> List[dict]:
     """
     cache_path = get_provider_cache_path(provider)
 
-    if not os.path.exists(cache_path):
-        # Create the cache file
-        with open(cache_path, 'w') as file:
-            json.dump({
-                "accounts": []
-            }, file, indent=4)
+    parsed = _load_cache_payload(cache_path, {'accounts': []})
 
-    with open(cache_path, 'r') as file:
-        parsed = json.load(file)
+    if parsed is None:
+        return []
 
-        if parsed is None:
-            return []
-        
-        if 'accounts' not in parsed:
-            return []
+    if 'accounts' not in parsed:
+        return []
 
-        # Get accounts dictionary
-        return parsed['accounts']
+    # Get accounts dictionary
+    return parsed['accounts']
 
 def add_account(provider: str, account: dict) -> None:
     """
@@ -148,18 +157,10 @@ def get_products() -> List[dict]:
     Returns:
         products (List[dict]): The products
     """
-    if not os.path.exists(get_afm_cache_path()):
-        # Create the cache file
-        with open(get_afm_cache_path(), 'w') as file:
-            json.dump({
-                "products": []
-            }, file, indent=4)
+    parsed = _load_cache_payload(get_afm_cache_path(), {'products': []})
 
-    with open(get_afm_cache_path(), 'r') as file:
-        parsed = json.load(file)
-
-        # Get the products
-        return parsed["products"]
+    # Get the products
+    return parsed['products']
     
 def add_product(product: dict) -> None:
     """
