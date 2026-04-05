@@ -1,3 +1,4 @@
+import json
 import os
 import random
 import shutil
@@ -7,6 +8,7 @@ import platform
 
 from status import *
 from config import *
+from cache import get_youtube_cache_path
 
 DEFAULT_SONG_ARCHIVE_URLS = []
 
@@ -55,18 +57,53 @@ def rem_temp_files() -> None:
     """
     # Path to the `.mp` directory
     mp_dir = os.path.join(ROOT_DIR, ".mp")
+    preserved_video_paths = _get_preserved_rendered_video_paths(mp_dir)
 
     files = os.listdir(mp_dir)
 
     for file in files:
-        if file.endswith((".json", ".mp4")):
+        path = os.path.join(mp_dir, file)
+
+        if file.endswith(".json"):
             continue
 
-        path = os.path.join(mp_dir, file)
+        if file.endswith(".mp4") and os.path.abspath(path) in preserved_video_paths:
+            continue
+
         if os.path.isdir(path) and not os.path.islink(path):
             shutil.rmtree(path)
         else:
             os.remove(path)
+
+
+def _get_preserved_rendered_video_paths(mp_dir: str) -> set[str]:
+    preserved_paths = set()
+    cache_path = get_youtube_cache_path()
+
+    if not os.path.exists(cache_path):
+        return preserved_paths
+
+    try:
+        with open(cache_path, "r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+    except (OSError, json.JSONDecodeError):
+        return preserved_paths
+
+    mp_dir_abs = os.path.abspath(mp_dir)
+    for account in payload.get("accounts", []):
+        for video in account.get("videos", []):
+            video_path = video.get("path")
+            if not video_path:
+                continue
+
+            absolute_video_path = os.path.abspath(video_path)
+            if (
+                absolute_video_path.endswith(".mp4")
+                and os.path.dirname(absolute_video_path) == mp_dir_abs
+            ):
+                preserved_paths.add(absolute_video_path)
+
+    return preserved_paths
 
 
 def fetch_songs() -> None:

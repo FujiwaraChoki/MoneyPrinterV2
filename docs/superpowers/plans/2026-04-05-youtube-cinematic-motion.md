@@ -4,7 +4,7 @@
 
 **Goal:** Add automatic cinematic motion to generated YouTube Shorts image clips without introducing crossfades or changing subtitle and audio timing.
 
-**Architecture:** Extend config parsing with motion settings, factor image clip preparation out of `combine()`, and add a deterministic cinematic motion helper that applies linear zoom plus optional horizontal pan using the existing MoviePy pipeline. Keep cuts hard and the rest of the render flow unchanged.
+**Architecture:** Extend config parsing with motion settings, factor image clip preparation out of `combine()`, and add a deterministic cinematic motion helper that applies eased zoom plus optional horizontal pan using the existing MoviePy pipeline. Keep cuts hard and the rest of the render flow unchanged.
 
 **Tech Stack:** Python 3.12, MoviePy, `unittest`, JSON config
 
@@ -45,8 +45,8 @@ Add tests covering:
 - `get_video_motion_style()` defaults to `static`
 - `get_video_motion_style()` normalizes `cinematic`
 - invalid style falls back to `static`
-- `get_video_zoom_intensity()` defaults to `1.08`
-- invalid or too-small zoom falls back to `1.08`
+- `get_video_zoom_intensity()` defaults to `1.12`
+- invalid or too-small zoom falls back to `1.12`
 - `get_video_pan_enabled()` defaults to `True`
 - `get_video_pan_intensity()` defaults to `0.03`
 - invalid or non-positive pan intensity falls back to `0.03`
@@ -67,7 +67,7 @@ Expected: FAIL with missing getter functions.
 Add tests covering:
 - static mode returns the prepared clip directly
 - cinematic mode wraps the clip in a `CompositeVideoClip`
-- cinematic mode uses a linear zoom function
+- cinematic mode uses an eased zoom function
 - even and odd indices produce opposite horizontal drift directions using the clip index from the `combine()` image iteration order as the source of truth
 - pan disabled keeps horizontal drift centered
 - motion-enabled clips do not change duration or break the surrounding composition contract needed for subtitles and audio timing
@@ -98,7 +98,7 @@ Implement:
 
 Use these defaults:
 - style: `static`
-- zoom: `1.08`
+- zoom: `1.12`
 - pan enabled: `true`
 - pan intensity: `0.03`
 
@@ -108,7 +108,7 @@ Add:
 
 ```json
 "video_motion_style": "static",
-"video_zoom_intensity": 1.08,
+"video_zoom_intensity": 1.12,
 "video_pan_enabled": true,
 "video_pan_intensity": 0.03,
 ```
@@ -119,7 +119,7 @@ Add:
 
 ```json
 "video_motion_style": "cinematic",
-"video_zoom_intensity": 1.08,
+"video_zoom_intensity": 1.12,
 "video_pan_enabled": true,
 "video_pan_intensity": 0.03,
 ```
@@ -152,7 +152,7 @@ Create these helpers:
 
 Behavior:
 - static mode returns the base clip unchanged
-- cinematic mode applies linear zoom from `1.0` to configured zoom
+- cinematic mode applies eased zoom from `1.0` to configured zoom
 - cinematic mode applies deterministic horizontal drift based on the clip index passed from the `combine()` image iteration order
 - hard cuts remain unchanged
 

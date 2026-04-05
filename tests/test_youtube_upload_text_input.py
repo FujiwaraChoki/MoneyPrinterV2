@@ -194,6 +194,39 @@ class YouTubeUploadTextInputTests(unittest.TestCase):
         error_message = error_mock.call_args.args[0]
         self.assertIn("set video title", error_message)
 
+    def test_upload_video_disables_retry_after_file_attach_failure(self) -> None:
+        youtube = self.youtube_module.YouTube.__new__(self.youtube_module.YouTube)
+        youtube.browser = Mock()
+        youtube.video_path = "/tmp/a685a34.mp4"
+        youtube.metadata = {"title": "A title", "description": "A description"}
+
+        file_picker = Mock()
+        file_input = Mock()
+        file_picker.find_element.return_value = file_input
+        youtube.browser.find_element.return_value = file_picker
+        title_el = Mock()
+        description_el = Mock()
+
+        with patch.object(self.youtube_module.YouTube, "get_channel_id"), patch.object(
+            self.youtube_module, "get_verbose", return_value=False
+        ), patch.object(
+            self.youtube_module.time, "sleep"
+        ), patch.object(
+            youtube,
+            "_get_upload_metadata_textboxes",
+            return_value=(title_el, description_el),
+        ), patch.object(
+            youtube,
+            "_set_upload_metadata_text",
+            side_effect=RuntimeError("stop after title"),
+        ), patch.object(
+            self.youtube_module, "error"
+        ):
+            result = youtube.upload_video()
+
+        self.assertFalse(result)
+        self.assertFalse(youtube.last_upload_retry_allowed)
+
 
 if __name__ == "__main__":
     unittest.main()

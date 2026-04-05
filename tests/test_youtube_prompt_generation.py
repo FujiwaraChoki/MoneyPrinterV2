@@ -264,6 +264,25 @@ class YouTubePromptGenerationTests(unittest.TestCase):
 
         self.assertEqual(youtube.generate_response.call_count, 3)
 
+    def test_generate_metadata_raises_after_repeated_oversized_descriptions(self) -> None:
+        youtube = self.youtube_module.YouTube.__new__(self.youtube_module.YouTube)
+        youtube.subject = "A town heard the same sound every night"
+        youtube.script = "A script."
+        title = "Short title"
+        long_description = "D" * 5001
+        youtube.generate_response = Mock(
+            side_effect=[title, long_description, long_description, long_description]
+        )
+
+        with patch.object(self.youtube_module, "get_verbose", return_value=False):
+            with self.assertRaisesRegex(
+                RuntimeError,
+                "Generated description remained too long",
+            ):
+                youtube.generate_metadata()
+
+        self.assertEqual(youtube.generate_response.call_count, 4)
+
     def test_generate_topic_requests_reported_background_rich_story_ideas(self) -> None:
         youtube = self.youtube_module.YouTube.__new__(self.youtube_module.YouTube)
         youtube._language = "english"

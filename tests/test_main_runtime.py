@@ -247,6 +247,18 @@ class MainRuntimeTests(unittest.TestCase):
         self.assertIn("0 10 * * *", write_call.kwargs["input"])
         self.assertIn("youtube yt-1", write_call.kwargs["input"])
 
+    def test_install_cron_job_raises_clear_error_when_crontab_binary_missing(self) -> None:
+        with patch.object(
+            self.main.subprocess,
+            "run",
+            side_effect=FileNotFoundError("No such file or directory: 'crontab'"),
+        ):
+            with self.assertRaisesRegex(
+                RuntimeError,
+                "crontab command is not available",
+            ):
+                self.main.install_cron_job("youtube", "yt-1", 1)
+
     def test_main_retries_failed_youtube_upload_with_same_video(self) -> None:
         youtube_instance = Mock()
         youtube_instance.upload_video.side_effect = [False, True]
@@ -366,6 +378,73 @@ class MainRuntimeTests(unittest.TestCase):
 
         youtube_instance.upload_video.assert_called_once_with()
         crosspost_mock.assert_not_called()
+
+    def test_main_skips_retry_prompt_after_upload_has_started(self) -> None:
+        youtube_instance = Mock()
+        youtube_instance.metadata = {"title": "A title"}
+        youtube_instance.video_path = "/tmp/generated-short.mp4"
+
+        def fail_after_attach():
+            youtube_instance.last_upload_retry_allowed = False
+            return False
+
+        youtube_instance.upload_video.side_effect = fail_after_attach
+
+        youtube_module = types.ModuleType("classes.YouTube")
+        youtube_module.YouTube = Mock(return_value=youtube_instance)
+        tts_module = types.ModuleType("classes.Tts")
+        tts_module.TTS = Mock(return_value=Mock())
+
+        option_answers = iter(["1", "4"])
+
+        def fake_question(message: str, *_args, **_kwargs) -> str:
+            if "Select an account to start" in message:
+                return "1"
+            if "Select an option" in message:
+                return next(option_answers)
+            if "Do you want to upload this video to YouTube" in message:
+                return "yes"
+            if "Retry YouTube upload with the same video" in message:
+                raise AssertionError("Retry prompt should not be shown after upload started")
+            raise AssertionError(f"Unexpected question prompt: {message}")
+
+        with patch.dict(
+            sys.modules,
+            {
+                "classes.YouTube": youtube_module,
+                "classes.Tts": tts_module,
+            },
+        ), patch("builtins.input", return_value="1"), patch.object(
+            self.main,
+            "get_accounts",
+            return_value=[
+                {
+                    "id": "yt-1",
+                    "nickname": "channel",
+                    "firefox_profile": "/tmp/firefox",
+                    "niche": "true crime",
+                    "language": "english",
+                }
+            ],
+        ), patch.object(
+            self.main,
+            "question",
+            side_effect=fake_question,
+        ), patch.object(
+            self.main,
+            "rem_temp_files",
+        ), patch.object(
+            self.main,
+            "warning",
+        ) as warning_mock, patch.object(
+            self.main,
+            "maybe_crosspost_youtube_short",
+        ) as crosspost_mock:
+            self.main.main()
+
+        youtube_instance.upload_video.assert_called_once_with()
+        crosspost_mock.assert_not_called()
+        self.assertIn("may already exist", warning_mock.call_args_list[-1].args[0])
 
 
 if __name__ == "__main__":

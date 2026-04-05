@@ -50,7 +50,7 @@ The motion should stay restrained. The goal is atmosphere, not obvious camera si
 Recommended default behavior:
 
 - base zoom starts at `1.0`
-- end zoom is configurable, default around `1.08`
+- end zoom is configurable, default around `1.12`
 - pan direction alternates per clip to avoid every shot moving the same way
 - pan distance remains small enough that important subject matter is not pushed off frame
 
@@ -66,7 +66,7 @@ Add config keys for cinematic motion:
 Expected values:
 
 - `video_motion_style`: `static` or `cinematic`
-- `video_zoom_intensity`: float-like numeric value, default `1.08`
+- `video_zoom_intensity`: float-like numeric value, default `1.12`
 - `video_pan_enabled`: boolean, default `true`
 - `video_pan_intensity`: float-like numeric value representing a fraction of frame width, default `0.03`
 
@@ -82,7 +82,7 @@ Example config snippet:
 
 ```json
 "video_motion_style": "cinematic",
-"video_zoom_intensity": 1.08,
+"video_zoom_intensity": 1.12,
 "video_pan_enabled": true,
 "video_pan_intensity": 0.03
 ```
@@ -109,7 +109,7 @@ This keeps `combine()` readable and isolates the motion rules.
 The cinematic helper should:
 
 - preserve the current 1080x1920 output size
-- compute a linear zoom curve across the clip duration from `1.0` to `video_zoom_intensity`
+- compute an eased zoom curve across the clip duration from `1.0` to `video_zoom_intensity`
 - use a simple alternating pattern for horizontal crop drift, such as moving the crop window rightward on even clips and leftward on odd clips
 - avoid randomness in v1 so renders remain testable and predictable
 
@@ -119,8 +119,8 @@ Pan magnitude definition:
 
 - `video_pan_intensity` is interpreted as a fraction of the rendered frame width
 - default `0.03` means the crop window drifts by `3%` of frame width over the full clip duration
-- if pan is enabled, horizontal position should move linearly from `-pan_offset/2` to `+pan_offset/2` for even clips
-- if pan is enabled, horizontal position should move linearly from `+pan_offset/2` to `-pan_offset/2` for odd clips
+- if pan is enabled, horizontal position should drift smoothly away from center in one direction for even clips
+- if pan is enabled, horizontal position should drift smoothly away from center in the opposite direction for odd clips
 
 This makes the motion measurable and deterministic.
 
@@ -142,7 +142,7 @@ Add safe defaults rather than failing hard on motion config mistakes.
 Examples:
 
 - unknown `video_motion_style` falls back to `static`
-- invalid `video_zoom_intensity` falls back to `1.08`
+- invalid `video_zoom_intensity` falls back to `1.12`
 - missing `video_pan_enabled` falls back to `true`
 - invalid `video_pan_intensity` falls back to `0.03`
 
@@ -167,7 +167,7 @@ After this change, generated Shorts should keep hard cuts but feel more cinemati
 Acceptance criteria:
 
 1. static mode preserves current rendering behavior
-2. cinematic mode applies a linear zoom from `1.0` to configured `video_zoom_intensity` across each clip
+2. cinematic mode applies an eased zoom from `1.0` to configured `video_zoom_intensity` across each clip
 3. optional pan drift works without changing total duration
 4. no crossfades or overlap transitions are introduced
 5. configuration and docs expose the feature clearly

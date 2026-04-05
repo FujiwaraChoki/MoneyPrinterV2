@@ -95,6 +95,21 @@ class YouTubeVideoPersistenceTests(unittest.TestCase):
         video_path = os.path.join(mp_dir, "final.mp4")
         image_path = os.path.join(mp_dir, "frame.png")
 
+        with open(self.cache.get_youtube_cache_path(), "r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+
+        payload["accounts"][0]["videos"] = [
+            {
+                "title": "Ancient computer",
+                "date": "04/04/2026, 12:00:00",
+                "path": video_path,
+                "uploaded": False,
+            }
+        ]
+
+        with open(self.cache.get_youtube_cache_path(), "w", encoding="utf-8") as handle:
+            json.dump(payload, handle, indent=4)
+
         with open(video_path, "wb") as handle:
             handle.write(b"video")
         with open(image_path, "wb") as handle:
@@ -104,6 +119,36 @@ class YouTubeVideoPersistenceTests(unittest.TestCase):
 
         self.assertTrue(os.path.exists(video_path))
         self.assertFalse(os.path.exists(image_path))
+
+    def test_rem_temp_files_removes_untracked_rendered_videos(self) -> None:
+        mp_dir = os.path.join(self.config_dir, ".mp")
+        tracked_video_path = os.path.join(mp_dir, "final.mp4")
+        untracked_video_path = os.path.join(mp_dir, "old-render.mp4")
+
+        with open(self.cache.get_youtube_cache_path(), "r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+
+        payload["accounts"][0]["videos"] = [
+            {
+                "title": "Ancient computer",
+                "date": "04/04/2026, 12:00:00",
+                "path": tracked_video_path,
+                "uploaded": False,
+            }
+        ]
+
+        with open(self.cache.get_youtube_cache_path(), "w", encoding="utf-8") as handle:
+            json.dump(payload, handle, indent=4)
+
+        with open(tracked_video_path, "wb") as handle:
+            handle.write(b"tracked")
+        with open(untracked_video_path, "wb") as handle:
+            handle.write(b"untracked")
+
+        self.utils.rem_temp_files()
+
+        self.assertTrue(os.path.exists(tracked_video_path))
+        self.assertFalse(os.path.exists(untracked_video_path))
 
     def test_add_video_persists_generated_video_in_cache(self) -> None:
         youtube = self.youtube_module.YouTube.__new__(self.youtube_module.YouTube)

@@ -114,12 +114,17 @@ def install_cron_job(
     frequency_option: int,
     model: str | None = None,
 ) -> str:
-    read_result = subprocess.run(
-        ["crontab", "-l"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    try:
+        read_result = subprocess.run(
+            ["crontab", "-l"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError as exc:
+        raise RuntimeError(
+            "crontab command is not available. Install cron/crontab and ensure it is on PATH."
+        ) from exc
 
     if read_result.returncode == 0:
         existing_crontab = read_result.stdout
@@ -140,13 +145,18 @@ def install_cron_job(
         new_block,
     )
 
-    write_result = subprocess.run(
-        ["crontab", "-"],
-        input=merged_crontab,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    try:
+        write_result = subprocess.run(
+            ["crontab", "-"],
+            input=merged_crontab,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError as exc:
+        raise RuntimeError(
+            "crontab command is not available. Install cron/crontab and ensure it is on PATH."
+        ) from exc
 
     if write_result.returncode != 0:
         raise RuntimeError(
@@ -170,6 +180,12 @@ def maybe_upload_youtube_video(youtube) -> bool:
                 interactive=True,
             )
             return True
+
+        if not getattr(youtube, "last_upload_retry_allowed", True):
+            warning(
+                "YouTube upload may already exist in Studio. Skipping automatic retry and Post Bridge cross-post."
+            )
+            return False
 
         retry_upload = question(
             "Retry YouTube upload with the same video? (Yes/No): "

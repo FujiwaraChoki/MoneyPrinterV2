@@ -1,4 +1,5 @@
 import importlib
+import json
 import os
 import shutil
 import sys
@@ -26,7 +27,7 @@ class UtilsCleanupTests(unittest.TestCase):
         os.makedirs(os.path.join(self.config_dir, ".mp", "debug-frames"), exist_ok=True)
         self.addCleanup(shutil.rmtree, self.config_dir, True)
 
-        self._modules_to_reset = ["config", "utils", "status", "srt_equalizer", "termcolor"]
+        self._modules_to_reset = ["cache", "config", "utils", "status", "srt_equalizer", "termcolor"]
         self._original_modules = {
             module_name: sys.modules.pop(module_name, None)
             for module_name in self._modules_to_reset
@@ -62,7 +63,23 @@ class UtilsCleanupTests(unittest.TestCase):
         with open(video_path, "wb") as handle:
             handle.write(b"video")
         with open(json_path, "w", encoding="utf-8") as handle:
-            handle.write("{}")
+            json.dump(
+                {
+                    "accounts": [
+                        {
+                            "id": "acct-1",
+                            "videos": [
+                                {
+                                    "path": video_path,
+                                    "uploaded": False,
+                                }
+                            ],
+                        }
+                    ]
+                },
+                handle,
+                indent=4,
+            )
         with open(image_path, "wb") as handle:
             handle.write(b"image")
         with open(debug_file, "wb") as handle:

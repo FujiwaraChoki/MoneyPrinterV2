@@ -470,9 +470,22 @@ class YouTube:
         else:
             raise RuntimeError("Generated title remained too long after 3 attempts.")
 
-        description = self.generate_response(
-            f"Please generate a YouTube Video Description for the following script: {self.script}. Only return the description, nothing else."
-        )
+        max_description_length = 5000
+        description = ""
+        for _ in range(max_attempts):
+            description = self.generate_response(
+                f"Please generate a YouTube Video Description for the following script: {self.script}. Only return the description, nothing else. Limit the description under {max_description_length} characters."
+            )
+
+            if len(description) <= max_description_length:
+                break
+
+            if get_verbose():
+                warning("Generated Description is too long. Retrying...")
+        else:
+            raise RuntimeError(
+                "Generated description remained too long after 3 attempts."
+            )
 
         self.metadata = {"title": title, "description": description}
 
@@ -1320,6 +1333,8 @@ class YouTube:
             success (bool): Whether the upload was successful or not.
         """
         current_step = "initialize channel context"
+        file_attached = False
+        self.last_upload_retry_allowed = True
         try:
             driver = self._ensure_browser()
             self.get_channel_id()
@@ -1338,6 +1353,7 @@ class YouTube:
             INPUT_TAG = "input"
             file_input = file_picker.find_element(By.TAG_NAME, INPUT_TAG)
             file_input.send_keys(self.video_path)
+            file_attached = True
 
             # Wait for upload to finish
             time.sleep(5)
@@ -1474,9 +1490,11 @@ class YouTube:
             # Close the browser
             driver.quit()
             self.browser = None
+            self.last_upload_retry_allowed = False
 
             return True
         except Exception as e:
+            self.last_upload_retry_allowed = not file_attached
             error(f"Failed to upload YouTube video during step '{current_step}': {e}")
             try:
                 self.browser.quit()
