@@ -162,6 +162,26 @@ class YouTubePromptGenerationTests(unittest.TestCase):
         self.assertNotIn("their faces", lowered)
         self.assertNotIn("brutal", lowered)
 
+    def test_generate_prompts_raises_after_repeated_unformatted_responses(self) -> None:
+        youtube = self.youtube_module.YouTube.__new__(self.youtube_module.YouTube)
+        youtube.subject = "Dyatlov Pass"
+        youtube.script = "A group fled their tent into the snow and no one knows why."
+        attempts = {"count": 0}
+
+        def unformatted_response(_prompt: str) -> str:
+            attempts["count"] += 1
+            if attempts["count"] > 3:
+                self.fail("generate_prompts retried more than 3 times")
+            return "not valid json"
+
+        youtube.generate_response = Mock(side_effect=unformatted_response)
+
+        with patch.object(self.youtube_module, "get_verbose", return_value=False):
+            with self.assertRaisesRegex(RuntimeError, "Failed to generate Image Prompts"):
+                youtube.generate_prompts()
+
+        self.assertEqual(youtube.generate_response.call_count, 3)
+
     def test_sanitize_image_prompt_softens_explicit_medical_trauma(self) -> None:
         youtube = self.youtube_module.YouTube.__new__(self.youtube_module.YouTube)
 
@@ -223,6 +243,26 @@ class YouTubePromptGenerationTests(unittest.TestCase):
         self.assertIn("Every sentence must add a new concrete detail", prompt)
         self.assertIn("Hook with the strangest or most unsettling claim", prompt)
         self.assertIn("End with a final sting", prompt)
+
+    def test_generate_metadata_raises_after_repeated_oversized_titles(self) -> None:
+        youtube = self.youtube_module.YouTube.__new__(self.youtube_module.YouTube)
+        youtube.subject = "A town heard the same sound every night"
+        youtube.script = "A script."
+        attempts = {"count": 0}
+
+        def oversized_title(_prompt: str) -> str:
+            attempts["count"] += 1
+            if attempts["count"] > 3:
+                self.fail("generate_metadata retried more than 3 times")
+            return "A" * 101
+
+        youtube.generate_response = Mock(side_effect=oversized_title)
+
+        with patch.object(self.youtube_module, "get_verbose", return_value=False):
+            with self.assertRaisesRegex(RuntimeError, "Generated title remained too long"):
+                youtube.generate_metadata()
+
+        self.assertEqual(youtube.generate_response.call_count, 3)
 
     def test_generate_topic_requests_reported_background_rich_story_ideas(self) -> None:
         youtube = self.youtube_module.YouTube.__new__(self.youtube_module.YouTube)

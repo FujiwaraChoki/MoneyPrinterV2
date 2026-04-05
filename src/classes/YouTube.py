@@ -4,7 +4,6 @@ import json
 import time
 import os
 import requests
-import assemblyai as aai
 from difflib import SequenceMatcher
 from urllib.parse import urlparse
 
@@ -456,14 +455,20 @@ class YouTube:
         Returns:
             metadata (dict): The generated metadata.
         """
-        title = self.generate_response(
-            f"Please generate a YouTube Video Title for the following subject, including hashtags: {self.subject}. Only return the title, nothing else. Limit the title under 100 characters."
-        )
+        max_attempts = 3
+        title = ""
+        for _ in range(max_attempts):
+            title = self.generate_response(
+                f"Please generate a YouTube Video Title for the following subject, including hashtags: {self.subject}. Only return the title, nothing else. Limit the title under 100 characters."
+            )
 
-        if len(title) > 100:
+            if len(title) <= 100:
+                break
+
             if get_verbose():
                 warning("Generated Title is too long. Retrying...")
-            return self.generate_metadata()
+        else:
+            raise RuntimeError("Generated title remained too long after 3 attempts.")
 
         description = self.generate_response(
             f"Please generate a YouTube Video Description for the following script: {self.script}. Only return the description, nothing else."
@@ -648,22 +653,28 @@ class YouTube:
         {self.script}
         """
 
-        completion = (
-            str(self.generate_response(prompt))
-            .replace("```json", "")
-            .replace("```", "")
-        )
-
+        max_attempts = 3
         image_prompts = []
+        for _ in range(max_attempts):
+            completion = (
+                str(self.generate_response(prompt))
+                .replace("```json", "")
+                .replace("```", "")
+            )
 
-        candidates = self._extract_image_prompt_candidates(completion)
-        image_prompts = self._select_best_image_prompt_candidate(candidates, n_prompts)
+            candidates = self._extract_image_prompt_candidates(completion)
+            image_prompts = self._select_best_image_prompt_candidate(
+                candidates, n_prompts
+            )
 
-        if not image_prompts:
+            if image_prompts:
+                break
+
             if get_verbose():
                 warning("LLM returned an unformatted response. Attempting to clean...")
                 warning("Failed to generate Image Prompts. Retrying...")
-            return self.generate_prompts()
+        else:
+            raise RuntimeError("Failed to generate Image Prompts after 3 attempts.")
 
         if get_verbose():
             info(f" => Generated Image Prompts: {image_prompts}")
@@ -969,6 +980,8 @@ class YouTube:
         Returns:
             path (str): Path to SRT file
         """
+        import assemblyai as aai
+
         aai.settings.api_key = get_assemblyai_api_key()
         config = aai.TranscriptionConfig()
         transcriber = aai.Transcriber(config=config)

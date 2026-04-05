@@ -1,9 +1,11 @@
 import importlib
+import builtins
 import json
 import os
 import shutil
 import sys
 import unittest
+from unittest.mock import patch
 
 
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -78,6 +80,20 @@ class StartupImportTests(unittest.TestCase):
 
     def test_main_imports_with_example_config(self) -> None:
         importlib.import_module("main")
+
+    def test_youtube_imports_without_assemblyai_installed(self) -> None:
+        real_import = builtins.__import__
+
+        def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+            if name == "assemblyai":
+                raise ModuleNotFoundError("No module named 'assemblyai'")
+            return real_import(name, globals, locals, fromlist, level)
+
+        with patch("builtins.__import__", side_effect=fake_import):
+            try:
+                importlib.import_module("classes.YouTube")
+            except ModuleNotFoundError as exc:
+                self.fail(str(exc))
 
 
 if __name__ == "__main__":
