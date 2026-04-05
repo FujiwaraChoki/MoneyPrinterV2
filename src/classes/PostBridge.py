@@ -105,6 +105,7 @@ class PostBridge:
         upload_response = self._request_json(
             "POST",
             f"{self.API_BASE}/media/create-upload-url",
+            expected_statuses={200, 201},
             json={
                 "name": file_name,
                 "mime_type": mime_type,
@@ -172,6 +173,7 @@ class PostBridge:
         return self._request_json(
             "POST",
             f"{self.API_BASE}/posts",
+            expected_statuses={200, 201},
             json=payload,
         )
 

@@ -3,7 +3,7 @@ import sys
 
 from status import *
 from cache import get_accounts
-from config import get_openrouter_api_key, get_openrouter_model, get_verbose
+from config import get_openrouter_api_key, get_openrouter_model, get_post_bridge_config, get_verbose
 from classes.Tts import TTS
 from classes.Twitter import Twitter
 from classes.YouTube import YouTube
@@ -82,17 +82,46 @@ def main():
                     acc["language"]
                 )
                 youtube.generate_video(tts)
-                upload_success = youtube.upload_video()
-                if upload_success:
-                    if verbose:
-                        success("Uploaded Short.")
-                    maybe_crosspost_youtube_short(
+                post_bridge_config = get_post_bridge_config()
+                use_post_bridge_for_youtube = (
+                    post_bridge_config.get("enabled")
+                    and post_bridge_config.get("api_key")
+                    and "youtube" in list(post_bridge_config.get("platforms") or [])
+                )
+
+                if use_post_bridge_for_youtube:
+                    publish_result = maybe_crosspost_youtube_short(
                         video_path=youtube.video_path,
                         title=youtube.metadata.get("title", ""),
+                        description=youtube.metadata.get("description", ""),
                         interactive=False,
+                        return_details=True,
+                        include_youtube=True,
+                        skip_confirmation=True,
                     )
+                    if isinstance(publish_result, dict) and publish_result.get("posted"):
+                        youtube.record_post_bridge_publish_result(publish_result)
+                        if verbose:
+                            success("Uploaded Short.")
+                    else:
+                        warning("Post Bridge YouTube publish failed.")
                 else:
-                    warning("YouTube upload failed. Skipping Post Bridge cross-post.")
+                    upload_success = youtube.upload_video()
+                    if upload_success:
+                        if verbose:
+                            success("Uploaded Short.")
+                        crosspost_kwargs = {
+                            "video_path": youtube.video_path,
+                            "title": youtube.metadata.get("title", ""),
+                            "interactive": False,
+                        }
+                        description_value = youtube.metadata.get("description", "")
+                        if description_value:
+                            crosspost_kwargs["description"] = description_value
+
+                        maybe_crosspost_youtube_short(**crosspost_kwargs)
+                    else:
+                        warning("YouTube upload failed. Skipping Post Bridge cross-post.")
                 break
     else:
         error("Invalid Purpose, exiting...")

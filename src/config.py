@@ -491,7 +491,7 @@ def get_post_bridge_config() -> dict:
         "account_ids": [],
         "auto_crosspost": False,
     }
-    supported_platforms = {"tiktok", "instagram"}
+    supported_platforms = {"tiktok", "instagram", "twitter", "youtube"}
 
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         config_json = json.load(file)

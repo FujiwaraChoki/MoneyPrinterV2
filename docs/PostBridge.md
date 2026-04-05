@@ -25,7 +25,7 @@ MoneyPrinterV2 still owns video generation and the initial YouTube upload. Post 
   "post_bridge": {
     "enabled": true,
     "api_key": "pb_your_api_key_here",
-    "platforms": ["tiktok", "instagram"],
+    "platforms": ["tiktok", "instagram", "twitter"],
     "account_ids": [],
     "auto_crosspost": false
   }
@@ -38,7 +38,7 @@ MoneyPrinterV2 still owns video generation and the initial YouTube upload. Post 
 | --- | --- | --- | --- |
 | `enabled` | `boolean` | `false` | Enables the Post Bridge integration. |
 | `api_key` | `string` | `""` | Post Bridge API key. Falls back to `POST_BRIDGE_API_KEY` when blank. |
-| `platforms` | `string[]` | `["tiktok", "instagram"]` when omitted | Platform filters used when looking up connected accounts. Unsupported values inside the list are ignored. |
+| `platforms` | `string[]` | `["tiktok", "instagram"]` when omitted | Platform filters used when looking up connected accounts. Supported values are `tiktok`, `instagram`, and `twitter`. Unsupported values inside the list are ignored. |
 | `account_ids` | `number[]` | `[]` | Exact Post Bridge account IDs to post to. When provided, MoneyPrinterV2 uses these directly and skips account lookup. |
 | `auto_crosspost` | `boolean` | `false` | Automatically cross-post after a successful YouTube upload. |
 

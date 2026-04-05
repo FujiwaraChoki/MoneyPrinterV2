@@ -48,7 +48,7 @@ All your configurations will be in a file in the root directory, called `config.
 - `post_bridge`: `object`:
     - `enabled`: `boolean` - Enables Post Bridge cross-posting after successful YouTube uploads.
     - `api_key`: `string` - Your Post Bridge API key. If empty, MPV2 falls back to `POST_BRIDGE_API_KEY`.
-    - `platforms`: `string[]` - Platforms to target. Supported values in v1 are `tiktok` and `instagram`.
+    - `platforms`: `string[]` - Platforms to target. Supported values in v1 are `tiktok`, `instagram`, and `twitter`.
     - `account_ids`: `number[]` - Optional fixed Post Bridge account IDs to avoid account-selection prompts.
     - `auto_crosspost`: `boolean` - If `true`, cross-post automatically after a successful YouTube upload. If `false`, interactive runs ask and cron runs skip.
 
@@ -99,7 +99,7 @@ All your configurations will be in a file in the root directory, called `config.
   "post_bridge": {
     "enabled": false,
     "api_key": "",
-    "platforms": ["tiktok", "instagram"],
+    "platforms": ["tiktok", "instagram", "twitter"],
     "account_ids": [],
     "auto_crosspost": false
   }

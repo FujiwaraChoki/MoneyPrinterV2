@@ -98,6 +98,22 @@ class PostBridgeClientTests(unittest.TestCase):
         self.assertEqual(session.request.call_count, 2)
         sleep_mock.assert_called_once()
 
+    def test_create_post_accepts_created_response(self) -> None:
+        session = Mock()
+        session.request.return_value = MockResponse(
+            201,
+            {"id": "post-123", "status": "processing"},
+        )
+        client = PostBridge("token", session=session)
+
+        response = client.create_post(
+            caption="Hello world",
+            social_account_ids=[12, 34],
+            media_ids=["media-1"],
+        )
+
+        self.assertEqual(response["id"], "post-123")
+
     def test_upload_media_does_not_forward_api_bearer_token_to_signed_upload_url(self) -> None:
         session = Mock()
         session.request.side_effect = [
@@ -125,6 +141,30 @@ class PostBridgeClientTests(unittest.TestCase):
         self.assertEqual(upload_call.args[0], "PUT")
         self.assertEqual(upload_call.args[1], "https://signed-upload.example/path")
         self.assertEqual(upload_call.kwargs["headers"], {"Content-Type": "video/mp4"})
+
+    def test_upload_media_accepts_created_response_for_upload_url(self) -> None:
+        session = Mock()
+        session.request.side_effect = [
+            MockResponse(
+                201,
+                {
+                    "media_id": "media-123",
+                    "upload_url": "https://signed-upload.example/path",
+                },
+            ),
+            MockResponse(200, {}),
+        ]
+        client = PostBridge("token", session=session)
+
+        with patch("classes.PostBridge.os.path.exists", return_value=True), patch(
+            "classes.PostBridge.os.path.getsize", return_value=5
+        ), patch("classes.PostBridge.mimetypes.guess_type", return_value=("video/mp4", None)), patch(
+            "builtins.open",
+            unittest.mock.mock_open(read_data=b"video"),
+        ):
+            media_id = client.upload_media("/tmp/video.mp4")
+
+        self.assertEqual(media_id, "media-123")
 
     @patch("classes.PostBridge.time.sleep")
     def test_request_rewinds_streamed_upload_body_before_retry(self, sleep_mock) -> None:

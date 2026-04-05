@@ -5,6 +5,7 @@ import time
 import os
 import requests
 from difflib import SequenceMatcher
+from urllib.parse import parse_qs
 from urllib.parse import urlparse
 
 from PIL import Image
@@ -274,6 +275,8 @@ class YouTube:
         Prefer a fresh story that does not overlap with prior videos on this channel.{avoid_block}
         Choose a real story with enough verified background to explain who, where, when, and why it matters.
         Prefer a historical impossibility angle: a familiar person, place, institution, expedition, disaster, or system colliding with a detail that sounds impossible but is true.
+        Prefer stories that are instantly interesting before explanation, not topics that only become interesting after a long setup.
+        Favor a familiar frame colliding with one impossible detail, contradiction, or reported anomaly.
         Prefer one story, one mystery, one payoff rather than a broad listicle, theme, or bundle of incidents.
         Prefer broad curiosity overlap across history, mystery, disaster, science, and true crime instead of narrow academic obscurity.
         Prefer a reported documentary story, not a vague teaser premise.
@@ -407,6 +410,8 @@ class YouTube:
         Every sentence must add a new concrete detail or move the story forward.
         Give enough background context for the viewer to understand why the story matters.
         Open with a pattern-break fact or claim that would make the viewer think "wait, what?"
+        Make the first sentence stand alone as a Shorts hook, even if the viewer stops after one line.
+        Do not bury the anomaly or contradiction in setup.
         Keep the whole piece shaped like one story, one mystery, one payoff.
         Pace it like a 35 to 45 second spoken short.
         When the facts support it, frame the hook as a historical impossibility or unsettling contradiction.
@@ -469,8 +474,11 @@ class YouTube:
                 f"""
                 Generate a YouTube Shorts title for the following real story, including hashtags: {self.subject}.
                 Create a clean curiosity gap built around a historical impossibility, unsettling contradiction, or impossible-sounding true detail.
+                Lead with the contradiction, not the category label.
+                Make it sound like an impossible claim about a real event, person, place, or object.
                 Keep it specific, emotionally charged, and narrow: one story, one mystery, one payoff.
-                Avoid generic educational phrasing, vague teaser language, or listicle framing.
+                Avoid generic educational phrasing, vague teaser language, listicle framing, or documentary-label titles like "The X Mystery".
+                Use no more than 2 concise, high-signal hashtags.
                 Only return the title, nothing else.
                 Limit the title under 100 characters.
                 """
@@ -494,6 +502,7 @@ class YouTube:
                 Keep the description focused on one story, one mystery, one payoff.
                 Make the viewer understand why it matters without spoiling the entire curiosity gap.
                 If appropriate, hint at the unresolved tension or modern implication.
+                Do not repeat the title verbatim or open with a flat summary sentence.
                 Only return the description, nothing else.
                 Limit the description under {max_description_length} characters.
                 """
@@ -984,6 +993,104 @@ class YouTube:
             with open(cache, "w") as f:
                 f.write(json.dumps(previous_json))
 
+    def record_crosspost_result(self, video: dict, crosspost_result: dict) -> None:
+        """
+        Persists successful Post Bridge platform status onto a cached video.
+
+        Args:
+            video (dict): Cached video identity fields.
+            crosspost_result (dict): Detailed Post Bridge result payload.
+
+        Returns:
+            None
+        """
+        platform_statuses = dict(crosspost_result.get("platforms") or {})
+        if not platform_statuses:
+            return
+
+        merged_crossposts = {}
+        existing_video = self._find_cached_video_record(video)
+        if isinstance(existing_video, dict):
+            merged_crossposts.update(dict(existing_video.get("crossposts") or {}))
+
+        merged_crossposts.update(dict(video.get("crossposts") or {}))
+        merged_crossposts.update(platform_statuses)
+
+        self.add_video(
+            {
+                "path": video.get("path"),
+                "url": video.get("url"),
+                "crossposts": merged_crossposts,
+            }
+        )
+
+    def _find_cached_video_record(self, video: dict) -> Optional[dict]:
+        cache = get_youtube_cache_path()
+
+        with open(cache, "r") as file:
+            payload = json.loads(file.read())
+
+        for account in payload.get("accounts", []):
+            if account.get("id") != self._account_uuid:
+                continue
+
+            for existing_video in account.get("videos", []):
+                if video.get("path") and existing_video.get("path") == video.get("path"):
+                    return existing_video
+                if video.get("url") and existing_video.get("url") == video.get("url"):
+                    return existing_video
+
+        return None
+
+    def record_post_bridge_publish_result(self, publish_result: dict) -> None:
+        """
+        Persist a Post Bridge publish outcome onto the cached video record.
+
+        YouTube is treated as the primary upload target and is reflected via the
+        cached video's uploaded flag. Non-YouTube targets remain in crossposts.
+
+        Args:
+            publish_result (dict): Detailed Post Bridge result payload.
+
+        Returns:
+            None
+        """
+        platform_statuses = dict(publish_result.get("platforms") or {})
+        youtube_status = dict(platform_statuses.get("youtube") or {})
+        uploaded_to_youtube = youtube_status.get("status") == "success"
+
+        video_update = {
+            "topic": getattr(self, "subject", ""),
+            "script": getattr(self, "script", ""),
+            "title": str(getattr(self, "metadata", {}).get("title", "") or ""),
+            "description": str(
+                getattr(self, "metadata", {}).get("description", "") or ""
+            ),
+            "path": getattr(self, "video_path", None),
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+        if uploaded_to_youtube:
+            video_update["uploaded"] = True
+
+        self.add_video(video_update)
+
+        non_youtube_platforms = {
+            platform: details
+            for platform, details in platform_statuses.items()
+            if str(platform).strip().lower() != "youtube"
+        }
+
+        if non_youtube_platforms:
+            self.record_crosspost_result(
+                {
+                    "path": getattr(self, "video_path", None),
+                    "url": getattr(self, "uploaded_video_url", None),
+                },
+                {
+                    "platforms": non_youtube_platforms,
+                },
+            )
+
     def generate_subtitles(self, audio_path: str) -> str:
         """
         Generates subtitles for the audio using the configured STT provider.
@@ -1266,6 +1373,110 @@ class YouTube:
 
         return path
 
+    def load_cached_video(self, video: dict) -> None:
+        """
+        Loads a cached video record onto the current YouTube instance so the
+        existing upload flow can retry the Short without regenerating assets.
+
+        Args:
+            video (dict): Cached video record for this account.
+
+        Returns:
+            None
+        """
+        self.video_path = os.path.abspath(video["path"])
+        self.metadata = {
+            "title": video.get("title", ""),
+            "description": self._resolve_cached_description(video),
+        }
+        self.subject = video.get("topic", "")
+        self.script = video.get("script", "")
+
+    def _resolve_cached_description(self, video: dict) -> str:
+        """
+        Returns the best available description for a cached Short.
+
+        Older cache entries may not include a dedicated description field.
+        Reuse the script or topic before falling back to an empty description.
+
+        Args:
+            video (dict): Cached video record.
+
+        Returns:
+            description (str): Best available description text.
+        """
+        for field_name in ("description", "script", "topic", "title"):
+            value = str(video.get(field_name, "") or "").strip()
+            if value:
+                return value
+
+        return ""
+
+    def _extract_video_id_from_studio_url(self, href: Optional[str]) -> Optional[str]:
+        """
+        Extract a YouTube video ID from a Studio or watch URL.
+
+        Args:
+            href (str | None): URL collected from YouTube Studio.
+
+        Returns:
+            video_id (str | None): Parsed video ID when available.
+        """
+        if not href:
+            return None
+
+        parsed_url = urlparse(href)
+        query_params = parse_qs(parsed_url.query)
+        if query_params.get("v"):
+            return query_params["v"][0]
+
+        path_segments = [segment for segment in parsed_url.path.split("/") if segment]
+        if "video" in path_segments:
+            video_index = path_segments.index("video")
+            if video_index + 1 < len(path_segments):
+                return path_segments[video_index + 1]
+
+        if path_segments:
+            return path_segments[-1]
+
+        return None
+
+    def _fetch_uploaded_short_url(
+        self,
+        max_attempts: int = 5,
+        delay_seconds: float = 2.0,
+    ) -> Optional[str]:
+        """
+        Poll YouTube Studio for the uploaded Short URL.
+
+        Returns:
+            url (str | None): Public watch URL when available.
+        """
+        driver = self.browser
+        studio_shorts_url = (
+            f"https://studio.youtube.com/channel/{self.channel_id}/videos/short"
+        )
+
+        for attempt in range(max_attempts):
+            driver.get(studio_shorts_url)
+            videos = driver.find_elements(By.TAG_NAME, "ytcp-video-row")
+
+            if videos:
+                anchor_tag = videos[0].find_element(By.TAG_NAME, "a")
+                href = anchor_tag.get_attribute("href")
+
+                if get_verbose():
+                    info(f"\t=> Extracting video ID from URL: {href}")
+
+                video_id = self._extract_video_id_from_studio_url(href)
+                if video_id:
+                    return build_url(video_id)
+
+            if attempt < max_attempts - 1:
+                time.sleep(delay_seconds)
+
+        return None
+
     def get_channel_id(self) -> str:
         """
         Gets the Channel ID of the YouTube Account.
@@ -1347,6 +1558,70 @@ class YouTube:
                 "Failed to apply YouTube metadata text; Studio kept a different value."
             )
 
+    def _click_upload_option_and_verify(
+        self,
+        option_element,
+        description: str,
+        focus_delay_seconds: float = 0.5,
+    ) -> None:
+        self.browser.execute_script(
+            """
+            const element = arguments[0];
+            element.scrollIntoView({block: "center", inline: "nearest"});
+            if (typeof element.focus === "function") {
+                element.focus();
+            }
+            """,
+            option_element,
+        )
+        option_element.click()
+        time.sleep(focus_delay_seconds)
+
+        is_selected = self.browser.execute_script(
+            """
+            const element = arguments[0];
+            const roleAncestor = element.closest('[role="radio"]');
+            const parentElement = element.parentElement;
+            return Boolean(element.checked)
+                || element.getAttribute('aria-checked') === 'true'
+                || element.getAttribute('checked') !== null
+                || (roleAncestor && roleAncestor.getAttribute('aria-checked') === 'true')
+                || (parentElement && parentElement.getAttribute('aria-checked') === 'true');
+            """,
+            option_element,
+        )
+
+        if not is_selected:
+            raise RuntimeError(f"Failed to select YouTube {description}.")
+
+    def _set_upload_audience_selection(self) -> None:
+        audience_name = (
+            YOUTUBE_MADE_FOR_KIDS_NAME
+            if get_is_for_kids()
+            else YOUTUBE_NOT_MADE_FOR_KIDS_NAME
+        )
+        audience_description = (
+            "made for kids audience"
+            if get_is_for_kids()
+            else "not made for kids audience"
+        )
+        audience_option = self.browser.find_element(By.NAME, audience_name)
+        self._click_upload_option_and_verify(
+            audience_option,
+            audience_description,
+        )
+
+    def _set_upload_visibility_public(self) -> None:
+        radio_buttons = self.browser.find_elements(By.XPATH, YOUTUBE_RADIO_BUTTON_XPATH)
+        if not radio_buttons:
+            raise RuntimeError("Could not find YouTube visibility options.")
+
+        public_radio_button = radio_buttons[0]
+        self._click_upload_option_and_verify(
+            public_radio_button,
+            "public visibility",
+        )
+
     def upload_video(self) -> bool:
         """
         Uploads the video to YouTube.
@@ -1356,6 +1631,8 @@ class YouTube:
         """
         current_step = "initialize channel context"
         file_attached = False
+        title_value = ""
+        description_value = ""
         self.last_upload_retry_allowed = True
         try:
             driver = self._ensure_browser()
@@ -1383,6 +1660,10 @@ class YouTube:
             # Set title
             current_step = "load YouTube metadata textboxes"
             title_el, description_el = self._get_upload_metadata_textboxes()
+            title_value = str(self.metadata.get("title", "") or "").strip()
+            if not title_value:
+                title_value = os.path.splitext(os.path.basename(self.video_path))[0]
+            description_value = str(self.metadata.get("description", "") or "").strip()
 
             if verbose:
                 info("\t=> Setting title...")
@@ -1390,7 +1671,7 @@ class YouTube:
             current_step = "set video title"
             self._set_upload_metadata_text(
                 title_el,
-                self.metadata["title"],
+                title_value,
                 focus_delay_seconds=1,
             )
 
@@ -1402,7 +1683,7 @@ class YouTube:
             time.sleep(10)
             self._set_upload_metadata_text(
                 description_el,
-                self.metadata["description"],
+                description_value,
                 focus_delay_seconds=0.5,
             )
 
@@ -1413,17 +1694,7 @@ class YouTube:
                 info("\t=> Setting `made for kids` option...")
 
             current_step = "set audience selection"
-            is_for_kids_checkbox = driver.find_element(
-                By.NAME, YOUTUBE_MADE_FOR_KIDS_NAME
-            )
-            is_not_for_kids_checkbox = driver.find_element(
-                By.NAME, YOUTUBE_NOT_MADE_FOR_KIDS_NAME
-            )
-
-            if not get_is_for_kids():
-                is_not_for_kids_checkbox.click()
-            else:
-                is_for_kids_checkbox.click()
+            self._set_upload_audience_selection()
 
             time.sleep(0.5)
 
@@ -1450,13 +1721,12 @@ class YouTube:
             next_button = driver.find_element(By.ID, YOUTUBE_NEXT_BUTTON_ID)
             next_button.click()
 
-            # Set as unlisted
+            # Set as public
             if verbose:
-                info("\t=> Setting as unlisted...")
+                info("\t=> Setting as public...")
 
-            current_step = "set visibility to unlisted"
-            radio_button = driver.find_elements(By.XPATH, YOUTUBE_RADIO_BUTTON_XPATH)
-            radio_button[2].click()
+            current_step = "set visibility to public"
+            self._set_upload_visibility_public()
 
             if verbose:
                 info("\t=> Clicking done button...")
@@ -1475,39 +1745,31 @@ class YouTube:
 
             # Get the latest uploaded video URL
             current_step = "fetch uploaded short URL"
-            driver.get(
-                f"https://studio.youtube.com/channel/{self.channel_id}/videos/short"
-            )
-            time.sleep(2)
-            videos = driver.find_elements(By.TAG_NAME, "ytcp-video-row")
-            first_video = videos[0]
-            anchor_tag = first_video.find_element(By.TAG_NAME, "a")
-            href = anchor_tag.get_attribute("href")
-            if verbose:
-                info(f"\t=> Extracting video ID from URL: {href}")
-            video_id = href.split("/")[-2]
-
-            # Build URL
-            url = build_url(video_id)
-
+            url = self._fetch_uploaded_short_url()
             self.uploaded_video_url = url
 
-            if verbose:
+            if url and verbose:
                 success(f" => Uploaded Video: {url}")
 
+            if not url:
+                warning(
+                    "YouTube upload finished, but Studio did not return a Short URL yet. Continuing without a saved URL."
+                )
+
             # Add video to cache
-            self.add_video(
-                {
-                    "topic": self.subject,
-                    "script": self.script,
-                    "title": self.metadata["title"],
-                    "description": self.metadata["description"],
-                    "path": self.video_path,
-                    "url": url,
-                    "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "uploaded": True,
-                }
-            )
+            video_record = {
+                "topic": self.subject,
+                "script": self.script,
+                "title": title_value,
+                "description": description_value,
+                "path": self.video_path,
+                "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "uploaded": True,
+            }
+            if url:
+                video_record["url"] = url
+
+            self.add_video(video_record)
 
             # Close the browser
             driver.quit()

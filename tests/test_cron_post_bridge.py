@@ -167,6 +167,7 @@ class CronPostBridgeTests(unittest.TestCase):
         )
         select_model_mock.assert_not_called()
 
+    @patch("cron.get_post_bridge_config")
     @patch("cron.maybe_crosspost_youtube_short")
     @patch("cron.YouTube")
     @patch("cron.TTS")
@@ -181,8 +182,16 @@ class CronPostBridgeTests(unittest.TestCase):
         tts_cls_mock,
         youtube_cls_mock,
         crosspost_mock,
+        get_post_bridge_config_mock,
     ) -> None:
         get_verbose_mock.return_value = False
+        get_post_bridge_config_mock.return_value = {
+            "enabled": True,
+            "api_key": "token",
+            "platforms": ["tiktok"],
+            "account_ids": [34],
+            "auto_crosspost": True,
+        }
         get_accounts_mock.return_value = [
             {
                 "id": "yt-1",
@@ -209,6 +218,73 @@ class CronPostBridgeTests(unittest.TestCase):
         youtube_instance.generate_video.assert_called_once()
         youtube_instance.upload_video.assert_called_once()
         crosspost_mock.assert_not_called()
+
+    @patch("cron.get_post_bridge_config")
+    @patch("cron.maybe_crosspost_youtube_short")
+    @patch("cron.YouTube")
+    @patch("cron.TTS")
+    @patch("cron.get_accounts")
+    @patch("cron.select_model")
+    @patch("cron.get_verbose")
+    def test_primary_youtube_publish_uses_post_bridge_when_youtube_platform_configured(
+        self,
+        get_verbose_mock,
+        select_model_mock,
+        get_accounts_mock,
+        tts_cls_mock,
+        youtube_cls_mock,
+        crosspost_mock,
+        get_post_bridge_config_mock,
+    ) -> None:
+        get_verbose_mock.return_value = False
+        get_post_bridge_config_mock.return_value = {
+            "enabled": True,
+            "api_key": "token",
+            "platforms": ["youtube", "tiktok"],
+            "account_ids": [12, 34],
+            "auto_crosspost": True,
+        }
+        get_accounts_mock.return_value = [
+            {
+                "id": "yt-1",
+                "nickname": "Channel",
+                "firefox_profile": "/tmp/profile",
+                "niche": "finance",
+                "language": "English",
+            }
+        ]
+        youtube_instance = youtube_cls_mock.return_value
+        youtube_instance.video_path = "/Users/example/video.mp4"
+        youtube_instance.metadata = {"title": "Title", "description": "Description"}
+        crosspost_mock.return_value = {
+            "posted": True,
+            "platforms": {
+                "youtube": {"status": "success", "post_id": "post-yt"},
+                "tiktok": {"status": "success", "post_id": "post-tt"},
+            },
+        }
+
+        with patch.object(cron, "get_openrouter_api_key", return_value="test-openrouter-key", create=True), patch.object(
+            sys,
+            "argv",
+            ["cron.py", "youtube", "yt-1", "llama3.2:3b"],
+        ):
+            cron.main()
+
+        select_model_mock.assert_called_once_with("llama3.2:3b")
+        tts_cls_mock.assert_called_once()
+        youtube_instance.generate_video.assert_called_once()
+        youtube_instance.upload_video.assert_not_called()
+        crosspost_mock.assert_called_once_with(
+            video_path="/Users/example/video.mp4",
+            title="Title",
+            description="Description",
+            interactive=False,
+            return_details=True,
+            include_youtube=True,
+            skip_confirmation=True,
+        )
+        youtube_instance.record_post_bridge_publish_result.assert_called_once()
 
 
 if __name__ == "__main__":

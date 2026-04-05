@@ -45,12 +45,42 @@ class PostBridgeConfigTests(ConfigTestCase):
 
         self.assertEqual(post_bridge_config["platforms"], ["tiktok", "instagram"])
 
+    def test_supported_twitter_platform_is_preserved(self) -> None:
+        self.write_config(
+            {
+                "post_bridge": {
+                    "enabled": True,
+                    "platforms": ["twitter", "instagram", "twitter"],
+                }
+            }
+        )
+
+        with self.patch_root_dir():
+            post_bridge_config = config.get_post_bridge_config()
+
+        self.assertEqual(post_bridge_config["platforms"], ["twitter", "instagram"])
+
+    def test_supported_youtube_platform_is_preserved(self) -> None:
+        self.write_config(
+            {
+                "post_bridge": {
+                    "enabled": True,
+                    "platforms": ["youtube", "instagram", "youtube"],
+                }
+            }
+        )
+
+        with self.patch_root_dir():
+            post_bridge_config = config.get_post_bridge_config()
+
+        self.assertEqual(post_bridge_config["platforms"], ["youtube", "instagram"])
+
     def test_invalid_or_empty_platforms_do_not_expand_to_defaults(self) -> None:
         self.write_config(
             {
                 "post_bridge": {
                     "enabled": True,
-                    "platforms": ["youtube", "tik-tok"],
+                    "platforms": ["tik-tok"],
                 }
             }
         )

@@ -302,8 +302,11 @@ class YouTubePromptGenerationTests(unittest.TestCase):
         self.assertEqual(metadata, youtube.metadata)
         self.assertIn("clean curiosity gap", title_prompt)
         self.assertIn("historical impossibility", title_prompt)
+        self.assertIn("Lead with the contradiction, not the category label", title_prompt)
+        self.assertIn("Use no more than 2 concise, high-signal hashtags", title_prompt)
         self.assertIn("one story, one mystery, one payoff", title_prompt)
         self.assertIn("high-contrast opening line", description_prompt)
+        self.assertIn("Do not repeat the title verbatim", description_prompt)
         self.assertIn("one story, one mystery, one payoff", description_prompt)
         self.assertIn("why it matters", description_prompt)
 
@@ -325,6 +328,8 @@ class YouTubePromptGenerationTests(unittest.TestCase):
             prompt,
         )
         self.assertIn("historical impossibility", prompt)
+        self.assertIn("instantly interesting before explanation", prompt)
+        self.assertIn("familiar frame colliding with one impossible detail", prompt)
         self.assertIn("one story, one mystery, one payoff", prompt)
         self.assertIn("broad curiosity overlap", prompt)
         self.assertIn("reported documentary story", prompt)
@@ -369,6 +374,8 @@ class YouTubePromptGenerationTests(unittest.TestCase):
         )
         self.assertIn("Do not invent facts", prompt)
         self.assertIn('make the viewer think "wait, what?"', prompt)
+        self.assertIn("first sentence stand alone as a Shorts hook", prompt)
+        self.assertIn("Do not bury the anomaly or contradiction in setup", prompt)
         self.assertIn("one story, one mystery, one payoff", prompt)
         self.assertIn("35 to 45 second spoken short", prompt)
 

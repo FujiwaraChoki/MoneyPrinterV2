@@ -198,6 +198,22 @@ class MainRuntimeTests(unittest.TestCase):
         )
         self.assertIn("# MONEYPRINTER_V2 youtube yt-1 END", block)
 
+    def test_build_crontab_block_accepts_custom_schedule_expressions(self) -> None:
+        block = self.main.build_crontab_block(
+            "youtube",
+            "yt-1",
+            ["15 9 * * 1,3,5", "45 16 * * 1,3,5"],
+        )
+
+        self.assertIn("15 9 * * 1,3,5", block)
+        self.assertIn("45 16 * * 1,3,5", block)
+
+    def test_build_custom_cron_schedules_supports_custom_days_and_times(self) -> None:
+        self.assertEqual(
+            self.main.build_custom_cron_schedules([1, 3, 5], ["09:15", "16:45"]),
+            ["15 9 * * 1,3,5", "45 16 * * 1,3,5"],
+        )
+
     def test_merge_crontab_block_replaces_existing_job_block_only(self) -> None:
         existing = "\n".join(
             [
@@ -248,6 +264,66 @@ class MainRuntimeTests(unittest.TestCase):
         self.assertIn("0 10 * * *", write_call.kwargs["input"])
         self.assertIn("youtube yt-1", write_call.kwargs["input"])
 
+    def test_main_guides_cron_setup_with_custom_days_and_times(self) -> None:
+        youtube_instance = Mock()
+
+        youtube_module = types.ModuleType("classes.YouTube")
+        youtube_module.YouTube = Mock(return_value=youtube_instance)
+        tts_module = types.ModuleType("classes.Tts")
+        tts_module.TTS = Mock(return_value=Mock())
+
+        option_answers = iter(["3", "4"])
+
+        def fake_question(message: str, *_args, **_kwargs) -> str:
+            if "Select an account to start" in message:
+                return "1"
+            if "Select an option" in message:
+                return next(option_answers)
+            if "Choose schedule days" in message:
+                return "3"
+            if "Enter weekdays" in message:
+                return "1,3,5"
+            if "Enter time(s)" in message:
+                return "09:15, 16:45"
+            raise AssertionError(f"Unexpected question prompt: {message}")
+
+        with patch.dict(
+            sys.modules,
+            {
+                "classes.YouTube": youtube_module,
+                "classes.Tts": tts_module,
+            },
+        ), patch("builtins.input", return_value="1"), patch.object(
+            self.main,
+            "get_accounts",
+            return_value=[
+                {
+                    "id": "yt-1",
+                    "nickname": "channel",
+                    "firefox_profile": "/tmp/firefox",
+                    "niche": "true crime",
+                    "language": "english",
+                }
+            ],
+        ), patch.object(
+            self.main,
+            "question",
+            side_effect=fake_question,
+        ), patch.object(
+            self.main,
+            "rem_temp_files",
+        ), patch.object(
+            self.main,
+            "install_cron_job",
+        ) as install_cron_job_mock:
+            self.main.main()
+
+        install_cron_job_mock.assert_called_once_with(
+            "youtube",
+            "yt-1",
+            ["15 9 * * 1,3,5", "45 16 * * 1,3,5"],
+        )
+
     def test_install_cron_job_raises_clear_error_when_crontab_binary_missing(self) -> None:
         with patch.object(
             self.main.subprocess,
@@ -280,6 +356,8 @@ class MainRuntimeTests(unittest.TestCase):
                 return next(option_answers)
             if "Do you want to upload this video to YouTube" in message:
                 return "yes"
+            if "Do you want to cross-post one of these Shorts" in message:
+                return "no"
             if "Retry YouTube upload with the same video" in message:
                 return "yes"
             raise AssertionError(f"Unexpected question prompt: {message}")
@@ -320,6 +398,7 @@ class MainRuntimeTests(unittest.TestCase):
             video_path="/tmp/generated-short.mp4",
             title="A title",
             interactive=True,
+            return_details=True,
         )
 
     def test_main_stops_retrying_youtube_upload_when_user_declines(self) -> None:
@@ -342,6 +421,8 @@ class MainRuntimeTests(unittest.TestCase):
                 return next(option_answers)
             if "Do you want to upload this video to YouTube" in message:
                 return "yes"
+            if "Do you want to cross-post one of these Shorts" in message:
+                return "no"
             if "Retry YouTube upload with the same video" in message:
                 return "no"
             raise AssertionError(f"Unexpected question prompt: {message}")
@@ -405,6 +486,8 @@ class MainRuntimeTests(unittest.TestCase):
                 return next(option_answers)
             if "Do you want to upload this video to YouTube" in message:
                 return "yes"
+            if "Do you want to cross-post one of these Shorts" in message:
+                return "no"
             if "Retry YouTube upload with the same video" in message:
                 raise AssertionError("Retry prompt should not be shown after upload started")
             raise AssertionError(f"Unexpected question prompt: {message}")
@@ -446,6 +529,975 @@ class MainRuntimeTests(unittest.TestCase):
         youtube_instance.upload_video.assert_called_once_with()
         crosspost_mock.assert_not_called()
         self.assertIn("may already exist", warning_mock.call_args_list[-1].args[0])
+
+    def test_main_retries_upload_for_selected_cached_short(self) -> None:
+        youtube_instance = Mock()
+        youtube_instance.upload_video.return_value = True
+        youtube_instance.metadata = {"title": "Cached title"}
+        youtube_instance.video_path = "/tmp/cached-short.mp4"
+
+        youtube_module = types.ModuleType("classes.YouTube")
+        youtube_module.YouTube = Mock(return_value=youtube_instance)
+        tts_module = types.ModuleType("classes.Tts")
+        tts_module.TTS = Mock(return_value=Mock())
+
+        option_answers = iter(["2", "4"])
+        cached_videos = [
+            {
+                "title": "Cached title",
+                "description": "Cached description",
+                "path": "/tmp/cached-short.mp4",
+                "date": "2026-04-05 10:00:00",
+                "topic": "Storm topic",
+                "script": "A script",
+                "uploaded": False,
+            }
+        ]
+
+        def fake_question(message: str, *_args, **_kwargs) -> str:
+            if "Select an account to start" in message:
+                return "1"
+            if "Select an option" in message:
+                return next(option_answers)
+            if "Publish one of these Shorts" in message:
+                return "yes"
+            if "Enter the short number to publish" in message:
+                return "1"
+            if "Do you want to upload this video to YouTube" in message:
+                return "yes"
+            raise AssertionError(f"Unexpected question prompt: {message}")
+
+        with patch.dict(
+            sys.modules,
+            {
+                "classes.YouTube": youtube_module,
+                "classes.Tts": tts_module,
+            },
+        ), patch("builtins.input", return_value="1"), patch.object(
+            self.main,
+            "get_accounts",
+            return_value=[
+                {
+                    "id": "yt-1",
+                    "nickname": "channel",
+                    "firefox_profile": "/tmp/firefox",
+                    "niche": "true crime",
+                    "language": "english",
+                }
+            ],
+        ), patch.object(
+            self.main,
+            "question",
+            side_effect=fake_question,
+        ), patch.object(
+            self.main,
+            "rem_temp_files",
+        ), patch.object(
+            self.main,
+            "info",
+        ), patch.object(
+            self.main,
+            "maybe_crosspost_youtube_short",
+        ) as crosspost_mock, patch.object(
+            youtube_instance,
+            "get_videos",
+            return_value=cached_videos,
+        ), patch("main.os.path.exists", return_value=True):
+            self.main.main()
+
+        youtube_instance.load_cached_video.assert_called_once_with(cached_videos[0])
+        youtube_instance.upload_video.assert_called_once_with()
+        crosspost_mock.assert_called_once_with(
+            video_path="/tmp/cached-short.mp4",
+            title="Cached title",
+            interactive=True,
+            return_details=True,
+        )
+
+    def test_main_skips_auto_crosspost_when_cached_short_already_crossposted(self) -> None:
+        youtube_instance = Mock()
+        youtube_instance.upload_video.return_value = True
+        youtube_instance.metadata = {"title": "Cached title"}
+        youtube_instance.video_path = "/tmp/cached-short.mp4"
+
+        youtube_module = types.ModuleType("classes.YouTube")
+        youtube_module.YouTube = Mock(return_value=youtube_instance)
+        tts_module = types.ModuleType("classes.Tts")
+        tts_module.TTS = Mock(return_value=Mock())
+
+        option_answers = iter(["2", "4"])
+        cached_videos = [
+            {
+                "title": "Cached title",
+                "description": "Cached description",
+                "path": "/tmp/cached-short.mp4",
+                "date": "2026-04-05 10:00:00",
+                "topic": "Storm topic",
+                "script": "A script",
+                "uploaded": True,
+                "crossposts": {
+                    "tiktok": {"status": "success", "post_id": "post-123"},
+                },
+            }
+        ]
+
+        def fake_question(message: str, *_args, **_kwargs) -> str:
+            if "Select an account to start" in message:
+                return "1"
+            if "Select an option" in message:
+                return next(option_answers)
+            if "Publish one of these Shorts" in message:
+                return "1"
+            raise AssertionError(f"Unexpected question prompt: {message}")
+
+        with patch.dict(
+            sys.modules,
+            {
+                "classes.YouTube": youtube_module,
+                "classes.Tts": tts_module,
+            },
+        ), patch("builtins.input", return_value="1"), patch.object(
+            self.main,
+            "get_accounts",
+            return_value=[
+                {
+                    "id": "yt-1",
+                    "nickname": "channel",
+                    "firefox_profile": "/tmp/firefox",
+                    "niche": "true crime",
+                    "language": "english",
+                }
+            ],
+        ), patch.object(
+            self.main,
+            "question",
+            side_effect=fake_question,
+        ), patch.object(
+            self.main,
+            "rem_temp_files",
+        ), patch.object(
+            self.main,
+            "info",
+        ) as info_mock, patch.object(
+            self.main,
+            "maybe_crosspost_youtube_short",
+        ) as crosspost_mock, patch.object(
+            youtube_instance,
+            "get_videos",
+            return_value=cached_videos,
+        ), patch.object(
+            youtube_instance,
+            "record_crosspost_result",
+        ) as record_crosspost_result_mock, patch("main.os.path.exists", return_value=True):
+            self.main.main()
+
+        youtube_instance.load_cached_video.assert_called_once_with(cached_videos[0])
+        youtube_instance.upload_video.assert_not_called()
+        crosspost_mock.assert_called_once_with(
+            video_path="/tmp/cached-short.mp4",
+            title="Cached title",
+            interactive=True,
+            return_details=True,
+            excluded_platforms=["youtube", "tiktok"],
+        )
+        record_crosspost_result_mock.assert_not_called()
+
+    def test_main_shows_cached_short_metadata_preview_before_retry_upload(self) -> None:
+        youtube_instance = Mock()
+        youtube_instance.upload_video.return_value = True
+        youtube_instance.metadata = {"title": "Cached title"}
+        youtube_instance.video_path = "/tmp/cached-short.mp4"
+
+        youtube_module = types.ModuleType("classes.YouTube")
+        youtube_module.YouTube = Mock(return_value=youtube_instance)
+        tts_module = types.ModuleType("classes.Tts")
+        tts_module.TTS = Mock(return_value=Mock())
+
+        option_answers = iter(["2", "4"])
+        cached_videos = [
+            {
+                "title": "Cached title",
+                "description": "Cached description for preview text",
+                "path": "/tmp/cached-short.mp4",
+                "date": "2026-04-05 10:00:00",
+                "topic": "Storm topic",
+                "script": "A script",
+                "uploaded": True,
+            }
+        ]
+
+        def fake_question(message: str, *_args, **_kwargs) -> str:
+            if "Select an account to start" in message:
+                return "1"
+            if "Select an option" in message:
+                return next(option_answers)
+            if "Publish one of these Shorts" in message:
+                return "yes"
+            if "Enter the short number to publish" in message:
+                return "1"
+            raise AssertionError(f"Unexpected question prompt: {message}")
+
+        with patch.dict(
+            sys.modules,
+            {
+                "classes.YouTube": youtube_module,
+                "classes.Tts": tts_module,
+            },
+        ), patch("builtins.input", return_value="1"), patch.object(
+            self.main,
+            "get_accounts",
+            return_value=[
+                {
+                    "id": "yt-1",
+                    "nickname": "channel",
+                    "firefox_profile": "/tmp/firefox",
+                    "niche": "true crime",
+                    "language": "english",
+                }
+            ],
+        ), patch.object(
+            self.main,
+            "question",
+            side_effect=fake_question,
+        ), patch.object(
+            self.main,
+            "rem_temp_files",
+        ), patch.object(
+            self.main,
+            "info",
+        ) as info_mock, patch.object(
+            self.main,
+            "maybe_crosspost_youtube_short",
+            return_value=None,
+        ), patch.object(
+            youtube_instance,
+            "get_videos",
+            return_value=cached_videos,
+        ), patch("main.os.path.exists", return_value=True):
+            self.main.main()
+
+        preview_messages = [call.args[0] for call in info_mock.call_args_list if call.args]
+        self.assertTrue(any("Selected Short title: Cached title" in message for message in preview_messages))
+        self.assertTrue(any("Cached description for preview text" in message for message in preview_messages))
+
+    def test_main_crossposts_selected_cached_short(self) -> None:
+        youtube_instance = Mock()
+        youtube_instance.video_path = "/tmp/cached-short.mp4"
+        youtube_instance.metadata = {"title": "Cached title", "description": "Cached description"}
+        youtube_module = types.ModuleType("classes.YouTube")
+        youtube_module.YouTube = Mock(return_value=youtube_instance)
+        tts_module = types.ModuleType("classes.Tts")
+        tts_module.TTS = Mock(return_value=Mock())
+
+        option_answers = iter(["2", "4"])
+        cached_videos = [
+            {
+                "title": "Cached title",
+                "description": "Cached description",
+                "path": "/tmp/cached-short.mp4",
+                "date": "2026-04-05 10:00:00",
+                "uploaded": True,
+                "crossposts": {"tiktok": {"status": "success", "post_id": "old-post"}},
+            }
+        ]
+
+        def fake_question(message: str, *_args, **_kwargs) -> str:
+            if "Select an account to start" in message:
+                return "1"
+            if "Select an option" in message:
+                return next(option_answers)
+            if "Publish one of these Shorts" in message:
+                return "1"
+            raise AssertionError(f"Unexpected question prompt: {message}")
+
+        with patch.dict(
+            sys.modules,
+            {
+                "classes.YouTube": youtube_module,
+                "classes.Tts": tts_module,
+            },
+        ), patch("builtins.input", return_value="1"), patch.object(
+            self.main,
+            "get_accounts",
+            return_value=[
+                {
+                    "id": "yt-1",
+                    "nickname": "channel",
+                    "firefox_profile": "/tmp/firefox",
+                    "niche": "true crime",
+                    "language": "english",
+                }
+            ],
+        ), patch.object(
+            self.main,
+            "question",
+            side_effect=fake_question,
+        ), patch.object(
+            self.main,
+            "rem_temp_files",
+        ), patch.object(
+            self.main,
+            "maybe_crosspost_youtube_short",
+            return_value={
+                "posted": True,
+                "platforms": {
+                    "tiktok": {"status": "success", "post_id": "post-123"},
+                    "instagram": {"status": "success", "post_id": "post-123"},
+                },
+            },
+        ) as crosspost_mock, patch.object(
+            youtube_instance,
+            "get_videos",
+            return_value=cached_videos,
+        ), patch.object(
+            youtube_instance,
+            "record_crosspost_result",
+        ) as record_crosspost_result_mock, patch("main.os.path.exists", return_value=True):
+            self.main.main()
+
+        crosspost_mock.assert_called_once_with(
+            video_path="/tmp/cached-short.mp4",
+            title="Cached title",
+            description="Cached description",
+            interactive=True,
+            return_details=True,
+            excluded_platforms=["youtube", "tiktok"],
+        )
+        record_crosspost_result_mock.assert_called_once_with(
+            cached_videos[0],
+            {
+                "posted": True,
+                "platforms": {
+                    "tiktok": {"status": "success", "post_id": "post-123"},
+                    "instagram": {"status": "success", "post_id": "post-123"},
+                },
+            },
+        )
+
+    def test_cached_short_prompts_accept_single_letter_yes(self) -> None:
+        youtube_instance = Mock()
+        youtube_instance.upload_video.return_value = True
+        youtube_instance.metadata = {"title": "Cached title"}
+        youtube_instance.video_path = "/tmp/cached-short.mp4"
+
+        youtube_module = types.ModuleType("classes.YouTube")
+        youtube_module.YouTube = Mock(return_value=youtube_instance)
+        tts_module = types.ModuleType("classes.Tts")
+        tts_module.TTS = Mock(return_value=Mock())
+
+        option_answers = iter(["2", "4"])
+        cached_videos = [
+            {
+                "title": "Cached title",
+                "description": "Cached description",
+                "path": "/tmp/cached-short.mp4",
+                "date": "2026-04-05 10:00:00",
+                "topic": "Storm topic",
+                "script": "A script",
+                "uploaded": True,
+            }
+        ]
+
+        def fake_question(message: str, *_args, **_kwargs) -> str:
+            if "Select an account to start" in message:
+                return "1"
+            if "Select an option" in message:
+                return next(option_answers)
+            if "Publish one of these Shorts" in message:
+                return "y"
+            if "Enter the short number to publish" in message:
+                return "1"
+            raise AssertionError(f"Unexpected question prompt: {message}")
+
+        with patch.dict(
+            sys.modules,
+            {
+                "classes.YouTube": youtube_module,
+                "classes.Tts": tts_module,
+            },
+        ), patch("builtins.input", return_value="1"), patch.object(
+            self.main,
+            "get_accounts",
+            return_value=[
+                {
+                    "id": "yt-1",
+                    "nickname": "channel",
+                    "firefox_profile": "/tmp/firefox",
+                    "niche": "true crime",
+                    "language": "english",
+                }
+            ],
+        ), patch.object(
+            self.main,
+            "question",
+            side_effect=fake_question,
+        ), patch.object(
+            self.main,
+            "rem_temp_files",
+        ), patch.object(
+            self.main,
+            "maybe_crosspost_youtube_short",
+            side_effect=[
+                {"posted": False, "platforms": {}},
+                {"posted": True, "platforms": {"tiktok": {"status": "success", "post_id": "post-123"}}},
+            ],
+        ) as crosspost_mock, patch.object(
+            youtube_instance,
+            "get_videos",
+            return_value=cached_videos,
+        ), patch.object(
+            youtube_instance,
+            "record_crosspost_result",
+        ), patch("main.os.path.exists", return_value=True):
+            self.main.main()
+
+        youtube_instance.load_cached_video.assert_called_once_with(cached_videos[0])
+        youtube_instance.upload_video.assert_not_called()
+        self.assertEqual(crosspost_mock.call_count, 1)
+
+    def test_cached_short_retry_prompt_accepts_direct_short_number(self) -> None:
+        youtube_instance = Mock()
+        youtube_instance.upload_video.return_value = True
+        youtube_instance.metadata = {"title": "Cached title"}
+        youtube_instance.video_path = "/tmp/cached-short.mp4"
+
+        youtube_module = types.ModuleType("classes.YouTube")
+        youtube_module.YouTube = Mock(return_value=youtube_instance)
+        tts_module = types.ModuleType("classes.Tts")
+        tts_module.TTS = Mock(return_value=Mock())
+
+        option_answers = iter(["2", "4"])
+        cached_videos = [
+            {
+                "title": "Cached title",
+                "description": "Cached description",
+                "path": "/tmp/cached-short.mp4",
+                "date": "2026-04-05 10:00:00",
+                "topic": "Storm topic",
+                "script": "A script",
+                "uploaded": True,
+            }
+        ]
+
+        def fake_question(message: str, *_args, **_kwargs) -> str:
+            if "Select an account to start" in message:
+                return "1"
+            if "Select an option" in message:
+                return next(option_answers)
+            if "Publish one of these Shorts" in message:
+                return "1"
+            raise AssertionError(f"Unexpected question prompt: {message}")
+
+        with patch.dict(
+            sys.modules,
+            {
+                "classes.YouTube": youtube_module,
+                "classes.Tts": tts_module,
+            },
+        ), patch("builtins.input", return_value="1"), patch.object(
+            self.main,
+            "get_accounts",
+            return_value=[
+                {
+                    "id": "yt-1",
+                    "nickname": "channel",
+                    "firefox_profile": "/tmp/firefox",
+                    "niche": "true crime",
+                    "language": "english",
+                }
+            ],
+        ), patch.object(
+            self.main,
+            "question",
+            side_effect=fake_question,
+        ), patch.object(
+            self.main,
+            "rem_temp_files",
+        ), patch.object(
+            self.main,
+            "maybe_crosspost_youtube_short",
+            return_value={"posted": False, "platforms": {}},
+        ), patch.object(
+            youtube_instance,
+            "get_videos",
+            return_value=cached_videos,
+        ), patch.object(
+            youtube_instance,
+            "record_crosspost_result",
+        ), patch("main.os.path.exists", return_value=True):
+            self.main.main()
+
+        youtube_instance.load_cached_video.assert_called_once_with(cached_videos[0])
+        youtube_instance.upload_video.assert_not_called()
+
+    def test_cached_short_crosspost_prompt_accepts_direct_short_number(self) -> None:
+        youtube_instance = Mock()
+        youtube_instance.video_path = "/tmp/cached-short.mp4"
+        youtube_instance.metadata = {"title": "Cached title", "description": "Cached description"}
+        youtube_module = types.ModuleType("classes.YouTube")
+        youtube_module.YouTube = Mock(return_value=youtube_instance)
+        tts_module = types.ModuleType("classes.Tts")
+        tts_module.TTS = Mock(return_value=Mock())
+
+        option_answers = iter(["2", "4"])
+        cached_videos = [
+            {
+                "title": "Cached title",
+                "description": "Cached description",
+                "path": "/tmp/cached-short.mp4",
+                "date": "2026-04-05 10:00:00",
+                "uploaded": True,
+            }
+        ]
+
+        def fake_question(message: str, *_args, **_kwargs) -> str:
+            if "Select an account to start" in message:
+                return "1"
+            if "Select an option" in message:
+                return next(option_answers)
+            if "Publish one of these Shorts" in message:
+                return "1"
+            raise AssertionError(f"Unexpected question prompt: {message}")
+
+        with patch.dict(
+            sys.modules,
+            {
+                "classes.YouTube": youtube_module,
+                "classes.Tts": tts_module,
+            },
+        ), patch("builtins.input", return_value="1"), patch.object(
+            self.main,
+            "get_accounts",
+            return_value=[
+                {
+                    "id": "yt-1",
+                    "nickname": "channel",
+                    "firefox_profile": "/tmp/firefox",
+                    "niche": "true crime",
+                    "language": "english",
+                }
+            ],
+        ), patch.object(
+            self.main,
+            "question",
+            side_effect=fake_question,
+        ), patch.object(
+            self.main,
+            "rem_temp_files",
+        ), patch.object(
+            self.main,
+            "maybe_crosspost_youtube_short",
+            return_value={"posted": True, "platforms": {"tiktok": {"status": "success", "post_id": "post-123"}}},
+        ) as crosspost_mock, patch.object(
+            youtube_instance,
+            "get_videos",
+            return_value=cached_videos,
+        ), patch.object(
+            youtube_instance,
+            "record_crosspost_result",
+        ), patch("main.os.path.exists", return_value=True):
+            self.main.main()
+
+        crosspost_mock.assert_called_once_with(
+            video_path="/tmp/cached-short.mp4",
+            title="Cached title",
+            description="Cached description",
+            interactive=True,
+            return_details=True,
+            excluded_platforms=["youtube"],
+        )
+
+    def test_main_warns_when_selected_cached_short_file_is_missing(self) -> None:
+        youtube_instance = Mock()
+
+        youtube_module = types.ModuleType("classes.YouTube")
+        youtube_module.YouTube = Mock(return_value=youtube_instance)
+        tts_module = types.ModuleType("classes.Tts")
+        tts_module.TTS = Mock(return_value=Mock())
+
+        option_answers = iter(["2", "4"])
+        cached_videos = [
+            {
+                "title": "Missing file",
+                "description": "Cached description",
+                "path": "/tmp/missing-short.mp4",
+                "date": "2026-04-05 10:00:00",
+                "uploaded": False,
+            }
+        ]
+
+        def fake_question(message: str, *_args, **_kwargs) -> str:
+            if "Select an account to start" in message:
+                return "1"
+            if "Select an option" in message:
+                return next(option_answers)
+            if "Publish one of these Shorts" in message:
+                return "yes"
+            if "Enter the short number to publish" in message:
+                return "1"
+            raise AssertionError(f"Unexpected question prompt: {message}")
+
+        with patch.dict(
+            sys.modules,
+            {
+                "classes.YouTube": youtube_module,
+                "classes.Tts": tts_module,
+            },
+        ), patch("builtins.input", return_value="1"), patch.object(
+            self.main,
+            "get_accounts",
+            return_value=[
+                {
+                    "id": "yt-1",
+                    "nickname": "channel",
+                    "firefox_profile": "/tmp/firefox",
+                    "niche": "true crime",
+                    "language": "english",
+                }
+            ],
+        ), patch.object(
+            self.main,
+            "question",
+            side_effect=fake_question,
+        ), patch.object(
+            youtube_instance,
+            "get_videos",
+            return_value=cached_videos,
+        ), patch.object(
+            self.main,
+            "rem_temp_files",
+        ), patch.object(
+            self.main,
+            "warning",
+        ) as warning_mock, patch("main.os.path.exists", return_value=False):
+            self.main.main()
+
+        youtube_instance.load_cached_video.assert_not_called()
+        youtube_instance.upload_video.assert_not_called()
+        self.assertIn("no longer exists", warning_mock.call_args_list[-1].args[0].lower())
+
+    def test_maybe_upload_youtube_video_uses_post_bridge_as_primary_youtube_publisher(self) -> None:
+        youtube_instance = Mock()
+        youtube_instance.video_path = "/tmp/generated-short.mp4"
+        youtube_instance.subject = "Storm topic"
+        youtube_instance.script = "A script"
+        youtube_instance.metadata = {
+            "title": "A title",
+            "description": "A description",
+        }
+
+        with patch.object(
+            self.main,
+            "question",
+            return_value="yes",
+        ), patch.object(
+            self.main,
+            "get_post_bridge_config",
+            return_value={
+                "enabled": True,
+                "api_key": "token",
+                "platforms": ["youtube", "tiktok"],
+                "account_ids": [12, 34],
+                "auto_crosspost": False,
+            },
+        ), patch.object(
+            self.main,
+            "maybe_crosspost_youtube_short",
+            return_value={
+                "posted": True,
+                "platforms": {
+                    "youtube": {"status": "success", "post_id": "post-yt"},
+                    "tiktok": {"status": "success", "post_id": "post-tt"},
+                },
+            },
+        ) as crosspost_mock:
+            result = self.main.maybe_upload_youtube_video(youtube_instance)
+
+        self.assertTrue(result)
+        youtube_instance.upload_video.assert_not_called()
+        crosspost_mock.assert_called_once_with(
+            video_path="/tmp/generated-short.mp4",
+            title="A title",
+            description="A description",
+            interactive=True,
+            return_details=True,
+            include_youtube=True,
+            skip_confirmation=True,
+        )
+        youtube_instance.record_post_bridge_publish_result.assert_called_once()
+
+    def test_maybe_upload_youtube_video_skips_already_posted_platforms_for_cached_short(self) -> None:
+        youtube_instance = Mock()
+        youtube_instance.video_path = "/tmp/generated-short.mp4"
+        youtube_instance.subject = "Storm topic"
+        youtube_instance.script = "A script"
+        youtube_instance.metadata = {
+            "title": "A title",
+            "description": "A description",
+        }
+        cached_video = {
+            "path": "/tmp/generated-short.mp4",
+            "uploaded": True,
+            "crossposts": {
+                "tiktok": {"status": "success", "post_id": "post-tt"},
+            },
+        }
+
+        with patch.object(
+            self.main,
+            "question",
+            return_value="yes",
+        ), patch.object(
+            self.main,
+            "get_post_bridge_config",
+            return_value={
+                "enabled": True,
+                "api_key": "token",
+                "platforms": ["youtube", "tiktok", "instagram"],
+                "account_ids": [12, 34, 56],
+                "auto_crosspost": False,
+            },
+        ), patch.object(
+            self.main,
+            "maybe_crosspost_youtube_short",
+            return_value={
+                "posted": True,
+                "platforms": {
+                    "instagram": {"status": "success", "post_id": "post-ig"},
+                },
+            },
+        ) as crosspost_mock:
+            result = self.main.maybe_upload_youtube_video(
+                youtube_instance,
+                cached_video=cached_video,
+            )
+
+        self.assertTrue(result)
+        youtube_instance.upload_video.assert_not_called()
+        crosspost_mock.assert_called_once_with(
+            video_path="/tmp/generated-short.mp4",
+            title="A title",
+            description="A description",
+            interactive=True,
+            return_details=True,
+            include_youtube=True,
+            skip_confirmation=True,
+            excluded_platforms=["youtube", "tiktok"],
+        )
+        youtube_instance.record_post_bridge_publish_result.assert_not_called()
+        youtube_instance.record_crosspost_result.assert_called_once_with(
+            cached_video,
+            {
+                "posted": True,
+                "platforms": {
+                    "instagram": {"status": "success", "post_id": "post-ig"},
+                },
+            },
+        )
+
+    def test_main_asks_once_to_publish_cached_short_when_post_bridge_handles_youtube(self) -> None:
+        youtube_instance = Mock()
+        youtube_instance.video_path = "/tmp/cached-short.mp4"
+        youtube_instance.subject = "Storm topic"
+        youtube_instance.script = "A script"
+        youtube_instance.metadata = {
+            "title": "Cached title",
+            "description": "Cached description",
+        }
+
+        youtube_module = types.ModuleType("classes.YouTube")
+        youtube_module.YouTube = Mock(return_value=youtube_instance)
+        tts_module = types.ModuleType("classes.Tts")
+        tts_module.TTS = Mock(return_value=Mock())
+
+        option_answers = iter(["2", "4"])
+        cached_videos = [
+            {
+                "title": "Cached title",
+                "description": "Cached description",
+                "path": "/tmp/cached-short.mp4",
+                "date": "2026-04-05 10:00:00",
+                "topic": "Storm topic",
+                "script": "A script",
+                "uploaded": False,
+            }
+        ]
+
+        def fake_question(message: str, *_args, **_kwargs) -> str:
+            if "Select an account to start" in message:
+                return "1"
+            if "Select an option" in message:
+                return next(option_answers)
+            if "Publish one of these Shorts" in message:
+                return "1"
+            raise AssertionError(f"Unexpected question prompt: {message}")
+
+        with patch.dict(
+            sys.modules,
+            {
+                "classes.YouTube": youtube_module,
+                "classes.Tts": tts_module,
+            },
+        ), patch("builtins.input", return_value="1"), patch.object(
+            self.main,
+            "get_accounts",
+            return_value=[
+                {
+                    "id": "yt-1",
+                    "nickname": "channel",
+                    "firefox_profile": "/tmp/firefox",
+                    "niche": "true crime",
+                    "language": "english",
+                }
+            ],
+        ), patch.object(
+            self.main,
+            "get_post_bridge_config",
+            return_value={
+                "enabled": True,
+                "api_key": "token",
+                "platforms": ["youtube", "tiktok"],
+                "account_ids": [12, 34],
+                "auto_crosspost": True,
+            },
+        ), patch.object(
+            self.main,
+            "question",
+            side_effect=fake_question,
+        ), patch.object(
+            self.main,
+            "rem_temp_files",
+        ), patch.object(
+            self.main,
+            "maybe_crosspost_youtube_short",
+            return_value={
+                "posted": True,
+                "platforms": {
+                    "youtube": {"status": "success", "post_id": "post-yt"},
+                    "tiktok": {"status": "success", "post_id": "post-tt"},
+                },
+            },
+        ) as crosspost_mock, patch.object(
+            youtube_instance,
+            "get_videos",
+            return_value=cached_videos,
+        ), patch.object(
+            youtube_instance,
+            "record_post_bridge_publish_result",
+        ) as record_publish_result_mock, patch("main.os.path.exists", return_value=True):
+            self.main.main()
+
+        youtube_instance.load_cached_video.assert_called_once_with(cached_videos[0])
+        youtube_instance.upload_video.assert_not_called()
+        crosspost_mock.assert_called_once_with(
+            video_path="/tmp/cached-short.mp4",
+            title="Cached title",
+            description="Cached description",
+            interactive=True,
+            return_details=True,
+            include_youtube=True,
+            skip_confirmation=True,
+        )
+        record_publish_result_mock.assert_called_once()
+
+    def test_main_asks_once_to_publish_cached_short_when_selenium_handles_youtube(self) -> None:
+        youtube_instance = Mock()
+        youtube_instance.video_path = "/tmp/cached-short.mp4"
+        youtube_instance.metadata = {
+            "title": "Cached title",
+            "description": "Cached description",
+        }
+        youtube_instance.upload_video.return_value = True
+
+        youtube_module = types.ModuleType("classes.YouTube")
+        youtube_module.YouTube = Mock(return_value=youtube_instance)
+        tts_module = types.ModuleType("classes.Tts")
+        tts_module.TTS = Mock(return_value=Mock())
+
+        option_answers = iter(["2", "4"])
+        cached_videos = [
+            {
+                "title": "Cached title",
+                "description": "Cached description",
+                "path": "/tmp/cached-short.mp4",
+                "date": "2026-04-05 10:00:00",
+                "uploaded": False,
+            }
+        ]
+
+        def fake_question(message: str, *_args, **_kwargs) -> str:
+            if "Select an account to start" in message:
+                return "1"
+            if "Select an option" in message:
+                return next(option_answers)
+            if "Publish one of these Shorts" in message:
+                return "1"
+            raise AssertionError(f"Unexpected question prompt: {message}")
+
+        with patch.dict(
+            sys.modules,
+            {
+                "classes.YouTube": youtube_module,
+                "classes.Tts": tts_module,
+            },
+        ), patch("builtins.input", return_value="1"), patch.object(
+            self.main,
+            "get_accounts",
+            return_value=[
+                {
+                    "id": "yt-1",
+                    "nickname": "channel",
+                    "firefox_profile": "/tmp/firefox",
+                    "niche": "true crime",
+                    "language": "english",
+                }
+            ],
+        ), patch.object(
+            self.main,
+            "get_post_bridge_config",
+            return_value={
+                "enabled": False,
+                "api_key": "",
+                "platforms": ["tiktok"],
+                "account_ids": [34],
+                "auto_crosspost": True,
+            },
+        ), patch.object(
+            self.main,
+            "question",
+            side_effect=fake_question,
+        ), patch.object(
+            self.main,
+            "rem_temp_files",
+        ), patch.object(
+            self.main,
+            "maybe_crosspost_youtube_short",
+            return_value={
+                "posted": True,
+                "platforms": {
+                    "tiktok": {"status": "success", "post_id": "post-tt"},
+                },
+            },
+        ) as crosspost_mock, patch.object(
+            youtube_instance,
+            "get_videos",
+            return_value=cached_videos,
+        ), patch.object(
+            youtube_instance,
+            "record_crosspost_result",
+        ) as record_crosspost_result_mock, patch("main.os.path.exists", return_value=True):
+            self.main.main()
+
+        youtube_instance.load_cached_video.assert_called_once_with(cached_videos[0])
+        youtube_instance.upload_video.assert_called_once_with()
+        crosspost_mock.assert_called_once_with(
+            video_path="/tmp/cached-short.mp4",
+            title="Cached title",
+            description="Cached description",
+            interactive=True,
+            return_details=True,
+        )
+        record_crosspost_result_mock.assert_called_once()
 
 
 if __name__ == "__main__":
