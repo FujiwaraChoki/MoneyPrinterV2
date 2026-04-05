@@ -183,6 +183,59 @@ class YouTubeVideoPersistenceTests(unittest.TestCase):
         self.assertEqual(persisted_video["path"], "/tmp/final.mp4")
         self.assertFalse(persisted_video["uploaded"])
 
+    def test_generate_video_raises_when_image_generation_returns_none(self) -> None:
+        youtube = self.youtube_module.YouTube.__new__(self.youtube_module.YouTube)
+        youtube._account_uuid = "acct-1"
+        youtube.images = []
+
+        def fake_generate_topic() -> str:
+            youtube.subject = "Broadcast intrusion mystery"
+            return youtube.subject
+
+        def fake_generate_script() -> str:
+            youtube.script = "A strange voice interrupted television signals."
+            return youtube.script
+
+        def fake_generate_metadata() -> dict:
+            youtube.metadata = {
+                "title": "Broadcast intrusion mystery",
+                "description": "A short documentary about a broadcast interruption.",
+            }
+            return youtube.metadata
+
+        with patch.object(
+            self.youtube_module.YouTube,
+            "generate_topic",
+            side_effect=fake_generate_topic,
+        ), patch.object(
+            self.youtube_module.YouTube,
+            "generate_script",
+            side_effect=fake_generate_script,
+        ), patch.object(
+            self.youtube_module.YouTube,
+            "generate_metadata",
+            side_effect=fake_generate_metadata,
+        ), patch.object(
+            self.youtube_module.YouTube,
+            "generate_prompts",
+            return_value=["prompt-1"],
+        ), patch.object(
+            self.youtube_module.YouTube,
+            "generate_image",
+            return_value=None,
+        ), patch.object(
+            self.youtube_module.YouTube,
+            "generate_script_to_speech",
+        ) as tts_mock, patch.object(
+            self.youtube_module.YouTube,
+            "combine",
+        ) as combine_mock:
+            with self.assertRaisesRegex(RuntimeError, "Failed to generate image for prompt"):
+                youtube.generate_video(Mock())
+
+        tts_mock.assert_not_called()
+        combine_mock.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

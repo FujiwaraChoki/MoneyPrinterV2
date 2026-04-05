@@ -30,7 +30,8 @@ class YouTubeUploadDiagnosticsTests(unittest.TestCase):
 
     def test_upload_video_logs_failure_step_and_exception(self) -> None:
         youtube = self.youtube_module.YouTube.__new__(self.youtube_module.YouTube)
-        youtube.browser = Mock()
+        browser = Mock()
+        youtube.browser = browser
 
         with patch.object(
             self.youtube_module.YouTube,
@@ -40,7 +41,8 @@ class YouTubeUploadDiagnosticsTests(unittest.TestCase):
             result = youtube.upload_video()
 
         self.assertFalse(result)
-        youtube.browser.quit.assert_called_once_with()
+        browser.quit.assert_called_once_with()
+        self.assertIsNone(youtube.browser)
         error_mock.assert_called_once()
         message = error_mock.call_args.args[0]
         self.assertIn("Failed to upload YouTube video", message)
@@ -75,6 +77,30 @@ class YouTubeUploadDiagnosticsTests(unittest.TestCase):
                 "Could not find YouTube metadata textboxes",
             ):
                 youtube._get_upload_metadata_textboxes(max_attempts=2, delay_seconds=0)
+
+    def test_upload_video_recreates_browser_when_previous_attempt_closed_it(self) -> None:
+        youtube = self.youtube_module.YouTube.__new__(self.youtube_module.YouTube)
+        youtube.browser = None
+        youtube.service = "service"
+        youtube.options = "options"
+
+        fresh_browser = Mock()
+
+        with patch.object(
+            self.youtube_module.webdriver,
+            "Firefox",
+            return_value=fresh_browser,
+        ) as firefox_mock, patch.object(
+            self.youtube_module.YouTube,
+            "get_channel_id",
+            side_effect=RuntimeError("boom"),
+        ), patch.object(self.youtube_module, "error"):
+            result = youtube.upload_video()
+
+        self.assertFalse(result)
+        firefox_mock.assert_called_once_with(service="service", options="options")
+        fresh_browser.quit.assert_called_once_with()
+        self.assertIsNone(youtube.browser)
 
 
 if __name__ == "__main__":

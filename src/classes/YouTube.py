@@ -169,9 +169,15 @@ class YouTube:
         self.service: Service = Service(GeckoDriverManager().install())
 
         # Initialize the browser
-        self.browser: webdriver.Firefox = webdriver.Firefox(
-            service=self.service, options=self.options
-        )
+        self.browser: webdriver.Firefox = self._create_browser()
+
+    def _create_browser(self):
+        return webdriver.Firefox(service=self.service, options=self.options)
+
+    def _ensure_browser(self):
+        if getattr(self, "browser", None) is None:
+            self.browser = self._create_browser()
+        return self.browser
 
     @property
     def niche(self) -> str:
@@ -1183,7 +1189,9 @@ class YouTube:
 
         # Generate the Images
         for prompt in image_prompts:
-            self.generate_image(prompt)
+            image_path = self.generate_image(prompt)
+            if not image_path:
+                raise RuntimeError(f"Failed to generate image for prompt: {prompt}")
 
         # Generate the TTS
         self.generate_script_to_speech(tts_instance)
@@ -1300,6 +1308,7 @@ class YouTube:
         """
         current_step = "initialize channel context"
         try:
+            driver = self._ensure_browser()
             self.get_channel_id()
 
             driver = self.browser
@@ -1451,6 +1460,7 @@ class YouTube:
 
             # Close the browser
             driver.quit()
+            self.browser = None
 
             return True
         except Exception as e:
@@ -1459,6 +1469,7 @@ class YouTube:
                 self.browser.quit()
             except Exception:
                 pass
+            self.browser = None
             return False
 
     def get_videos(self) -> List[dict]:

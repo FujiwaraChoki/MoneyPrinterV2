@@ -89,7 +89,7 @@ All your configurations will be in a file in the root directory, called `config.
   "whisper_compute_type": "int8",
   "assembly_ai_api_key": "",
   "tts_voice": "Jasper",
-  "font": "bold_font.ttf",
+  "font": "BebasNeue-Regular.ttf",
   "imagemagick_path": "Path to magick.exe or on linux/macOS just /usr/bin/convert",
   "script_sentence_length": 4,
   "video_motion_style": "static",
