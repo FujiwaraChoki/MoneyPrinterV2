@@ -161,6 +161,131 @@ class OpenRouterConfigTests(ConfigTestCase):
 
                 self.assertEqual(base_url, expected)
 
+    def test_image_provider_defaults_to_googleai_studio(self) -> None:
+        self.write_config({})
+
+        with self.patch_root_dir():
+            provider = config.get_image_provider()
+
+        self.assertEqual(provider, "googleai_studio")
+
+    def test_openrouter_image_models_prefers_config_list(self) -> None:
+        self.write_config(
+            {
+                "openrouter_image_models": [
+                    "sourceful/riverflow-v2-fast-preview",
+                    "sourceful/riverflow-v2-fast",
+                ]
+            }
+        )
+
+        with self.patch_root_dir(), patch.dict(
+            os.environ,
+            {"OPENROUTER_IMAGE_MODELS": "ignored/model"},
+            clear=False,
+        ):
+            models = config.get_openrouter_image_models()
+
+        self.assertEqual(
+            models,
+            [
+                "sourceful/riverflow-v2-fast-preview",
+                "sourceful/riverflow-v2-fast",
+            ],
+        )
+
+    def test_openrouter_image_models_use_env_when_config_missing(self) -> None:
+        self.write_config({})
+
+        with self.patch_root_dir(), patch.dict(
+            os.environ,
+            {
+                "OPENROUTER_IMAGE_MODELS": " model-a , model-b ,, model-c ",
+            },
+            clear=False,
+        ):
+            models = config.get_openrouter_image_models()
+
+        self.assertEqual(models, ["model-a", "model-b", "model-c"])
+
+
+class VideoMotionConfigTests(ConfigTestCase):
+    def test_video_motion_style_defaults_to_static(self) -> None:
+        self.write_config({})
+
+        with self.patch_root_dir():
+            style = config.get_video_motion_style()
+
+        self.assertEqual(style, "static")
+
+    def test_video_motion_style_normalizes_cinematic(self) -> None:
+        self.write_config({"video_motion_style": "  CiNeMaTiC  "})
+
+        with self.patch_root_dir():
+            style = config.get_video_motion_style()
+
+        self.assertEqual(style, "cinematic")
+
+    def test_video_motion_style_invalid_values_fall_back_to_static(self) -> None:
+        self.write_config({"video_motion_style": "flashy"})
+
+        with self.patch_root_dir():
+            style = config.get_video_motion_style()
+
+        self.assertEqual(style, "static")
+
+    def test_video_zoom_intensity_defaults_to_safe_value(self) -> None:
+        self.write_config({})
+
+        with self.patch_root_dir():
+            zoom = config.get_video_zoom_intensity()
+
+        self.assertEqual(zoom, 1.12)
+
+    def test_video_zoom_intensity_invalid_or_too_small_falls_back(self) -> None:
+        for payload in (
+            {"video_zoom_intensity": "abc"},
+            {"video_zoom_intensity": 0.9},
+            {"video_zoom_intensity": 1.0},
+        ):
+            with self.subTest(payload=payload):
+                self.write_config(payload)
+
+                with self.patch_root_dir():
+                    zoom = config.get_video_zoom_intensity()
+
+                self.assertEqual(zoom, 1.12)
+
+    def test_video_pan_enabled_defaults_to_true(self) -> None:
+        self.write_config({})
+
+        with self.patch_root_dir():
+            pan_enabled = config.get_video_pan_enabled()
+
+        self.assertTrue(pan_enabled)
+
+    def test_video_pan_intensity_defaults_to_safe_value(self) -> None:
+        self.write_config({})
+
+        with self.patch_root_dir():
+            pan_intensity = config.get_video_pan_intensity()
+
+        self.assertEqual(pan_intensity, 0.03)
+
+    def test_video_pan_intensity_invalid_or_non_positive_falls_back(self) -> None:
+        for payload in (
+            {"video_pan_intensity": "abc"},
+            {"video_pan_intensity": 0},
+            {"video_pan_intensity": -0.1},
+        ):
+            with self.subTest(payload=payload):
+                self.write_config(payload)
+
+                with self.patch_root_dir():
+                    pan_intensity = config.get_video_pan_intensity()
+
+                self.assertEqual(pan_intensity, 0.03)
+
 
 if __name__ == "__main__":
     unittest.main()

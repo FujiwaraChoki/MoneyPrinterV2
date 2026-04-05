@@ -5,7 +5,7 @@ import srt_equalizer
 
 from termcolor import colored
 
-ROOT_DIR = os.path.dirname(sys.path[0])
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def assert_folder_structure() -> None:
     """
@@ -120,6 +120,34 @@ def get_openrouter_base_url() -> str:
     """
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file).get("openrouter_base_url", "") or "https://openrouter.ai/api/v1"
+
+def get_image_provider() -> str:
+    """
+    Gets the configured image provider.
+
+    Returns:
+        provider (str): Image provider identifier
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        provider = str(json.load(file).get("image_provider", "googleai_studio")).strip().lower()
+        return provider or "googleai_studio"
+
+def get_openrouter_image_models() -> list[str]:
+    """
+    Gets the ordered OpenRouter image model fallback list.
+
+    Returns:
+        models (list[str]): Ordered OpenRouter image model identifiers
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        config_json = json.load(file)
+
+    raw_models = config_json.get("openrouter_image_models")
+    if isinstance(raw_models, list):
+        return [str(model).strip() for model in raw_models if str(model).strip()]
+
+    env_value = os.environ.get("OPENROUTER_IMAGE_MODELS", "")
+    return [model.strip() for model in env_value.split(",") if model.strip()]
 
 def get_twitter_language() -> str:
     """
@@ -371,6 +399,83 @@ def get_script_sentence_length() -> int:
             return config_json["script_sentence_length"]
         else:
             return 4
+
+def get_video_motion_style() -> str:
+    """
+    Gets the configured video motion style.
+
+    Returns:
+        style (str): `static` or `cinematic`
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        raw_style = str(json.load(file).get("video_motion_style", "static")).strip().lower()
+
+    if raw_style == "cinematic":
+        return "cinematic"
+
+    return "static"
+
+def get_video_zoom_intensity() -> float:
+    """
+    Gets the configured zoom intensity for cinematic motion.
+
+    Returns:
+        zoom (float): Zoom intensity multiplier
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        raw_zoom = json.load(file).get("video_zoom_intensity", 1.12)
+
+    try:
+        zoom_value = float(raw_zoom)
+    except (TypeError, ValueError):
+        return 1.12
+
+    if zoom_value <= 1.0:
+        return 1.12
+
+    return zoom_value
+
+def get_video_pan_enabled() -> bool:
+    """
+    Gets whether cinematic pan drift is enabled.
+
+    Returns:
+        enabled (bool): Whether pan is enabled
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        raw_value = json.load(file).get("video_pan_enabled", True)
+
+    if isinstance(raw_value, bool):
+        return raw_value
+
+    if isinstance(raw_value, str):
+        normalized = raw_value.strip().lower()
+        if normalized in {"true", "1", "yes", "on"}:
+            return True
+        if normalized in {"false", "0", "no", "off"}:
+            return False
+
+    return bool(raw_value)
+
+def get_video_pan_intensity() -> float:
+    """
+    Gets the configured pan intensity for cinematic motion.
+
+    Returns:
+        intensity (float): Pan intensity as a fraction of frame width
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        raw_pan = json.load(file).get("video_pan_intensity", 0.03)
+
+    try:
+        pan_value = float(raw_pan)
+    except (TypeError, ValueError):
+        return 0.03
+
+    if pan_value <= 0:
+        return 0.03
+
+    return pan_value
 
 def get_post_bridge_config() -> dict:
     """

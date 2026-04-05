@@ -1,7 +1,7 @@
 import os
 import sys
+import shlex
 
-import schedule
 import subprocess
 
 from art import *
@@ -11,15 +11,18 @@ from config import *
 from status import *
 from uuid import uuid4
 from constants import *
-from classes.Tts import TTS
 from termcolor import colored
-from classes.Twitter import Twitter
-from classes.YouTube import YouTube
 from prettytable import PrettyTable
-from classes.Outreach import Outreach
-from classes.AFM import AffiliateMarketing
 from llm_provider import select_model
 from post_bridge_integration import maybe_crosspost_youtube_short
+
+
+CRON_OPTION_SCHEDULES = {
+    1: ["0 10 * * *"],
+    2: ["0 10 * * *", "0 16 * * *"],
+    3: ["0 8 * * *", "0 12 * * *", "0 18 * * *"],
+}
+CRON_PATH = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
 def bootstrap_runtime() -> None:
     fetch_songs()
@@ -41,6 +44,139 @@ def build_cron_command(
     if model:
         command.append(model)
     return command
+
+
+def build_crontab_block(
+    purpose: str,
+    account_id: str,
+    frequency_option: int,
+    model: str | None = None,
+) -> str:
+    schedules = CRON_OPTION_SCHEDULES.get(frequency_option)
+    if not schedules:
+        raise ValueError(f"Unsupported cron frequency option: {frequency_option}")
+
+    os.makedirs(os.path.join(ROOT_DIR, ".mp"), exist_ok=True)
+
+    command = " ".join(
+        shlex.quote(part) for part in build_cron_command(purpose, account_id, model)
+    )
+    log_path = os.path.join(ROOT_DIR, ".mp", f"cron-{purpose}-{account_id}.log")
+    marker = f"MONEYPRINTER_V2 {purpose} {account_id}"
+
+    lines = [f"# {marker} BEGIN"]
+    for schedule_expression in schedules:
+        lines.append(
+            f"{schedule_expression} PATH={shlex.quote(CRON_PATH)}; export PATH; "
+            f"cd {shlex.quote(ROOT_DIR)} && {command} >> {shlex.quote(log_path)} 2>&1"
+        )
+    lines.append(f"# {marker} END")
+
+    return "\n".join(lines)
+
+
+def merge_crontab_block(
+    existing_crontab: str,
+    purpose: str,
+    account_id: str,
+    new_block: str,
+) -> str:
+    begin_marker = f"# MONEYPRINTER_V2 {purpose} {account_id} BEGIN"
+    end_marker = f"# MONEYPRINTER_V2 {purpose} {account_id} END"
+
+    merged_lines = []
+    skipping = False
+
+    for line in str(existing_crontab or "").splitlines():
+        stripped = line.strip()
+        if stripped == begin_marker:
+            skipping = True
+            continue
+        if skipping and stripped == end_marker:
+            skipping = False
+            continue
+        if not skipping:
+            merged_lines.append(line)
+
+    while merged_lines and not merged_lines[-1].strip():
+        merged_lines.pop()
+
+    if merged_lines:
+        merged_lines.append("")
+
+    merged_lines.extend(new_block.splitlines())
+    return "\n".join(merged_lines).rstrip() + "\n"
+
+
+def install_cron_job(
+    purpose: str,
+    account_id: str,
+    frequency_option: int,
+    model: str | None = None,
+) -> str:
+    read_result = subprocess.run(
+        ["crontab", "-l"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    if read_result.returncode == 0:
+        existing_crontab = read_result.stdout
+    else:
+        missing_crontab_text = f"{read_result.stdout}\n{read_result.stderr}".lower()
+        if "no crontab" in missing_crontab_text:
+            existing_crontab = ""
+        else:
+            raise RuntimeError(
+                f"Failed to read existing crontab: {(read_result.stderr or read_result.stdout).strip()}"
+            )
+
+    new_block = build_crontab_block(purpose, account_id, frequency_option, model)
+    merged_crontab = merge_crontab_block(
+        existing_crontab,
+        purpose,
+        account_id,
+        new_block,
+    )
+
+    write_result = subprocess.run(
+        ["crontab", "-"],
+        input=merged_crontab,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    if write_result.returncode != 0:
+        raise RuntimeError(
+            f"Failed to install crontab entry: {(write_result.stderr or write_result.stdout).strip()}"
+        )
+
+    return merged_crontab
+
+
+def maybe_upload_youtube_video(youtube) -> bool:
+    upload_to_yt = question("Do you want to upload this video to YouTube? (Yes/No): ")
+    if upload_to_yt.strip().lower() != "yes":
+        return False
+
+    while True:
+        upload_success = youtube.upload_video()
+        if upload_success:
+            maybe_crosspost_youtube_short(
+                video_path=youtube.video_path,
+                title=youtube.metadata.get("title", ""),
+                interactive=True,
+            )
+            return True
+
+        retry_upload = question(
+            "Retry YouTube upload with the same video? (Yes/No): "
+        )
+        if retry_upload.strip().lower() != "yes":
+            warning("YouTube upload failed. Skipping Post Bridge cross-post.")
+            return False
 
 
 def main():
@@ -164,6 +300,8 @@ def main():
                 error("Invalid account selected. Please try again.", "red")
                 main()
             else:
+                from classes.YouTube import YouTube
+
                 youtube = YouTube(
                     selected_account["id"],
                     selected_account["nickname"],
@@ -183,21 +321,12 @@ def main():
 
                     # Get user input
                     user_input = int(question("Select an option: "))
+                    from classes.Tts import TTS
                     tts = TTS()
 
                     if user_input == 1:
                         youtube.generate_video(tts)
-                        upload_to_yt = question("Do you want to upload this video to YouTube? (Yes/No): ")
-                        if upload_to_yt.lower() == "yes":
-                            upload_success = youtube.upload_video()
-                            if upload_success:
-                                maybe_crosspost_youtube_short(
-                                    video_path=youtube.video_path,
-                                    title=youtube.metadata.get("title", ""),
-                                    interactive=True,
-                                )
-                            else:
-                                warning("YouTube upload failed. Skipping Post Bridge cross-post.")
+                        maybe_upload_youtube_video(youtube)
                     elif user_input == 2:
                         videos = youtube.get_videos()
 
@@ -226,19 +355,8 @@ def main():
 
                         user_input = int(question("Select an Option: "))
 
-                        command = build_cron_command("youtube", selected_account["id"])
-
-                        def job():
-                            subprocess.run(command)
-
-                        if user_input == 1:
-                            # Upload Once
-                            schedule.every(1).day.do(job)
-                            success("Set up CRON Job.")
-                        elif user_input == 2:
-                            # Upload Twice a day
-                            schedule.every().day.at("10:00").do(job)
-                            schedule.every().day.at("16:00").do(job)
+                        if user_input in CRON_OPTION_SCHEDULES:
+                            install_cron_job("youtube", selected_account["id"], user_input)
                             success("Set up CRON Job.")
                         else:
                             break
@@ -314,6 +432,8 @@ def main():
                 error("Invalid account selected. Please try again.", "red")
                 main()
             else:
+                from classes.Twitter import Twitter
+
                 twitter = Twitter(selected_account["id"], selected_account["nickname"], selected_account["firefox_profile"], selected_account["topic"])
 
                 while True:
@@ -356,25 +476,8 @@ def main():
 
                         user_input = int(question("Select an Option: "))
 
-                        command = build_cron_command("twitter", selected_account["id"])
-
-                        def job():
-                            subprocess.run(command)
-
-                        if user_input == 1:
-                            # Post Once a day
-                            schedule.every(1).day.do(job)
-                            success("Set up CRON Job.")
-                        elif user_input == 2:
-                            # Post twice a day
-                            schedule.every().day.at("10:00").do(job)
-                            schedule.every().day.at("16:00").do(job)
-                            success("Set up CRON Job.")
-                        elif user_input == 3:
-                            # Post thrice a day
-                            schedule.every().day.at("08:00").do(job)
-                            schedule.every().day.at("12:00").do(job)
-                            schedule.every().day.at("18:00").do(job)
+                        if user_input in CRON_OPTION_SCHEDULES:
+                            install_cron_job("twitter", selected_account["id"], user_input)
                             success("Set up CRON Job.")
                         else:
                             break
@@ -407,6 +510,8 @@ def main():
                     "twitter_uuid": twitter_uuid
                 })
 
+                from classes.AFM import AffiliateMarketing
+
                 afm = AffiliateMarketing(affiliate_link, account["firefox_profile"], account["id"], account["nickname"], account["topic"])
 
                 afm.generate_pitch()
@@ -438,6 +543,8 @@ def main():
                     if acc["id"] == selected_product["twitter_uuid"]:
                         account = acc
 
+                from classes.AFM import AffiliateMarketing
+
                 afm = AffiliateMarketing(selected_product["affiliate_link"], account["firefox_profile"], account["id"], account["nickname"], account["topic"])
 
                 afm.generate_pitch()
@@ -445,6 +552,8 @@ def main():
 
     elif user_input == 4:
         info("Starting Outreach...")
+
+        from classes.Outreach import Outreach
 
         outreach = Outreach()
 

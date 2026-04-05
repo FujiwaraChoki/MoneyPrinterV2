@@ -2,8 +2,11 @@ import importlib
 import json
 import os
 import shutil
+import subprocess
 import sys
+import types
 import unittest
+from unittest.mock import Mock
 from unittest.mock import patch
 
 
@@ -177,6 +180,192 @@ class MainRuntimeTests(unittest.TestCase):
                 "override/model",
             ],
         )
+
+    def test_build_crontab_block_uses_daily_schedule_and_log_file(self) -> None:
+        block = self.main.build_crontab_block("youtube", "yt-1", 1)
+
+        self.assertIn("# MONEYPRINTER_V2 youtube yt-1 BEGIN", block)
+        self.assertIn("0 10 * * *", block)
+        self.assertIn("PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin", block)
+        self.assertIn(
+            os.path.join(self.main.ROOT_DIR, "src", "cron.py"),
+            block,
+        )
+        self.assertIn(
+            os.path.join(self.main.ROOT_DIR, ".mp", "cron-youtube-yt-1.log"),
+            block,
+        )
+        self.assertIn("# MONEYPRINTER_V2 youtube yt-1 END", block)
+
+    def test_merge_crontab_block_replaces_existing_job_block_only(self) -> None:
+        existing = "\n".join(
+            [
+                "MAILTO=\"\"",
+                "# MONEYPRINTER_V2 youtube yt-1 BEGIN",
+                "old youtube line",
+                "# MONEYPRINTER_V2 youtube yt-1 END",
+                "15 9 * * * echo keep-me",
+            ]
+        )
+
+        merged = self.main.merge_crontab_block(
+            existing,
+            "youtube",
+            "yt-1",
+            "# MONEYPRINTER_V2 youtube yt-1 BEGIN\nnew youtube line\n# MONEYPRINTER_V2 youtube yt-1 END",
+        )
+
+        self.assertIn("MAILTO=\"\"", merged)
+        self.assertIn("15 9 * * * echo keep-me", merged)
+        self.assertIn("new youtube line", merged)
+        self.assertNotIn("old youtube line", merged)
+
+    def test_install_cron_job_treats_missing_crontab_as_empty(self) -> None:
+        missing = subprocess.CompletedProcess(
+            ["crontab", "-l"],
+            1,
+            stdout="",
+            stderr="no crontab for cris\n",
+        )
+        written = subprocess.CompletedProcess(
+            ["crontab", "-"],
+            0,
+            stdout="",
+            stderr="",
+        )
+
+        with patch.object(
+            self.main.subprocess,
+            "run",
+            side_effect=[missing, written],
+        ) as run_mock:
+            self.main.install_cron_job("youtube", "yt-1", 1)
+
+        self.assertEqual(run_mock.call_count, 2)
+        write_call = run_mock.call_args_list[1]
+        self.assertEqual(write_call.args[0], ["crontab", "-"])
+        self.assertIn("0 10 * * *", write_call.kwargs["input"])
+        self.assertIn("youtube yt-1", write_call.kwargs["input"])
+
+    def test_main_retries_failed_youtube_upload_with_same_video(self) -> None:
+        youtube_instance = Mock()
+        youtube_instance.upload_video.side_effect = [False, True]
+        youtube_instance.metadata = {"title": "A title"}
+        youtube_instance.video_path = "/tmp/generated-short.mp4"
+
+        youtube_module = types.ModuleType("classes.YouTube")
+        youtube_module.YouTube = Mock(return_value=youtube_instance)
+        tts_module = types.ModuleType("classes.Tts")
+        tts_module.TTS = Mock(return_value=Mock())
+
+        option_answers = iter(["1", "4"])
+
+        def fake_question(message: str, *_args, **_kwargs) -> str:
+            if "Select an account to start" in message:
+                return "1"
+            if "Select an option" in message:
+                return next(option_answers)
+            if "Do you want to upload this video to YouTube" in message:
+                return "yes"
+            if "Retry YouTube upload with the same video" in message:
+                return "yes"
+            raise AssertionError(f"Unexpected question prompt: {message}")
+
+        with patch.dict(
+            sys.modules,
+            {
+                "classes.YouTube": youtube_module,
+                "classes.Tts": tts_module,
+            },
+        ), patch("builtins.input", return_value="1"), patch.object(
+            self.main,
+            "get_accounts",
+            return_value=[
+                {
+                    "id": "yt-1",
+                    "nickname": "channel",
+                    "firefox_profile": "/tmp/firefox",
+                    "niche": "true crime",
+                    "language": "english",
+                }
+            ],
+        ), patch.object(
+            self.main,
+            "question",
+            side_effect=fake_question,
+        ), patch.object(
+            self.main,
+            "rem_temp_files",
+        ), patch.object(
+            self.main,
+            "maybe_crosspost_youtube_short",
+        ) as crosspost_mock:
+            self.main.main()
+
+        self.assertEqual(youtube_instance.upload_video.call_count, 2)
+        crosspost_mock.assert_called_once_with(
+            video_path="/tmp/generated-short.mp4",
+            title="A title",
+            interactive=True,
+        )
+
+    def test_main_stops_retrying_youtube_upload_when_user_declines(self) -> None:
+        youtube_instance = Mock()
+        youtube_instance.upload_video.return_value = False
+        youtube_instance.metadata = {"title": "A title"}
+        youtube_instance.video_path = "/tmp/generated-short.mp4"
+
+        youtube_module = types.ModuleType("classes.YouTube")
+        youtube_module.YouTube = Mock(return_value=youtube_instance)
+        tts_module = types.ModuleType("classes.Tts")
+        tts_module.TTS = Mock(return_value=Mock())
+
+        option_answers = iter(["1", "4"])
+
+        def fake_question(message: str, *_args, **_kwargs) -> str:
+            if "Select an account to start" in message:
+                return "1"
+            if "Select an option" in message:
+                return next(option_answers)
+            if "Do you want to upload this video to YouTube" in message:
+                return "yes"
+            if "Retry YouTube upload with the same video" in message:
+                return "no"
+            raise AssertionError(f"Unexpected question prompt: {message}")
+
+        with patch.dict(
+            sys.modules,
+            {
+                "classes.YouTube": youtube_module,
+                "classes.Tts": tts_module,
+            },
+        ), patch("builtins.input", return_value="1"), patch.object(
+            self.main,
+            "get_accounts",
+            return_value=[
+                {
+                    "id": "yt-1",
+                    "nickname": "channel",
+                    "firefox_profile": "/tmp/firefox",
+                    "niche": "true crime",
+                    "language": "english",
+                }
+            ],
+        ), patch.object(
+            self.main,
+            "question",
+            side_effect=fake_question,
+        ), patch.object(
+            self.main,
+            "rem_temp_files",
+        ), patch.object(
+            self.main,
+            "maybe_crosspost_youtube_short",
+        ) as crosspost_mock:
+            self.main.main()
+
+        youtube_instance.upload_video.assert_called_once_with()
+        crosspost_mock.assert_not_called()
 
 
 if __name__ == "__main__":

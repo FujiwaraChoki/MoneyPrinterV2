@@ -10,6 +10,8 @@ All your configurations will be in a file in the root directory, called `config.
 - `openrouter_api_key`: `string` - OpenRouter API key for text generation. Resolution order: `config.json` first, then `OPENROUTER_API_KEY`.
 - `openrouter_base_url`: `string` - Base URL for OpenRouter requests. Resolution order: `config.json` first, otherwise `https://openrouter.ai/api/v1`.
 - `openrouter_model`: `string` - OpenRouter model to use for text generation (for example `openai/gpt-4.1-mini`). Resolution order: `config.json` first, then `OPENROUTER_MODEL`.
+- `image_provider`: `string` - Image generation provider strategy. Options: `googleai_studio`, `openrouter_only`, `openrouter_then_googleai`.
+- `openrouter_image_models`: `string[]` - Ordered OpenRouter image models to try before falling back. If empty, OpenRouter image generation is skipped.
 - `twitter_language`: `string` - The language that will be used to generate & post tweets.
 - `nanobanana2_api_base_url`: `string` - Nano Banana 2 API base URL (default: `https://generativelanguage.googleapis.com/v1beta`).
 - `nanobanana2_api_key`: `string` - API key for Nano Banana 2 (Gemini image API). If empty, MPV2 falls back to environment variable `GEMINI_API_KEY`.
@@ -39,6 +41,10 @@ All your configurations will be in a file in the root directory, called `config.
 - `font`: `string` - The font that will be used to generate images. This should be a `.ttf` file in the `fonts/` directory.
 - `imagemagick_path`: `string` - The path to the ImageMagick binary. This is used by MoviePy to manipulate images. Install ImageMagick from [here](https://imagemagick.org/script/download.php) and set the path to the `magick.exe` on Windows, or on Linux/MacOS the path to `convert` (usually /usr/bin/convert).
 - `script_sentence_length`: `number` - The number of sentences in the generated video script (default: `4`).
+- `video_motion_style`: `string` - Motion treatment for rendered image clips. Options: `static`, `cinematic`. Invalid values fall back to `static`.
+- `video_zoom_intensity`: `number` - End zoom multiplier for cinematic mode. Invalid or too-small values fall back to `1.12`.
+- `video_pan_enabled`: `boolean` - Whether cinematic mode should add horizontal pan drift. Defaults to `true`.
+- `video_pan_intensity`: `number` - Horizontal drift amount as a fraction of frame width for cinematic mode. Invalid or non-positive values fall back to `0.03`.
 - `post_bridge`: `object`:
     - `enabled`: `boolean` - Enables Post Bridge cross-posting after successful YouTube uploads.
     - `api_key`: `string` - Your Post Bridge API key. If empty, MPV2 falls back to `POST_BRIDGE_API_KEY`.
@@ -56,6 +62,8 @@ All your configurations will be in a file in the root directory, called `config.
   "openrouter_api_key": "",
   "openrouter_base_url": "https://openrouter.ai/api/v1",
   "openrouter_model": "",
+  "image_provider": "googleai_studio",
+  "openrouter_image_models": [],
   "twitter_language": "English",
   "nanobanana2_api_base_url": "https://generativelanguage.googleapis.com/v1beta",
   "nanobanana2_api_key": "",
@@ -84,6 +92,10 @@ All your configurations will be in a file in the root directory, called `config.
   "font": "bold_font.ttf",
   "imagemagick_path": "Path to magick.exe or on linux/macOS just /usr/bin/convert",
   "script_sentence_length": 4,
+  "video_motion_style": "static",
+  "video_zoom_intensity": 1.12,
+  "video_pan_enabled": true,
+  "video_pan_intensity": 0.03,
   "post_bridge": {
     "enabled": false,
     "api_key": "",

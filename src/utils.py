@@ -1,5 +1,6 @@
 import os
 import random
+import shutil
 import zipfile
 import requests
 import platform
@@ -58,8 +59,14 @@ def rem_temp_files() -> None:
     files = os.listdir(mp_dir)
 
     for file in files:
-        if not file.endswith(".json"):
-            os.remove(os.path.join(mp_dir, file))
+        if file.endswith((".json", ".mp4")):
+            continue
+
+        path = os.path.join(mp_dir, file)
+        if os.path.isdir(path) and not os.path.islink(path):
+            shutil.rmtree(path)
+        else:
+            os.remove(path)
 
 
 def fetch_songs() -> None:

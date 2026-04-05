@@ -5,7 +5,11 @@ import time
 import os
 import requests
 import assemblyai as aai
+from difflib import SequenceMatcher
+from urllib.parse import urlparse
 
+from PIL import Image
+from cinematic_motion import render_motion_frame
 from utils import *
 from cache import *
 from .Tts import TTS
@@ -15,6 +19,8 @@ from status import *
 from uuid import uuid4
 from constants import *
 from typing import List
+from typing import Optional
+from typing import Set
 from moviepy.editor import *
 from termcolor import colored
 from selenium import webdriver
@@ -26,6 +32,75 @@ from selenium.webdriver.firefox.options import Options
 from moviepy.video.tools.subtitles import SubtitlesClip
 from webdriver_manager.firefox import GeckoDriverManager
 from datetime import datetime
+
+
+def _ensure_pillow_antialias_compatibility(image_module) -> None:
+    if hasattr(image_module, "ANTIALIAS"):
+        return
+
+    if hasattr(image_module, "Resampling"):
+        image_module.ANTIALIAS = image_module.Resampling.LANCZOS
+        return
+
+    image_module.ANTIALIAS = image_module.LANCZOS
+
+
+_ensure_pillow_antialias_compatibility(Image)
+
+
+GENERIC_STORY_TOKENS = {
+    "a",
+    "an",
+    "and",
+    "at",
+    "case",
+    "deaths",
+    "deadly",
+    "disappearance",
+    "disaster",
+    "documentary",
+    "event",
+    "explained",
+    "for",
+    "from",
+    "ghost",
+    "history",
+    "historical",
+    "how",
+    "incident",
+    "in",
+    "inside",
+    "made",
+    "makes",
+    "mysteries",
+    "mystery",
+    "no",
+    "of",
+    "on",
+    "passage",
+    "real",
+    "sense",
+    "ship",
+    "short",
+    "shorts",
+    "still",
+    "story",
+    "strange",
+    "that",
+    "the",
+    "this",
+    "to",
+    "tragedy",
+    "true",
+    "unexplained",
+    "unsolved",
+    "vanished",
+    "vanishing",
+    "what",
+    "why",
+    "with",
+}
+
 
 # Set ImageMagick Path
 change_settings({"IMAGEMAGICK_BINARY": get_imagemagick_path()})
@@ -137,16 +212,172 @@ class YouTube:
         Returns:
             topic (str): The generated topic.
         """
-        completion = self.generate_response(
-            f"Please generate a specific video idea that takes about the following topic: {self.niche}. Make it exactly one sentence. Only return the topic, nothing else."
+        existing_videos = self.get_videos()
+        avoid_story_references = self._get_story_references(existing_videos)
+        max_attempts = 5
+
+        for _ in range(max_attempts):
+            completion = self.generate_response(
+                self._build_topic_prompt(avoid_story_references)
+            )
+            completion = re.sub(r"\*", "", str(completion or "")).strip()
+
+            if not completion:
+                error("Failed to generate Topic.")
+                raise RuntimeError("Failed to generate Topic.")
+
+            similar_video = self._find_similar_video(completion, existing_videos)
+            if similar_video is not None:
+                if get_verbose():
+                    warning(
+                        "Generated topic is too similar to a previous video. Retrying..."
+                    )
+
+                reference = self._get_video_story_reference(similar_video)
+                if reference and reference not in avoid_story_references:
+                    avoid_story_references.append(reference)
+
+                if completion not in avoid_story_references:
+                    avoid_story_references.append(completion)
+                continue
+
+            self.subject = completion
+            return completion
+
+        raise RuntimeError(
+            "Generated topic remained too similar to previous videos after 5 attempts."
         )
 
-        if not completion:
-            error("Failed to generate Topic.")
+    def _build_topic_prompt(self, avoid_story_references: List[str]) -> str:
+        avoid_block = ""
+        if avoid_story_references:
+            bullet_list = "\n".join(
+                f"        - {story}" for story in avoid_story_references[:15]
+            )
+            avoid_block = f"""
 
-        self.subject = completion
+        Do not generate a topic that repeats or is substantially similar to these previously covered stories:
+{bullet_list}
 
-        return completion
+        Avoid the same core event, expedition, disaster, person, place, year, vessel, case, or incident even if you reword the title.
+        """
+
+        return f"""
+        Please generate a specific video idea about the following niche: {self.niche}.
+        The language is: {self.language}.
+        Make it exactly one sentence.
+        Prefer a fresh story that does not overlap with prior videos on this channel.{avoid_block}
+        Choose a real story with enough verified background to explain who, where, when, and why it matters.
+        Prefer a reported documentary story, not a vague teaser premise.
+        Favor cases with concrete people, places, dates, institutions, or records that can support a tightly reported short.
+        Only return the topic, nothing else.
+        """
+
+    def _normalize_story_text(self, text: str) -> str:
+        cleaned = re.sub(r"[^a-z0-9]+", " ", str(text or "").lower())
+        return re.sub(r"\s+", " ", cleaned).strip()
+
+    def _story_tokens(self, text: str) -> List[str]:
+        normalized = self._normalize_story_text(text)
+        return [token for token in normalized.split() if token]
+
+    def _story_distinctive_tokens(self, text: str) -> Set[str]:
+        return {
+            token
+            for token in self._story_tokens(text)
+            if token not in GENERIC_STORY_TOKENS and len(token) >= 4
+        }
+
+    def _story_years(self, text: str) -> Set[str]:
+        return {token for token in self._story_tokens(text) if re.fullmatch(r"\d{4}", token)}
+
+    def _story_similarity_score(self, candidate: str, comparison: str) -> float:
+        candidate_text = self._normalize_story_text(candidate)
+        comparison_text = self._normalize_story_text(comparison)
+
+        if not candidate_text or not comparison_text:
+            return 0.0
+
+        if candidate_text == comparison_text:
+            return 1.0
+
+        if candidate_text in comparison_text or comparison_text in candidate_text:
+            return 0.95
+
+        candidate_tokens = self._story_distinctive_tokens(candidate_text)
+        comparison_tokens = self._story_distinctive_tokens(comparison_text)
+        token_overlap = candidate_tokens & comparison_tokens
+        candidate_years = self._story_years(candidate_text)
+        comparison_years = self._story_years(comparison_text)
+
+        overlap_coverage = (
+            len(token_overlap) / len(candidate_tokens) if candidate_tokens else 0.0
+        )
+        token_union = candidate_tokens | comparison_tokens
+        jaccard = len(token_overlap) / len(token_union) if token_union else 0.0
+        sequence_ratio = SequenceMatcher(
+            None,
+            candidate_text,
+            comparison_text,
+        ).ratio()
+
+        score = max(
+            sequence_ratio * 0.55 + overlap_coverage * 0.35 + jaccard * 0.10,
+            overlap_coverage * 0.75 + jaccard * 0.25,
+        )
+
+        if token_overlap and any(len(token) >= 8 for token in token_overlap):
+            score += 0.10
+
+        if len(token_overlap) >= 2:
+            score += 0.10
+
+        if candidate_years and (candidate_years & comparison_years):
+            score += 0.05
+
+        return min(score, 1.0)
+
+    def _get_video_story_reference(self, video: dict) -> str:
+        return (
+            str(video.get("topic") or "").strip()
+            or str(video.get("title") or "").strip()
+            or str(video.get("description") or "").strip()[:160]
+        )
+
+    def _get_story_references(self, videos: List[dict]) -> List[str]:
+        references = []
+        for video in videos:
+            for reference in (
+                str(video.get("topic") or "").strip(),
+                str(video.get("title") or "").strip(),
+                str(video.get("description") or "").strip()[:160],
+            ):
+                if reference and reference not in references:
+                    references.append(reference)
+        return references
+
+    def _find_similar_video(self, candidate_topic: str, videos: List[dict]) -> Optional[dict]:
+        best_match = None
+        best_score = 0.0
+
+        for video in videos:
+            comparisons = [
+                video.get("topic", ""),
+                video.get("title", ""),
+                video.get("description", ""),
+                video.get("script", ""),
+            ]
+
+            for comparison in comparisons:
+                score = self._story_similarity_score(candidate_topic, comparison)
+                if score > best_score:
+                    best_score = score
+                    best_match = video
+
+        if best_score >= 0.72:
+            return best_match
+
+        return None
 
     def generate_script(self) -> str:
         """
@@ -157,40 +388,56 @@ class YouTube:
         """
         sentence_length = get_script_sentence_length()
         prompt = f"""
-        Generate a script for a video in {sentence_length} sentences, depending on the subject of the video.
+        Generate a script for a YouTube Short in exactly {sentence_length} sentences.
 
-        The script is to be returned as a string with the specified number of paragraphs.
+        The subject is: {self.subject}
+        The language is: {self.language}
+        The niche is: {self.niche}.
 
-        Here is an example of a string:
-        "This is an example string."
+        Write the script like a compact narrated story about a real event.
+        Write with the discipline of a reported newspaper feature and the narrative pull of a top true crime podcast.
+        Every sentence must add a new concrete detail or move the story forward.
+        Give enough background context for the viewer to understand why the story matters.
+        Clearly distinguish confirmed facts from rumor, legend, or theory.
+        Do not invent facts or present speculation as certainty.
+        Do not use filler, introductions, conclusions, listicles, or educational framing.
+        Do not say things like "welcome back", "in this video", or "did you know".
+        Do not use markdown, titles, bullet points, speaker labels, or quotation marks around the full response.
+        Return only the raw script.
+
+        Use this beat structure as closely as possible:
+        1. Hook with the strangest or most unsettling claim.
+        2. Ground the story with who, where, or when.
+        3. Explain the core anomaly, disaster, or impossible-seeming detail.
+        4. Escalate with consequence, discovery, or rising tension.
+        5. Deliver the main reveal, confirmed outcome, or historical consequence.
+        6. End with a final sting, unresolved mystery, or haunting closing fact.
+
+        If the sentence count is lower than 6, combine adjacent beats while keeping a hook, context, anomaly, consequence, and closing line.
+        If the sentence count is higher than 6, use extra sentences only for concrete escalation details.
 
         Do not under any circumstance reference this prompt in your response.
-
-        Get straight to the point, don't start with unnecessary things like, "welcome to this video".
-
-        Obviously, the script should be related to the subject of the video.
-        
-        YOU MUST NOT EXCEED THE {sentence_length} SENTENCES LIMIT. MAKE SURE THE {sentence_length} SENTENCES ARE SHORT.
-        YOU MUST NOT INCLUDE ANY TYPE OF MARKDOWN OR FORMATTING IN THE SCRIPT, NEVER USE A TITLE.
-        YOU MUST WRITE THE SCRIPT IN THE LANGUAGE SPECIFIED IN [LANGUAGE].
-        ONLY RETURN THE RAW CONTENT OF THE SCRIPT. DO NOT INCLUDE "VOICEOVER", "NARRATOR" OR SIMILAR INDICATORS OF WHAT SHOULD BE SPOKEN AT THE BEGINNING OF EACH PARAGRAPH OR LINE. YOU MUST NOT MENTION THE PROMPT, OR ANYTHING ABOUT THE SCRIPT ITSELF. ALSO, NEVER TALK ABOUT THE AMOUNT OF PARAGRAPHS OR LINES. JUST WRITE THE SCRIPT
-        
-        Subject: {self.subject}
-        Language: {self.language}
         """
-        completion = self.generate_response(prompt)
+        max_attempts = 3
+        completion = ""
 
-        # Apply regex to remove *
-        completion = re.sub(r"\*", "", completion)
+        for attempt in range(max_attempts):
+            completion = self.generate_response(prompt)
 
-        if not completion:
-            error("The generated script is empty.")
-            return
+            # Apply regex to remove *
+            completion = re.sub(r"\*", "", completion)
 
-        if len(completion) > 5000:
+            if not completion:
+                error("The generated script is empty.")
+                raise RuntimeError("The generated script is empty.")
+
+            if len(completion) <= 5000:
+                break
+
             if get_verbose():
                 warning("Generated Script is too long. Retrying...")
-            return self.generate_script()
+        else:
+            raise RuntimeError("Generated script remained too long after 3 attempts.")
 
         self.script = completion
 
@@ -220,6 +467,138 @@ class YouTube:
 
         return self.metadata
 
+    def _looks_like_placeholder_prompt(self, prompt: str) -> bool:
+        normalized = str(prompt).strip().lower()
+        return normalized.startswith("image prompt") or "..." in normalized
+
+    def _extract_image_prompt_candidates(self, completion: str) -> List[List[str]]:
+        candidates: List[List[str]] = []
+
+        def add_candidate(candidate) -> None:
+            if not isinstance(candidate, list):
+                return
+
+            normalized = [str(item).strip() for item in candidate if str(item).strip()]
+            if not normalized:
+                return
+
+            if all(isinstance(item, str) for item in normalized):
+                candidates.append(normalized)
+
+        try:
+            parsed_completion = json.loads(completion)
+            if isinstance(parsed_completion, dict):
+                add_candidate(parsed_completion.get("image_prompts", []))
+            else:
+                add_candidate(parsed_completion)
+        except Exception:
+            pass
+
+        for match in re.finditer(r"\[[\s\S]*?\]", completion):
+            snippet = match.group(0)
+            try:
+                parsed_candidate = json.loads(snippet)
+            except Exception:
+                continue
+
+            add_candidate(parsed_candidate)
+
+        return candidates
+
+    def _select_best_image_prompt_candidate(
+        self, candidates: List[List[str]], n_prompts: int
+    ) -> List[str]:
+        if not candidates:
+            return []
+
+        def score(candidate: List[str]) -> tuple[int, int, int]:
+            substantive_count = sum(
+                1 for item in candidate if not self._looks_like_placeholder_prompt(item)
+            )
+            total_length = sum(len(item) for item in candidate)
+            target_fit = -abs(len(candidate) - n_prompts)
+            return substantive_count, target_fit, total_length
+
+        best_candidate = max(candidates, key=score)
+        return best_candidate[:n_prompts]
+
+    def _sanitize_image_prompt(self, prompt: str) -> str:
+        cleaned_prompt = " ".join(str(prompt).split())
+        replacements = [
+            (
+                r"their faces contorted in sheer panic",
+                "distant figures with indistinct expressions",
+            ),
+            (
+                r"their faces contorted in panic",
+                "distant figures with indistinct expressions",
+            ),
+            (
+                r"faces? contorted in sheer panic",
+                "distant figures with indistinct expressions",
+            ),
+            (
+                r"faces? contorted in panic",
+                "distant figures with indistinct expressions",
+            ),
+            (r"desperately flee(?:ing)?", "move away"),
+            (r"\bflee(?:ing)?\b", "move away"),
+            (r"\bautopsy scene\b", "archival medical investigation setting"),
+            (
+                r"massive chest trauma with no external wounds",
+                "unexplained medical findings documented in records",
+            ),
+            (r"\binternal injuries?\b", "medical findings"),
+            (r"\bvictim\b", "historical subject"),
+            (r"\bbloodstained\b", "weathered"),
+            (r"\bbloody\b", "weathered"),
+            (r"\bcorpse(s)?\b", "aftermath"),
+            (r"\bdead bod(?:y|ies)\b", "aftermath"),
+            (r"\bchilling\b", "atmospheric"),
+            (r"\bgrim\b", "somber"),
+            (r"\bbrutal\b", "severe"),
+            (r"\bpanic\b", "urgency"),
+            (r"\bterrified\b", "alarmed"),
+            (r"\bscreaming\b", "tense"),
+            (r"\bwithout proper winter gear\b", "in limited winter clothing"),
+            (r"\bmove away their tent\b", "move away from their tent"),
+            (r"\bA atmospheric\b", "An atmospheric"),
+        ]
+
+        for pattern, replacement in replacements:
+            cleaned_prompt = re.sub(
+                pattern,
+                replacement,
+                cleaned_prompt,
+                flags=re.IGNORECASE,
+            )
+
+        cleaned_prompt = re.sub(r"\s+", " ", cleaned_prompt).strip(" ,.")
+        cleaned_prompt = cleaned_prompt.rstrip(".")
+
+        lowered = cleaned_prompt.lower()
+        documentary_style_suffix = (
+            " National Geographic-style documentary photography, authentic "
+            "photojournalism, professional documentary camera language, "
+            "specific shot type, camera angle, lens choice, natural or "
+            "practical lighting, grounded composition, realistic textures, "
+            "not stylized AI art."
+        )
+        safety_suffix = (
+            " Documentary-style historical scene, non-graphic, focus on setting, "
+            "atmosphere, weather, objects, and distant figures, no visible injury, "
+            "no gore, no dead bodies, no terrified facial close-ups."
+        )
+
+        if "national geographic-style documentary photography" not in lowered:
+            cleaned_prompt = f"{cleaned_prompt}.{documentary_style_suffix}"
+            lowered = cleaned_prompt.lower()
+
+        if "non-graphic" not in lowered:
+            cleaned_prompt = f"{cleaned_prompt}.{safety_suffix}"
+
+        return cleaned_prompt
+
     def generate_prompts(self) -> List[str]:
         """
         Generates AI Image Prompts based on the provided Video Script.
@@ -227,7 +606,7 @@ class YouTube:
         Returns:
             image_prompts (List[str]): Generated List of image prompts.
         """
-        n_prompts = len(self.script) / 3
+        n_prompts = max(1, min(10, int(len(self.script) / 3)))
 
         prompt = f"""
         Generate {n_prompts} Image Prompts for AI Image Generation,
@@ -240,8 +619,16 @@ class YouTube:
         Each search term should consist of a full sentence,
         always add the main subject of the video.
 
-        Be emotional and use interesting adjectives to make the
-        Image Prompt as detailed as possible.
+        Use vivid visual detail, but keep every prompt documentary-style
+        and non-graphic.
+        Make each prompt feel like National Geographic-style documentary photography
+        or a frame from real documentary footage, not stylized AI art.
+        Use professional camera language with a specific shot type,
+        camera angle, lens choice, and lighting or composition cues.
+        Focus on atmosphere, setting, weather, objects, distant figures,
+        authentic textures, practical lighting, and historically grounded detail.
+        Avoid gore, visible injury, dead bodies, medical trauma, panic close-ups,
+        screaming faces, or explicit suffering.
 
         YOU MUST ONLY RETURN THE JSON-ARRAY OF STRINGS.
         YOU MUST NOT RETURN ANYTHING ELSE.
@@ -263,30 +650,22 @@ class YouTube:
 
         image_prompts = []
 
-        if "image_prompts" in completion:
-            image_prompts = json.loads(completion)["image_prompts"]
-        else:
-            try:
-                image_prompts = json.loads(completion)
-                if get_verbose():
-                    info(f" => Generated Image Prompts: {image_prompts}")
-            except Exception:
-                if get_verbose():
-                    warning(
-                        "LLM returned an unformatted response. Attempting to clean..."
-                    )
+        candidates = self._extract_image_prompt_candidates(completion)
+        image_prompts = self._select_best_image_prompt_candidate(candidates, n_prompts)
 
-                # Get everything between [ and ], and turn it into a list
-                r = re.compile(r"\[.*\]")
-                image_prompts = r.findall(completion)
-                if len(image_prompts) == 0:
-                    if get_verbose():
-                        warning("Failed to generate Image Prompts. Retrying...")
-                    return self.generate_prompts()
+        if not image_prompts:
+            if get_verbose():
+                warning("LLM returned an unformatted response. Attempting to clean...")
+                warning("Failed to generate Image Prompts. Retrying...")
+            return self.generate_prompts()
+
+        if get_verbose():
+            info(f" => Generated Image Prompts: {image_prompts}")
 
         if len(image_prompts) > n_prompts:
             image_prompts = image_prompts[: int(n_prompts)]
 
+        image_prompts = [self._sanitize_image_prompt(item) for item in image_prompts]
         self.image_prompts = image_prompts
 
         success(f"Generated {len(image_prompts)} Image Prompts.")
@@ -376,9 +755,91 @@ class YouTube:
                 warning(f"Failed to generate image with Nano Banana 2 API: {str(e)}")
             return None
 
+    def _openrouter_modalities(self, model: str) -> list[str]:
+        image_and_text_prefixes = ("google/", "openai/", "openrouter/")
+        if str(model).startswith(image_and_text_prefixes):
+            return ["image", "text"]
+        return ["image"]
+
+    def _persist_openrouter_image(self, image_url: str, model: str) -> str:
+        if image_url.startswith("data:image/"):
+            _, encoded = image_url.split(",", 1)
+            image_bytes = base64.b64decode(encoded)
+            return self._persist_image(image_bytes, f"OpenRouter ({model})")
+
+        parsed = urlparse(image_url)
+        if parsed.scheme in {"http", "https"}:
+            response = requests.get(image_url, timeout=300)
+            response.raise_for_status()
+            return self._persist_image(response.content, f"OpenRouter ({model})")
+
+        raise ValueError(f"Unsupported OpenRouter image URL format: {image_url[:64]}")
+
+    def generate_image_openrouter(self, prompt: str) -> str:
+        api_key = get_openrouter_api_key()
+        if not api_key:
+            if get_verbose():
+                warning("openrouter_api_key is not configured for image generation.")
+            return None
+
+        models = get_openrouter_image_models()
+        if not models:
+            if get_verbose():
+                warning("No OpenRouter image models configured. Falling back to Google AI Studio.")
+            return None
+
+        base_url = get_openrouter_base_url().rstrip("/")
+        aspect_ratio = get_nanobanana2_aspect_ratio()
+
+        for model in models:
+            print(f"Generating Image using OpenRouter ({model}): {prompt}")
+
+            payload = {
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "modalities": self._openrouter_modalities(model),
+                "image_config": {"aspect_ratio": aspect_ratio},
+                "stream": False,
+            }
+
+            try:
+                response = requests.post(
+                    f"{base_url}/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json=payload,
+                    timeout=300,
+                )
+                response.raise_for_status()
+                body = response.json()
+
+                choices = body.get("choices", [])
+                if not choices:
+                    if get_verbose():
+                        warning(f"OpenRouter returned no choices for model {model}. Response: {body}")
+                    continue
+
+                message = choices[0].get("message", {})
+                images = message.get("images", [])
+                for image in images:
+                    image_payload = image.get("image_url") or image.get("imageUrl") or {}
+                    image_url = image_payload.get("url")
+                    if image_url:
+                        return self._persist_openrouter_image(image_url, model)
+
+                if get_verbose():
+                    warning(f"OpenRouter model {model} did not return an image payload. Response: {body}")
+            except Exception as e:
+                if get_verbose():
+                    warning(f"Failed to generate image with OpenRouter model {model}: {str(e)}")
+
+        return None
+
     def generate_image(self, prompt: str) -> str:
         """
-        Generates an AI Image based on the given prompt using Nano Banana 2.
+        Generates an AI Image based on the configured provider.
 
         Args:
             prompt (str): Reference for image generation
@@ -386,6 +847,18 @@ class YouTube:
         Returns:
             path (str): The path to the generated image.
         """
+        prompt = self._sanitize_image_prompt(prompt)
+        provider = get_image_provider()
+
+        if provider == "openrouter_then_googleai":
+            image_path = self.generate_image_openrouter(prompt)
+            if image_path is not None:
+                return image_path
+            return self.generate_image_nanobanana2(prompt)
+
+        if provider == "openrouter_only":
+            return self.generate_image_openrouter(prompt)
+
         return self.generate_image_nanobanana2(prompt)
 
     def generate_script_to_speech(self, tts_instance: TTS) -> str:
@@ -422,9 +895,6 @@ class YouTube:
         Returns:
             None
         """
-        videos = self.get_videos()
-        videos.append(video)
-
         cache = get_youtube_cache_path()
 
         with open(cache, "r") as file:
@@ -434,7 +904,29 @@ class YouTube:
             accounts = previous_json["accounts"]
             for account in accounts:
                 if account["id"] == self._account_uuid:
-                    account["videos"].append(video)
+                    existing_videos = account.get("videos", [])
+                    replacement_index = None
+
+                    video_path = video.get("path")
+                    video_url = video.get("url")
+
+                    for index, existing_video in enumerate(existing_videos):
+                        if video_path and existing_video.get("path") == video_path:
+                            replacement_index = index
+                            break
+                        if video_url and existing_video.get("url") == video_url:
+                            replacement_index = index
+                            break
+
+                    if replacement_index is None:
+                        existing_videos.append(video)
+                    else:
+                        existing_videos[replacement_index] = {
+                            **existing_videos[replacement_index],
+                            **video,
+                        }
+
+                    account["videos"] = existing_videos
 
             # Commit changes
             with open(cache, "w") as f:
@@ -548,6 +1040,58 @@ class YouTube:
 
         return srt_path
 
+    def _build_base_image_clip(self, image_path: str, duration: float):
+        clip = ImageClip(image_path)
+        clip = clip.set_duration(duration)
+        clip = clip.set_fps(30)
+
+        if round((clip.w / clip.h), 4) < 0.5625:
+            if get_verbose():
+                info(f" => Resizing Image: {image_path} to 1080x1920")
+            clip = crop(
+                clip,
+                width=clip.w,
+                height=round(clip.w / 0.5625),
+                x_center=clip.w / 2,
+                y_center=clip.h / 2,
+            )
+        else:
+            if get_verbose():
+                info(f" => Resizing Image: {image_path} to 1920x1080")
+            clip = crop(
+                clip,
+                width=round(0.5625 * clip.h),
+                height=clip.h,
+                x_center=clip.w / 2,
+                y_center=clip.h / 2,
+            )
+
+        return clip.resize((1080, 1920))
+
+    def _build_motion_clip(self, image_path: str, duration: float, index: int):
+        clip = self._build_base_image_clip(image_path, duration)
+
+        if get_video_motion_style() != "cinematic":
+            return clip
+
+        zoom_intensity = get_video_zoom_intensity()
+        pan_enabled = get_video_pan_enabled()
+        pan_intensity = get_video_pan_intensity()
+
+        motion_clip = clip.fl(
+            lambda gf, t: render_motion_frame(
+                gf(t),
+                t=t,
+                duration=duration,
+                index=index,
+                pan_enabled=pan_enabled,
+                pan_intensity=pan_intensity,
+                zoom_intensity=zoom_intensity,
+            ),
+            apply_to=["mask"],
+        )
+        return motion_clip.set_duration(duration).set_fps(30)
+
     def combine(self) -> str:
         """
         Combines everything into the final video.
@@ -579,38 +1123,8 @@ class YouTube:
         tot_dur = 0
         # Add downloaded clips over and over until the duration of the audio (max_duration) has been reached
         while tot_dur < max_duration:
-            for image_path in self.images:
-                clip = ImageClip(image_path)
-                clip.duration = req_dur
-                clip = clip.set_fps(30)
-
-                # Not all images are same size,
-                # so we need to resize them
-                if round((clip.w / clip.h), 4) < 0.5625:
-                    if get_verbose():
-                        info(f" => Resizing Image: {image_path} to 1080x1920")
-                    clip = crop(
-                        clip,
-                        width=clip.w,
-                        height=round(clip.w / 0.5625),
-                        x_center=clip.w / 2,
-                        y_center=clip.h / 2,
-                    )
-                else:
-                    if get_verbose():
-                        info(f" => Resizing Image: {image_path} to 1920x1080")
-                    clip = crop(
-                        clip,
-                        width=round(0.5625 * clip.h),
-                        height=clip.h,
-                        x_center=clip.w / 2,
-                        y_center=clip.h / 2,
-                    )
-                clip = clip.resize((1080, 1920))
-
-                # FX (Fade In)
-                # clip = clip.fadein(2)
-
+            for index, image_path in enumerate(self.images):
+                clip = self._build_motion_clip(image_path, req_dur, index)
                 clips.append(clip)
                 tot_dur += clip.duration
 
@@ -625,7 +1139,7 @@ class YouTube:
             subtitles = SubtitlesClip(subtitles_path, generator)
             subtitles.set_pos(("center", "center"))
         except Exception as e:
-            warning(f"Failed to generate subtitles, continuing without subtitles: {e}")
+            raise RuntimeError(f"Failed to generate subtitles: {e}") from e
 
         random_song_clip = AudioFileClip(random_song).set_fps(44100)
 
@@ -639,7 +1153,7 @@ class YouTube:
         if subtitles is not None:
             final_clip = CompositeVideoClip([final_clip, subtitles])
 
-        final_clip.write_videofile(combined_image_path, threads=threads)
+        final_clip.write_videofile(combined_image_path, threads=threads, audio_codec="aac")
 
         success(f'Wrote Video to "{combined_image_path}"')
 
@@ -665,10 +1179,10 @@ class YouTube:
         self.generate_metadata()
 
         # Generate the Image Prompts
-        self.generate_prompts()
+        image_prompts = self.generate_prompts()
 
         # Generate the Images
-        for prompt in self.image_prompts:
+        for prompt in image_prompts:
             self.generate_image(prompt)
 
         # Generate the TTS
@@ -681,6 +1195,18 @@ class YouTube:
             info(f" => Generated Video: {path}")
 
         self.video_path = os.path.abspath(path)
+
+        self.add_video(
+            {
+                "topic": self.subject,
+                "script": self.script,
+                "title": self.metadata["title"],
+                "description": self.metadata["description"],
+                "path": self.video_path,
+                "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "uploaded": False,
+            }
+        )
 
         return path
 
@@ -699,6 +1225,72 @@ class YouTube:
 
         return channel_id
 
+    def _get_upload_metadata_textboxes(
+        self,
+        max_attempts: int = 10,
+        delay_seconds: float = 1.0,
+    ):
+        """
+        Waits for the YouTube Studio upload title and description textboxes.
+
+        Returns:
+            tuple: (title_element, description_element)
+        """
+        last_count = 0
+
+        for _ in range(max_attempts):
+            textboxes = self.browser.find_elements(By.ID, YOUTUBE_TEXTBOX_ID)
+            last_count = len(textboxes)
+
+            if last_count >= 2:
+                return textboxes[0], textboxes[1]
+
+            time.sleep(delay_seconds)
+
+        raise RuntimeError(
+            f"Could not find YouTube metadata textboxes after {max_attempts} attempts; found {last_count}."
+        )
+
+    def _set_upload_metadata_text(
+        self,
+        text_element,
+        value: str,
+        focus_delay_seconds: float = 0.5,
+    ) -> None:
+        self.browser.execute_script(
+            """
+            const element = arguments[0];
+            const value = arguments[1];
+            element.scrollIntoView({block: "center", inline: "nearest"});
+            element.focus();
+            element.textContent = value;
+            element.innerText = value;
+            element.dispatchEvent(new InputEvent("input", {
+                bubbles: true,
+                inputType: "insertText",
+                data: value,
+            }));
+            element.dispatchEvent(new Event("change", { bubbles: true }));
+            """,
+            text_element,
+            value,
+        )
+        time.sleep(focus_delay_seconds)
+
+        applied_value = self.browser.execute_script(
+            """
+            return (arguments[0].innerText || arguments[0].textContent || "").trim();
+            """,
+            text_element,
+        )
+
+        normalized_expected = re.sub(r"\s+", " ", str(value or "")).strip()
+        normalized_applied = re.sub(r"\s+", " ", str(applied_value or "")).strip()
+        if normalized_expected != normalized_applied:
+            raise RuntimeError(
+                "Failed to apply YouTube metadata text; Studio kept a different value."
+            )
+
     def upload_video(self) -> bool:
         """
         Uploads the video to YouTube.
@@ -706,6 +1298,7 @@ class YouTube:
         Returns:
             success (bool): Whether the upload was successful or not.
         """
+        current_step = "initialize channel context"
         try:
             self.get_channel_id()
 
@@ -713,9 +1306,11 @@ class YouTube:
             verbose = get_verbose()
 
             # Go to youtube.com/upload
+            current_step = "open YouTube upload page"
             driver.get("https://www.youtube.com/upload")
 
             # Set video file
+            current_step = "attach local video file"
             FILE_PICKER_TAG = "ytcp-uploads-file-picker"
             file_picker = driver.find_element(By.TAG_NAME, FILE_PICKER_TAG)
             INPUT_TAG = "input"
@@ -726,28 +1321,30 @@ class YouTube:
             time.sleep(5)
 
             # Set title
-            textboxes = driver.find_elements(By.ID, YOUTUBE_TEXTBOX_ID)
-
-            title_el = textboxes[0]
-            description_el = textboxes[-1]
+            current_step = "load YouTube metadata textboxes"
+            title_el, description_el = self._get_upload_metadata_textboxes()
 
             if verbose:
                 info("\t=> Setting title...")
 
-            title_el.click()
-            time.sleep(1)
-            title_el.clear()
-            title_el.send_keys(self.metadata["title"])
+            current_step = "set video title"
+            self._set_upload_metadata_text(
+                title_el,
+                self.metadata["title"],
+                focus_delay_seconds=1,
+            )
 
             if verbose:
                 info("\t=> Setting description...")
 
             # Set description
+            current_step = "set video description"
             time.sleep(10)
-            description_el.click()
-            time.sleep(0.5)
-            description_el.clear()
-            description_el.send_keys(self.metadata["description"])
+            self._set_upload_metadata_text(
+                description_el,
+                self.metadata["description"],
+                focus_delay_seconds=0.5,
+            )
 
             time.sleep(0.5)
 
@@ -755,6 +1352,7 @@ class YouTube:
             if verbose:
                 info("\t=> Setting `made for kids` option...")
 
+            current_step = "set audience selection"
             is_for_kids_checkbox = driver.find_element(
                 By.NAME, YOUTUBE_MADE_FOR_KIDS_NAME
             )
@@ -773,6 +1371,7 @@ class YouTube:
             if verbose:
                 info("\t=> Clicking next...")
 
+            current_step = "advance upload wizard"
             next_button = driver.find_element(By.ID, YOUTUBE_NEXT_BUTTON_ID)
             next_button.click()
 
@@ -795,6 +1394,7 @@ class YouTube:
             if verbose:
                 info("\t=> Setting as unlisted...")
 
+            current_step = "set visibility to unlisted"
             radio_button = driver.find_elements(By.XPATH, YOUTUBE_RADIO_BUTTON_XPATH)
             radio_button[2].click()
 
@@ -802,6 +1402,7 @@ class YouTube:
                 info("\t=> Clicking done button...")
 
             # Click done button
+            current_step = "finalize upload"
             done_button = driver.find_element(By.ID, YOUTUBE_DONE_BUTTON_ID)
             done_button.click()
 
@@ -813,6 +1414,7 @@ class YouTube:
                 info("\t=> Getting video URL...")
 
             # Get the latest uploaded video URL
+            current_step = "fetch uploaded short URL"
             driver.get(
                 f"https://studio.youtube.com/channel/{self.channel_id}/videos/short"
             )
@@ -836,10 +1438,14 @@ class YouTube:
             # Add video to cache
             self.add_video(
                 {
+                    "topic": self.subject,
+                    "script": self.script,
                     "title": self.metadata["title"],
                     "description": self.metadata["description"],
+                    "path": self.video_path,
                     "url": url,
                     "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "uploaded": True,
                 }
             )
 
@@ -847,8 +1453,12 @@ class YouTube:
             driver.quit()
 
             return True
-        except:
-            self.browser.quit()
+        except Exception as e:
+            error(f"Failed to upload YouTube video during step '{current_step}': {e}")
+            try:
+                self.browser.quit()
+            except Exception:
+                pass
             return False
 
     def get_videos(self) -> List[dict]:
