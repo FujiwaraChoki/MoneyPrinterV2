@@ -15,8 +15,17 @@ if SRC_DIR not in sys.path:
 import etsy.io as etsy_io
 from etsy.render import PdfRenderer
 
+try:
+    from etsy.render_weasyprint import WeasyPrintRenderer as _WeasyPrintRenderer
+    _WEASYPRINT_AVAILABLE = True
+except ImportError:
+    _WeasyPrintRenderer = None  # type: ignore
+    _WEASYPRINT_AVAILABLE = False
+
 
 class EtsyRenderTests(unittest.TestCase):
+    renderer_class = PdfRenderer
+
     def setUp(self) -> None:
         self.base_dir = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, self.base_dir, True)
@@ -113,7 +122,7 @@ class EtsyRenderTests(unittest.TestCase):
         return run_dir
 
     def test_renderer_writes_pdf_and_render_manifest(self) -> None:
-        renderer = PdfRenderer()
+        renderer = self.renderer_class()
         run_dir = self.make_run_dir_with_product_spec()
 
         manifest_path = renderer.run(run_dir)
@@ -130,7 +139,7 @@ class EtsyRenderTests(unittest.TestCase):
             self.assertTrue(os.path.exists(os.path.join(run_dir, relative_path)))
 
     def test_renderer_stores_registered_fonts_attribute(self) -> None:
-        renderer = PdfRenderer()
+        renderer = self.renderer_class()
 
         self.assertTrue(hasattr(renderer, "_registered_fonts"))
         self.assertIsInstance(renderer._registered_fonts, (set, frozenset))
@@ -138,7 +147,7 @@ class EtsyRenderTests(unittest.TestCase):
             self.assertIn("Georgia-Bold", renderer._registered_fonts)
 
     def test_renderer_writes_non_placeholder_pdf_bytes(self) -> None:
-        renderer = PdfRenderer()
+        renderer = self.renderer_class()
         run_dir = self.make_run_dir_with_product_spec()
 
         renderer.run(run_dir)
@@ -152,7 +161,7 @@ class EtsyRenderTests(unittest.TestCase):
         self.assertIn(b"/Type /Page", pdf_bytes)
 
     def test_renderer_writes_multiple_page_preview_images(self) -> None:
-        renderer = PdfRenderer()
+        renderer = self.renderer_class()
         run_dir = self.make_run_dir_with_product_spec()
 
         manifest_path = renderer.run(run_dir)
@@ -177,3 +186,35 @@ class EtsyRenderTests(unittest.TestCase):
             "Lato-Bold.ttf",
         ]:
             self.assertTrue((fonts_dir / name).exists(), f"Missing font: {name}")
+
+
+@unittest.skipUnless(_WEASYPRINT_AVAILABLE, "render_weasyprint not yet implemented")
+class WeasyPrintRenderTests(EtsyRenderTests):
+    """Run the full EtsyRenderTests suite with WeasyPrintRenderer."""
+
+    renderer_class = _WeasyPrintRenderer  # type: ignore
+
+    def test_renderer_stores_registered_fonts_attribute(self) -> None:
+        # WeasyPrintRenderer uses bundled fonts, not registered system fonts
+        renderer = self.renderer_class()
+        self.assertTrue(hasattr(renderer, "_registered_fonts"))
+        self.assertIsInstance(renderer._registered_fonts, (set, frozenset))
+
+    def test_renderer_writes_non_placeholder_pdf_bytes(self) -> None:
+        # WeasyPrint serializes /Type/Page without a space; override to accept both forms.
+        renderer = self.renderer_class()
+        run_dir = self.make_run_dir_with_product_spec()
+
+        renderer.run(run_dir)
+
+        pdf_path = os.path.join(run_dir, "product", "budget-planner.pdf")
+        with open(pdf_path, "rb") as handle:
+            pdf_bytes = handle.read()
+
+        self.assertGreater(len(pdf_bytes), 500)
+        self.assertIn(b"startxref", pdf_bytes)
+        # WeasyPrint writes /Type/Page (no space); ReportLab writes /Type /Page
+        self.assertTrue(
+            b"/Type/Page" in pdf_bytes or b"/Type /Page" in pdf_bytes,
+            "Expected /Type/Page or /Type /Page in PDF bytes",
+        )
