@@ -17,6 +17,6 @@ faster-whisper
 srt_equalizer
 undetected_chromedriver
 platformdirs
-weasyprint>=61,<62
+weasyprint>=61
 Jinja2>=3.1,<4
 pymupdf>=1.24,<2
