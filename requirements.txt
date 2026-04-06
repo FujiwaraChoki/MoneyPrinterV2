@@ -10,9 +10,13 @@ selenium
 art
 moviepy<2
 Pillow>=10.0.0
+reportlab>=4,<5
 yagmail
 assemblyai
 faster-whisper
 srt_equalizer
 undetected_chromedriver
 platformdirs
+weasyprint>=61,<62
+Jinja2>=3.1,<4
+pymupdf>=1.24,<2
