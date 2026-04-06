@@ -3,6 +3,19 @@
 from __future__ import annotations
 
 import os
+import sys
+
+# macOS: WeasyPrint's cffi bindings look for 'libgobject-2.0-0' at dlopen() time.
+# Homebrew installs it at /opt/homebrew/lib/libgobject-2.0.0.dylib.
+# Setting DYLD_LIBRARY_PATH before the import lets cffi find it regardless of
+# whether the process was started with it in the environment (e.g. from main.py).
+if sys.platform == "darwin":
+    _homebrew_lib = "/opt/homebrew/lib"
+    _current = os.environ.get("DYLD_LIBRARY_PATH", "")
+    if _homebrew_lib not in _current.split(":"):
+        os.environ["DYLD_LIBRARY_PATH"] = (
+            f"{_homebrew_lib}:{_current}" if _current else _homebrew_lib
+        )
 
 import fitz  # PyMuPDF
 import jinja2
