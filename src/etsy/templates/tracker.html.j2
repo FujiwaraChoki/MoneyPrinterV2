@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><style>{{ css }}
+.tracker-table { width: 100%; border-collapse: collapse; margin-bottom: 0.12in; }
+.tracker-header th { font-family: var(--heading-font); font-weight: 700; font-size: 9.5pt; color: var(--primary); padding: 4pt 2pt; text-align: center; border-bottom: 1.5pt solid var(--secondary); }
+.tracker-header th.habit-col { text-align: left; padding-left: 6pt; }
+.tracker-table tbody tr:nth-child(even) td { background: #F8FAFC; }
+.habit-name-cell { font-family: var(--body-font); font-size: 9.5pt; color: #1E293B; padding: 6pt 6pt; border-bottom: 0.5pt solid #E2E8F0; font-weight: 700; }
+.circle-cell { text-align: center; padding: 6pt 2pt; border-bottom: 0.5pt solid #E2E8F0; }
+.tracker-circle { display: inline-block; width: 18pt; height: 18pt; border-radius: 50%; border: 1.2pt solid var(--secondary); }
+.count-cell { border: 1pt solid var(--secondary); border-radius: 4pt; width: 28pt; text-align: center; padding: 4pt 2pt; }
+.intention-box { background: white; border: 1pt solid var(--secondary); border-radius: 8pt; padding: 0.08in 0.14in; }
+.intention-title { font-family: var(--heading-font); font-weight: 700; font-size: 8.5pt; color: var(--primary); margin-bottom: 6pt; }
+</style></head>
+<body>
+<div class="page">
+  <div class="header-bar">
+    <span class="theme-label">{{ title_theme }}</span>
+    <span class="page-title">{{ title }}</span>
+    <span class="page-num">{{ page_number }} / {{ page_count }}</span>
+  </div>
+  <div class="sub-header">
+    <span class="badge">{{ page_type }}</span>
+    <span class="section-name">{{ section_name }}</span>
+  </div>
+  <div class="content-zone">
+    <table class="tracker-table">
+      <thead class="tracker-header">
+        <tr>
+          <th class="habit-col">HABIT</th>
+          {% for day in ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"] %}
+          <th>{{ day }}</th>
+          {% endfor %}
+          <th>#</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for i in range(5) %}
+        <tr>
+          <td class="habit-name-cell">{% if i < body|length %}{{ body[i] }}{% else %}Habit {{ i + 1 }}{% endif %}</td>
+          {% for d in range(7) %}
+          <td class="circle-cell"><div class="tracker-circle"></div></td>
+          {% endfor %}
+          <td class="circle-cell"><div style="width:26pt;height:22pt;border:1pt solid var(--secondary);border-radius:4pt;display:inline-block;"></div></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="intention-box">
+      <div class="intention-title">WEEKLY INTENTION:</div>
+      {% for j in range(2) %}
+      <div class="writing-line"></div>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="footer">
+    <div class="footer-row">
+      <span class="footer-left">Instant digital download for personal planning use</span>
+      <span class="footer-right">MoneyPrinter+ Generator</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

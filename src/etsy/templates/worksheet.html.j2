@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><style>{{ css }}
+.content-layout { display: flex; flex-direction: column; gap: 0.1in; height: 7.4in; }
+.zone1 { flex: 42; }
+.zone2 { flex: 37; }
+.zone3 { flex: 21; background: var(--primary); border-radius: 10pt; padding: 0.1in 0.16in; }
+.zone3-title { font-family: var(--heading-font); font-weight: 700; font-size: 9.5pt; color: white; margin-bottom: 6pt; }
+.zone3-line { border-bottom: 0.8pt solid rgba(255,255,255,0.6); min-height: 16pt; margin-bottom: 4pt; }
+.num-label { font-family: var(--heading-font); font-weight: 700; font-size: 10.5pt; color: var(--primary); width: 14pt; flex-shrink: 0; }
+</style></head>
+<body>
+<div class="page">
+  <div class="header-bar">
+    <span class="theme-label">{{ title_theme }}</span>
+    <span class="page-title">{{ title }}</span>
+    <span class="page-num">{{ page_number }} / {{ page_count }}</span>
+  </div>
+  <div class="sub-header">
+    <span class="badge">{{ page_type }}</span>
+    <span class="section-name">{{ section_name }}</span>
+  </div>
+  <div class="content-zone">
+    <div class="content-layout">
+      <div class="zone1 panel">
+        <div class="panel-title">TODAY'S TOP PRIORITIES</div>
+        {% for i in range(5) %}
+        <div class="checkbox-row">
+          <span class="num-label">{{ i + 1 }}</span>
+          <div class="checkbox-circle"></div>
+          <div style="flex:1;">
+            {% if i < body|length %}<div class="hint-text">{{ body[i] }}</div>{% endif %}
+            <div class="writing-line"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="zone2 panel">
+        <div class="panel-title">NOTES  &amp;  BRAIN DUMP</div>
+        {% for j in range(5) %}
+        <div class="writing-line"></div>
+        {% endfor %}
+      </div>
+      <div class="zone3">
+        <div class="zone3-title">TODAY'S WIN  ★</div>
+        <div class="zone3-line"></div>
+        <div class="zone3-line"></div>
+      </div>
+    </div>
+  </div>
+  <div class="footer">
+    <div class="footer-row">
+      <span class="footer-left">Instant digital download for personal planning use</span>
+      <span class="footer-right">MoneyPrinter+ Generator</span>
+    </div>
+    <div class="footer-row">
+      <span class="footer-left">Designed for {{ audience }}</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

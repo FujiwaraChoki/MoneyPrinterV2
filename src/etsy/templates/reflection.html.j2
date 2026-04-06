@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><style>{{ css }}
+.reflection-layout { display: flex; flex-direction: column; gap: 0.1in; height: 7.5in; }
+.reflection-box { flex: 1; background: white; border: 1pt solid var(--secondary); border-radius: 10pt; padding: 0.1in 0.16in; }
+.question-title { font-family: var(--heading-font); font-weight: 700; font-size: 10pt; color: var(--primary); margin-bottom: 8pt; }
+</style></head>
+<body>
+<div class="page">
+  <div class="header-bar">
+    <span class="theme-label">{{ title_theme }}</span>
+    <span class="page-title">{{ title }}</span>
+    <span class="page-num">{{ page_number }} / {{ page_count }}</span>
+  </div>
+  <div class="sub-header">
+    <span class="badge">{{ page_type }}</span>
+    <span class="section-name">{{ section_name }}</span>
+  </div>
+  <div class="content-zone">
+    <div class="reflection-layout">
+      {% for i in range(3) %}
+      <div class="reflection-box">
+        <div class="question-title">Q{{ i + 1 }}.  {% if i < body|length %}{{ body[i] }}{% else %}Reflection question {{ i + 1 }}{% endif %}</div>
+        {% for j in range(4) %}
+        <div class="writing-line"></div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="footer">
+    <div class="footer-row">
+      <span class="footer-left">Instant digital download for personal planning use</span>
+      <span class="footer-right">MoneyPrinter+ Generator</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

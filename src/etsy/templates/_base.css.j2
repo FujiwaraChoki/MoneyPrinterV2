@@ -1,0 +1,182 @@
+@font-face {
+    font-family: 'Playfair Display';
+    font-weight: 400;
+    src: url('file://{{ fonts_dir }}/PlayfairDisplay-Regular.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Playfair Display';
+    font-weight: 700;
+    src: url('file://{{ fonts_dir }}/PlayfairDisplay-Bold.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Lato';
+    font-weight: 400;
+    src: url('file://{{ fonts_dir }}/Lato-Regular.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Lato';
+    font-weight: 700;
+    src: url('file://{{ fonts_dir }}/Lato-Bold.ttf') format('truetype');
+}
+
+:root {
+    --primary: {{ primary }};
+    --secondary: {{ secondary }};
+    --background: {{ background }};
+    --heading-font: '{{ heading_font }}', 'Playfair Display', Georgia, serif;
+    --body-font: '{{ body_font }}', 'Lato', Helvetica, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    background: var(--background);
+    font-family: var(--body-font);
+    font-size: 11pt;
+    color: #1E293B;
+}
+
+.page {
+    width: 8.5in;
+    min-height: 11in;
+    padding: 0;
+    background: var(--background);
+    position: relative;
+    overflow: hidden;
+}
+
+.header-bar {
+    background: var(--primary);
+    color: white;
+    padding: 0.55in 0.55in 0.1in 0.55in;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    min-height: 0.95in;
+}
+
+.header-bar .theme-label {
+    font-family: var(--body-font);
+    font-size: 9pt;
+    color: rgba(255,255,255,0.85);
+}
+
+.header-bar .page-title {
+    font-family: var(--heading-font);
+    font-weight: 700;
+    font-size: 18pt;
+    color: white;
+    text-align: center;
+    flex: 1;
+    padding: 0 1em;
+}
+
+.header-bar .page-num {
+    font-family: var(--body-font);
+    font-size: 9pt;
+    color: rgba(255,255,255,0.85);
+    white-space: nowrap;
+}
+
+.sub-header {
+    background: var(--secondary);
+    padding: 0.06in 0.55in;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 0.38in;
+}
+
+.sub-header .badge {
+    background: var(--primary);
+    color: white;
+    font-family: var(--body-font);
+    font-size: 8pt;
+    font-weight: 700;
+    padding: 3pt 8pt;
+    border-radius: 5pt;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.sub-header .section-name {
+    font-family: var(--body-font);
+    font-size: 9.5pt;
+    color: #334155;
+}
+
+.content-zone {
+    margin: 0.12in 0.55in 0.12in 0.55in;
+}
+
+.footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0 0.55in 0.3in 0.55in;
+    border-top: 1.5pt solid var(--secondary);
+}
+
+.footer .footer-left {
+    font-family: var(--body-font);
+    font-size: 7.5pt;
+    color: #94A3B8;
+}
+
+.footer .footer-right {
+    font-family: var(--body-font);
+    font-size: 7.5pt;
+    color: #94A3B8;
+    text-align: right;
+}
+
+.footer-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 3pt;
+}
+
+.panel {
+    background: white;
+    border: 1.2pt solid var(--secondary);
+    border-radius: 10pt;
+    padding: 0.1in 0.16in;
+    margin-bottom: 0.1in;
+}
+
+.panel-title {
+    font-family: var(--heading-font);
+    font-weight: 700;
+    font-size: 10pt;
+    color: var(--primary);
+    margin-bottom: 0.08in;
+    letter-spacing: 0.04em;
+}
+
+.writing-line {
+    border-bottom: 0.8pt solid #E2E8F0;
+    min-height: 18pt;
+    margin-bottom: 4pt;
+}
+
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8pt;
+    margin-bottom: 8pt;
+}
+
+.checkbox-circle {
+    width: 12pt;
+    height: 12pt;
+    border-radius: 50%;
+    border: 1.2pt solid var(--secondary);
+    flex-shrink: 0;
+}
+
+.hint-text {
+    font-family: var(--body-font);
+    font-size: 8.5pt;
+    color: #64748B;
+}
