@@ -1,54 +1,153 @@
 <!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><style>{{ css }}
-.cover-page { width: 8.5in; min-height: 11in; background: var(--background); position: relative; overflow: hidden; }
-.hero { background: var(--primary); min-height: 5.1in; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0.6in 0.6in 0.25in 0.6in; }
-.cover-title { font-family: var(--heading-font); font-weight: 700; font-size: 32pt; color: white; text-align: center; line-height: 1.2; }
-.audience-tagline { font-family: var(--body-font); font-size: 13pt; color: #D6E8F6; margin-top: 0.12in; }
-.badge { display: inline-block; background: #2A5A8A; color: white; font-family: var(--body-font); font-size: 9pt; padding: 5pt 16pt; border-radius: 8pt; margin-top: 0.16in; }
-.accent-strip { height: 10pt; background: var(--secondary); }
-.inside-section { padding: 0.18in 0.6in 0.1in 0.6in; }
-.inside-title { font-family: var(--heading-font); font-weight: 700; font-size: 9pt; color: var(--primary); letter-spacing: 0.18em; text-align: center; margin-bottom: 0.08in; }
-.inside-divider { border: none; border-top: 1.5pt solid var(--secondary); margin: 0 0.5in 0.12in 0.5in; }
-.section-item { display: flex; align-items: flex-start; gap: 0.12in; margin-bottom: 0.1in; }
-.section-arrow { font-family: var(--heading-font); font-weight: 700; color: var(--primary); font-size: 12pt; line-height: 1; margin-top: 1pt; }
-.section-name-text { font-family: var(--body-font); font-size: 11.5pt; color: #1E293B; font-weight: 700; }
-.section-purpose-text { font-family: var(--body-font); font-size: 8.5pt; color: #64748B; }
-.info-box { margin: 0 0.6in; border: 1pt solid var(--secondary); border-radius: 10pt; padding: 0.1in 0.16in; display: flex; justify-content: space-between; align-items: center; }
-.info-box-text { font-family: var(--body-font); font-size: 9pt; color: #475569; }
-.info-box-brand { font-family: var(--heading-font); font-weight: 700; font-size: 9pt; color: var(--primary); }
-.cover-footer { padding: 0.1in 0.6in; border-top: 1pt solid var(--secondary); display: flex; justify-content: space-between; margin-top: 0.1in; }
-.cover-footer-text { font-family: var(--body-font); font-size: 7.5pt; color: #94A3B8; }
-</style></head>
+<head>
+<meta charset="utf-8">
+<style>{{ css }}</style>
+<style>
+/* ── Cover-specific ── */
+.cover-hero {
+    background: var(--primary);
+    height: 4.8in;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 0.35in 0.65in 0.4in 0.65in;
+}
+.cover-kicker {
+    font-family: var(--body-font);
+    font-size: 7.5pt;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 12pt;
+}
+.cover-title {
+    font-family: var(--heading-font);
+    font-size: 40pt;
+    font-weight: 700;
+    color: white;
+    line-height: 1.08;
+    margin-bottom: 14pt;
+    max-width: 5.5in;
+}
+.cover-tagline {
+    font-family: var(--body-font);
+    font-size: 11pt;
+    color: rgba(255,255,255,0.75);
+    margin-bottom: 20pt;
+}
+.cover-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    border: 1pt solid rgba(255,255,255,0.4);
+    border-radius: 20pt;
+    padding: 4pt 12pt;
+    font-family: var(--body-font);
+    font-size: 8pt;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.9);
+}
+.cover-body {
+    flex: 1;
+    padding: 0.28in 0.65in 0.3in 0.65in;
+    background: white;
+}
+.cover-section-title {
+    font-family: var(--body-font);
+    font-size: 7.5pt;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8pt;
+}
+.sections-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.1in 0.2in;
+}
+.section-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 7pt;
+    width: calc(50% - 0.1in);
+}
+.section-dot {
+    width: 7pt;
+    height: 7pt;
+    border-radius: 50%;
+    background: var(--secondary);
+    flex-shrink: 0;
+    margin-top: 2pt;
+}
+.section-name {
+    font-family: var(--body-font);
+    font-size: 9pt;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 2pt;
+}
+.section-desc {
+    font-family: var(--body-font);
+    font-size: 8pt;
+    color: var(--mid);
+}
+.cover-info-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.15in 0.65in;
+    background: var(--background);
+    border-top: 0.7pt solid var(--line);
+}
+.cover-brand {
+    font-family: var(--heading-font);
+    font-size: 11pt;
+    font-weight: 700;
+    color: var(--dark);
+}
+.cover-meta {
+    font-family: var(--body-font);
+    font-size: 8pt;
+    color: var(--muted);
+    text-align: right;
+}
+</style>
+</head>
 <body>
-<div class="cover-page">
-  <div class="hero">
-    <div class="cover-title">{{ title }}</div>
-    <div class="audience-tagline">Designed for {{ audience }}</div>
-    <div class="badge">{{ page_count }} pages  |  Instant Digital Download</div>
-  </div>
-  <div class="accent-strip"></div>
-  <div class="inside-section">
-    <div class="inside-title">W H A T ' S   I N S I D E</div>
-    <hr class="inside-divider">
-    {% for section in sections[:5] %}
-    <div class="section-item">
-      <div class="section-arrow">&gt;</div>
-      <div>
-        <div class="section-name-text">{% if section is mapping %}{{ section.name }}{% else %}{{ section }}{% endif %}</div>
-        {% if section is mapping and section.purpose %}<div class="section-purpose-text">{{ section.purpose }}</div>{% endif %}
-      </div>
+<div class="page">
+    <div class="cover-hero">
+        <div class="cover-kicker">Digital Planner</div>
+        <div class="cover-title">{{ title }}</div>
+        <div class="cover-tagline">{{ audience }}</div>
+        <div><span class="cover-badge">{{ page_count }} pages</span></div>
     </div>
-    {% endfor %}
-  </div>
-  <div class="info-box">
-    <span class="info-box-text">Print at home  ·  A4 &amp; Letter compatible  ·  Personal planning use</span>
-    <span class="info-box-brand">MoneyPrinter+ Digital Download</span>
-  </div>
-  <div class="cover-footer">
-    <span class="cover-footer-text">Digital file only - no physical product will ship.</span>
-    <span class="cover-footer-text">Thank you for your purchase!</span>
-  </div>
+
+    <div class="accent-strip"></div>
+
+    <div class="cover-body">
+        <div class="cover-section-title">What's Inside</div>
+        <hr class="rule-accent">
+        <div class="sections-grid">
+            {% for s in sections %}
+            <div class="section-item">
+                <div class="section-dot"></div>
+                <div>
+                    <div class="section-name">{{ s.name }}</div>
+                    <div class="section-desc">{{ s.purpose }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="cover-info-bar">
+        <div class="cover-brand">Betwixt &amp; Between Co.</div>
+        <div class="cover-meta">{{ title }}<br>Digital Download</div>
+    </div>
 </div>
 </body>
 </html>

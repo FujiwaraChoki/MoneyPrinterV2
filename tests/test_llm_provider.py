@@ -263,6 +263,73 @@ class LLMProviderTests(unittest.TestCase):
         )
         post_mock.assert_not_called()
 
+    def test_generate_text_falls_back_to_secondary_model_after_request_failure(self) -> None:
+        primary_error = requests.Timeout("timed out")
+        secondary_response = self.make_response(
+            {"choices": [{"message": {"content": "  Fallback reply  \n"}}]}
+        )
+
+        with patch.object(
+            self.llm_provider,
+            "get_openrouter_api_key",
+            return_value="secret-key",
+            create=True,
+        ), patch.object(
+            self.llm_provider,
+            "get_openrouter_base_url",
+            return_value="https://openrouter.ai/api/v1",
+            create=True,
+        ), patch.object(
+            self.llm_provider,
+            "get_openrouter_fallback_models",
+            return_value=["google/gemma-4-31b-it"],
+            create=True,
+        ), patch.object(
+            self.llm_provider.requests,
+            "post",
+            side_effect=[primary_error, secondary_response],
+        ) as post_mock:
+            self.llm_provider.select_model("google/gemma-4-26b-a4b-it")
+
+            result = self.llm_provider.generate_text("Write a tagline")
+
+        self.assertEqual(result, "Fallback reply")
+        self.assertEqual(post_mock.call_count, 2)
+        self.assertEqual(post_mock.call_args_list[0].kwargs["json"]["model"], "google/gemma-4-26b-a4b-it")
+        self.assertEqual(post_mock.call_args_list[1].kwargs["json"]["model"], "google/gemma-4-31b-it")
+
+    def test_generate_text_falls_back_when_primary_response_has_no_content(self) -> None:
+        primary_response = self.make_response({"choices": [{"message": {}}]})
+        secondary_response = self.make_response(
+            {"choices": [{"message": {"content": "  Recovered reply  \n"}}]}
+        )
+
+        with patch.object(
+            self.llm_provider,
+            "get_openrouter_api_key",
+            return_value="secret-key",
+            create=True,
+        ), patch.object(
+            self.llm_provider,
+            "get_openrouter_base_url",
+            return_value="https://openrouter.ai/api/v1",
+            create=True,
+        ), patch.object(
+            self.llm_provider,
+            "get_openrouter_fallback_models",
+            return_value=["google/gemma-4-31b-it"],
+            create=True,
+        ), patch.object(
+            self.llm_provider.requests,
+            "post",
+            side_effect=[primary_response, secondary_response],
+        ):
+            self.llm_provider.select_model("google/gemma-4-26b-a4b-it")
+
+            result = self.llm_provider.generate_text("Write a tagline")
+
+        self.assertEqual(result, "Recovered reply")
+
 
 if __name__ == "__main__":
     unittest.main()

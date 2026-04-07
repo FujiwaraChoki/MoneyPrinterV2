@@ -1,3 +1,9 @@
+/* ─── Fonts ─────────────────────────────────────────────────────────── */
+@font-face {
+    font-family: 'DM Sans';
+    font-weight: 100 900;
+    src: url('file://{{ fonts_dir }}/DMSans-Regular.ttf') format('truetype');
+}
 @font-face {
     font-family: 'Playfair Display';
     font-weight: 400;
@@ -19,48 +25,55 @@
     src: url('file://{{ fonts_dir }}/Lato-Bold.ttf') format('truetype');
 }
 
+/* ─── Design tokens ────────────────────────────────────────────────── */
 :root {
-    --primary: {{ primary }};
-    --secondary: {{ secondary }};
+    --primary:    {{ primary }};
+    --secondary:  {{ secondary }};
     --background: {{ background }};
     --heading-font: '{{ heading_font }}', 'Playfair Display', Georgia, serif;
-    --body-font: '{{ body_font }}', 'Lato', Helvetica, sans-serif;
+    --body-font:    '{{ body_font }}', 'DM Sans', 'Lato', Helvetica, sans-serif;
+    --line:    #E8E2D8;
+    --muted:   #9A8E82;
+    --dark:    #2A1F15;
+    --mid:     #6B5B4E;
+    --gold:    var(--secondary);
 }
 
+/* ─── Reset ─────────────────────────────────────────────────────────── */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
     background: var(--background);
     font-family: var(--body-font);
-    font-size: 11pt;
-    color: #1E293B;
+    font-size: 10pt;
+    color: var(--dark);
 }
 
 .page {
     width: 8.5in;
     min-height: 11in;
-    padding: 0;
     background: var(--background);
-    position: relative;
     overflow: hidden;
 }
 
+/* ─── Header bar ────────────────────────────────────────────────────── */
 .header-bar {
     background: var(--primary);
-    color: white;
-    padding: 0.55in 0.55in 0.1in 0.55in;
+    padding: 0 0.65in;
+    height: 0.8in;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: space-between;
-    min-height: 0.95in;
 }
-
 .header-bar .theme-label {
     font-family: var(--body-font);
-    font-size: 9pt;
-    color: rgba(255,255,255,0.85);
+    font-size: 6.5pt;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.55);
+    width: 1.4in;
 }
-
 .header-bar .page-title {
     font-family: var(--heading-font);
     font-weight: 700;
@@ -68,120 +81,277 @@ body {
     color: white;
     text-align: center;
     flex: 1;
-    padding: 0 1em;
+    letter-spacing: 0.01em;
 }
-
 .header-bar .page-num {
     font-family: var(--body-font);
-    font-size: 9pt;
-    color: rgba(255,255,255,0.85);
-    white-space: nowrap;
-}
-
-.sub-header {
-    background: var(--secondary);
-    padding: 0.06in 0.55in;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 0.38in;
-}
-
-.sub-header .badge {
-    background: var(--primary);
-    color: white;
-    font-family: var(--body-font);
-    font-size: 8pt;
-    font-weight: 700;
-    padding: 3pt 8pt;
-    border-radius: 5pt;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-}
-
-.sub-header .section-name {
-    font-family: var(--body-font);
-    font-size: 9.5pt;
-    color: #334155;
-}
-
-.content-zone {
-    margin: 0.12in 0.55in 0.12in 0.55in;
-}
-
-.footer {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 0 0.55in 0.3in 0.55in;
-    border-top: 1.5pt solid var(--secondary);
-}
-
-.footer .footer-left {
-    font-family: var(--body-font);
-    font-size: 7.5pt;
-    color: #94A3B8;
-}
-
-.footer .footer-right {
-    font-family: var(--body-font);
-    font-size: 7.5pt;
-    color: #94A3B8;
+    font-size: 6.5pt;
+    letter-spacing: 0.12em;
+    color: rgba(255,255,255,0.55);
     text-align: right;
+    width: 1.4in;
 }
 
-.footer-row {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 3pt;
+/* ─── Gold accent strip ─────────────────────────────────────────────── */
+.accent-strip {
+    height: 4pt;
+    background: var(--secondary);
 }
 
-.panel {
-    background: white;
-    border: 1.2pt solid var(--secondary);
-    border-radius: 10pt;
-    padding: 0.1in 0.16in;
-    margin-bottom: 0.1in;
+/* ─── Gold rule (horizontal hairline in secondary/gold) ─────────────── */
+.gold-rule {
+    height: 1.5pt;
+    background: var(--secondary);
+    margin: 0.06in 0;
 }
 
-.panel-title {
-    font-family: var(--heading-font);
+/* ─── Section heading ───────────────────────────────────────────────── */
+.section-heading {
+    font-family: var(--body-font);
+    font-size: 6.5pt;
     font-weight: 700;
-    font-size: 10pt;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
     color: var(--primary);
-    margin-bottom: 0.08in;
-    letter-spacing: 0.04em;
+    margin-bottom: 7pt;
 }
 
-.writing-line {
-    border-bottom: 0.8pt solid #E2E8F0;
-    min-height: 18pt;
-    margin-bottom: 4pt;
-}
-
-.checkbox-row {
-    display: flex;
+/* ─── Priority badge (numbered gold circle) ─────────────────────────── */
+.priority-badge {
+    width: 17pt;
+    height: 17pt;
+    border-radius: 50%;
+    background: var(--secondary);
+    font-family: var(--heading-font);
+    font-size: 9pt;
+    font-weight: 700;
+    color: white;
+    display: inline-flex;
     align-items: center;
-    gap: 8pt;
-    margin-bottom: 8pt;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-bottom: 3pt;
 }
 
-.checkbox-circle {
+/* ─── Priority row (badge + checkbox + fill line) ───────────────────── */
+.top3-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 6pt;
+    margin-bottom: 0.07in;
+}
+.top3-check {
+    width: 13pt;
+    height: 13pt;
+    border: 1.2pt solid var(--secondary);
+    border-radius: 2pt;
+    flex-shrink: 0;
+    margin-bottom: 3pt;
+}
+
+/* ─── Checkbox row ──────────────────────────────────────────────────── */
+.check-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 7pt;
+    margin-bottom: 0.05in;
+}
+.check-box {
     width: 12pt;
     height: 12pt;
+    border-radius: 2pt;
+    border: 1pt solid var(--secondary);
+    flex-shrink: 0;
+    margin-bottom: 3pt;
+}
+
+/* ─── Dot row (mood / energy circles) ──────────────────────────────── */
+.dot-row { display: flex; align-items: center; gap: 5pt; }
+.dot-circle {
+    width: 11pt;
+    height: 11pt;
     border-radius: 50%;
-    border: 1.2pt solid var(--secondary);
+    border: 1pt solid var(--secondary);
     flex-shrink: 0;
 }
 
-.hint-text {
+/* ─── Field row ─────────────────────────────────────────────────────── */
+.field-row {
+    display: flex;
+    align-items: baseline;
+    gap: 5pt;
+    margin-bottom: 0.07in;
+}
+.field-label {
     font-family: var(--body-font);
-    font-size: 8.5pt;
-    color: #64748B;
+    font-size: 6.5pt;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+.field-line {
+    flex: 1;
+    border-bottom: 0.5pt solid var(--line);
+    min-height: 0.22in;
 }
 
-@page {
-    size: 8.5in 11in;
-    margin: 0;
+/* ─── Content zone ──────────────────────────────────────────────────── */
+.content-zone {
+    padding: 0.16in 0.65in 0.12in 0.65in;
 }
+
+/* ─── Write lines ───────────────────────────────────────────────────── */
+.line       { border-bottom: 0.5pt solid var(--line); min-height: 0.28in; margin-bottom: 0.025in; }
+.line-sm    { border-bottom: 0.5pt solid var(--line); min-height: 0.22in; margin-bottom: 0.025in; }
+.line-white { border-bottom: 0.7pt solid rgba(255,255,255,0.3); min-height: 0.25in; margin-bottom: 0.025in; }
+
+/* ─── Cards ─────────────────────────────────────────────────────────── */
+.card {
+    background: white;
+    border: 0.7pt solid var(--line);
+    border-radius: 5pt;
+    padding: 0.1in 0.14in;
+    margin-bottom: 0.09in;
+}
+.card-primary   { border-left: 2.5pt solid var(--primary); }
+.card-secondary { border-left: 2.5pt solid var(--secondary); }
+.card-filled {
+    background: var(--primary);
+    border-radius: 5pt;
+    padding: 0.1in 0.14in;
+    margin-bottom: 0.09in;
+}
+.card-tint {
+    background: rgba(0,0,0,0.04);
+    border: 0.5pt solid var(--line);
+    border-radius: 5pt;
+    padding: 0.09in 0.12in;
+    margin-bottom: 0.09in;
+}
+
+/* ─── Card labels ───────────────────────────────────────────────────── */
+.card-label {
+    font-family: var(--body-font);
+    font-size: 6.5pt;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin-bottom: 7pt;
+}
+.card-label-white {
+    font-family: var(--body-font);
+    font-size: 6.5pt;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.75);
+    margin-bottom: 7pt;
+}
+.card-label-dark {
+    font-family: var(--body-font);
+    font-size: 6.5pt;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--dark);
+    margin-bottom: 7pt;
+}
+.card-tint .field-label { color: rgba(0,0,0,0.45); }
+.card-tint .field-line  { border-bottom-color: rgba(0,0,0,0.18); }
+.card-tint .line        { border-bottom-color: rgba(0,0,0,0.18); }
+.card-tint .check-box   { border-color: rgba(0,0,0,0.3); }
+
+/* ─── Old priority item (kept for compatibility) ───────────────────── */
+.priority-item {
+    display: flex;
+    align-items: flex-end;
+    gap: 7pt;
+    margin-bottom: 0.05in;
+}
+.priority-num {
+    font-family: var(--heading-font);
+    font-weight: 700;
+    font-size: 13pt;
+    color: var(--primary);
+    width: 14pt;
+    text-align: right;
+    flex-shrink: 0;
+    margin-bottom: 3pt;
+    line-height: 1;
+}
+.priority-check {
+    width: 13pt;
+    height: 13pt;
+    border-radius: 3pt;
+    border: 1.2pt solid var(--secondary);
+    flex-shrink: 0;
+    margin-bottom: 4pt;
+}
+
+/* ─── Rules ─────────────────────────────────────────────────────────── */
+.rule        { border: none; border-top: 0.5pt solid var(--line);      margin: 0.08in 0; }
+.rule-accent { border: none; border-top: 1.5pt solid var(--secondary); margin: 0.07in 0; }
+
+/* ─── Footer three-column layout ───────────────────────────────────── */
+.footer-cols {
+    display: flex;
+    gap: 0;
+}
+.footer-col {
+    flex: 1;
+    padding: 0 0.1in 0 0.1in;
+    border-left: 0.7pt solid var(--line);
+}
+.footer-col:first-child { border-left: none; padding-left: 0; }
+
+/* ─── Calendar grid ─────────────────────────────────────────────────── */
+.cal-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+.cal-table th {
+    font-family: var(--body-font);
+    font-size: 7pt;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: white;
+    text-align: center;
+    padding: 6pt 0;
+    background: var(--primary);
+}
+.cal-cell {
+    vertical-align: top;
+    border: 0.5pt solid var(--line);
+    height: 1.08in;
+    padding: 3pt 4pt;
+}
+.cal-empty {
+    background: var(--background);
+    opacity: 0.5;
+}
+.cal-date-num {
+    font-family: var(--heading-font);
+    font-size: 10pt;
+    font-weight: 700;
+    color: var(--primary);
+    display: block;
+    margin-bottom: 2pt;
+    line-height: 1.1;
+}
+.cal-write-line {
+    border-bottom: 0.35pt solid var(--line);
+    min-height: 0.16in;
+    margin-bottom: 0.02in;
+}
+.cal-today {
+    background: rgba(var(--secondary), 0.08);
+}
+
+/* ─── Page ──────────────────────────────────────────────────────────── */
+@page { size: 8.5in 11in; margin: 0; }

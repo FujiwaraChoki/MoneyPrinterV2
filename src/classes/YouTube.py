@@ -3,6 +3,9 @@ import base64
 import json
 import time
 import os
+import shutil
+import sys
+import subprocess
 import requests
 from difflib import SequenceMatcher
 from urllib.parse import parse_qs
@@ -53,53 +56,119 @@ GENERIC_STORY_TOKENS = {
     "an",
     "and",
     "at",
+    "back",
+    "became",
+    "behind",
+    "brand",
+    "built",
+    "business",
     "case",
+    "channel",
+    "company",
+    "content",
+    "created",
+    "creator",
+    "creators",
+    "culture",
     "deaths",
     "deadly",
     "disappearance",
     "disaster",
     "documentary",
+    "dollar",
+    "dollars",
+    "economy",
+    "empire",
+    "entire",
     "event",
     "explained",
+    "failed",
+    "failure",
+    "followed",
     "for",
     "from",
     "ghost",
+    "grew",
+    "growth",
     "history",
     "historical",
     "how",
     "incident",
     "in",
     "inside",
+    "internet",
+    "into",
     "made",
     "makes",
+    "market",
+    "media",
+    "million",
+    "millions",
+    "model",
+    "money",
     "mysteries",
     "mystery",
+    "never",
+    "niche",
     "no",
     "of",
     "on",
+    "online",
     "passage",
+    "people",
+    "platform",
+    "platforms",
+    "product",
     "real",
+    "revenue",
+    "rise",
+    "sale",
+    "sales",
     "sense",
     "ship",
     "short",
     "shorts",
+    "single",
+    "small",
+    "social",
+    "sold",
+    "startup",
     "still",
     "story",
     "strange",
+    "success",
     "that",
     "the",
+    "their",
     "this",
+    "tiktok",
     "to",
     "tragedy",
     "true",
+    "turned",
     "unexplained",
     "unsolved",
     "vanished",
     "vanishing",
+    "venture",
+    "video",
+    "videos",
+    "viral",
+    "went",
     "what",
     "why",
     "with",
+    "worked",
+    "world",
+    "youtube",
 }
+
+WEIRD_BUSINESS_NICHE = "weird business / internet / creator-economy micro-doc Shorts"
+FINANCE_NICHE = "manim-finance"
+PSYCHOLOGY_NICHE = "manim-psychology"
+PHYSICS_NICHE = "manim-physics"
+
+ALL_MANIM_NICHES = {FINANCE_NICHE, PSYCHOLOGY_NICHE, PHYSICS_NICHE}
 
 
 # Set ImageMagick Path
@@ -150,32 +219,24 @@ class YouTube:
 
         self.images = []
 
-        # Initialize the Firefox profile
-        self.options: Options = Options()
+        # Browser is created lazily — only when upload_video() is actually called.
+        self.browser: webdriver.Firefox | None = None
 
-        # Set headless state of browser
-        if get_headless():
-            self.options.add_argument("--headless")
-
+    def _create_browser(self):
         if not os.path.isdir(self._fp_profile_path):
             raise ValueError(
                 f"Firefox profile path does not exist or is not a directory: {self._fp_profile_path}"
             )
-
-        self.options.add_argument("-profile")
-        self.options.add_argument(self._fp_profile_path)
-
-        # Set the service
-        self.service: Service = Service(GeckoDriverManager().install())
-
-        # Initialize the browser
-        self.browser: webdriver.Firefox = self._create_browser()
-
-    def _create_browser(self):
-        return webdriver.Firefox(service=self.service, options=self.options)
+        options: Options = Options()
+        if get_headless():
+            options.add_argument("--headless")
+        options.add_argument("-profile")
+        options.add_argument(self._fp_profile_path)
+        service: Service = Service(GeckoDriverManager().install())
+        return webdriver.Firefox(service=service, options=options)
 
     def _ensure_browser(self):
-        if getattr(self, "browser", None) is None:
+        if self.browser is None:
             self.browser = self._create_browser()
         return self.browser
 
@@ -188,6 +249,27 @@ class YouTube:
             niche (str): The niche
         """
         return self._niche
+
+    @property
+    def effective_niche(self) -> str:
+        if getattr(self, "_niche", None) in ALL_MANIM_NICHES:
+            return self._niche
+        return WEIRD_BUSINESS_NICHE
+
+    def _is_weird_business_profile(self) -> bool:
+        return self.effective_niche == WEIRD_BUSINESS_NICHE
+
+    def _is_manim_profile(self) -> bool:
+        return self.effective_niche in ALL_MANIM_NICHES
+
+    def _is_finance_profile(self) -> bool:
+        return self.effective_niche == FINANCE_NICHE
+
+    def _is_psychology_profile(self) -> bool:
+        return self.effective_niche == PSYCHOLOGY_NICHE
+
+    def _is_physics_profile(self) -> bool:
+        return self.effective_niche == PHYSICS_NICHE
 
     @property
     def language(self) -> str:
@@ -211,6 +293,36 @@ class YouTube:
         """
         return generate_text(prompt, model_name=model_name)
 
+    def _niche_topics_path(self) -> str:
+        """Returns the path to the per-niche topics log markdown file."""
+        safe = re.sub(r"[^\w\-]", "-", self.effective_niche).lower()
+        return os.path.join(ROOT_DIR, ".mp", f"topics-{safe}.md")
+
+    def _load_niche_topics(self) -> List[str]:
+        """Reads the niche topics log and returns all recorded topics."""
+        path = self._niche_topics_path()
+        if not os.path.exists(path):
+            return []
+        topics = []
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("- "):
+                    topic = line[2:].strip()
+                    if topic:
+                        topics.append(topic)
+        return topics
+
+    def _record_niche_topic(self, topic: str) -> None:
+        """Appends a newly chosen topic to the per-niche topics log."""
+        path = self._niche_topics_path()
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        write_header = not os.path.exists(path)
+        with open(path, "a", encoding="utf-8") as f:
+            if write_header:
+                f.write(f"# Topics: {self.effective_niche}\n\n")
+            f.write(f"- {topic}\n")
+
     def generate_topic(self) -> str:
         """
         Generates a topic based on the YouTube Channel niche.
@@ -220,6 +332,13 @@ class YouTube:
         """
         existing_videos = self.get_videos()
         avoid_story_references = self._get_story_references(existing_videos)
+
+        # Merge in every topic from the persistent per-niche log,
+        # prioritising them at the front so they are never truncated out.
+        for logged in self._load_niche_topics():
+            if logged not in avoid_story_references:
+                avoid_story_references.insert(0, logged)
+
         max_attempts = 5
 
         for _ in range(max_attempts):
@@ -248,6 +367,7 @@ class YouTube:
                 continue
 
             self.subject = completion
+            self._record_niche_topic(completion)
             return completion
 
         raise RuntimeError(
@@ -255,10 +375,17 @@ class YouTube:
         )
 
     def _build_topic_prompt(self, avoid_story_references: List[str]) -> str:
+        if self._is_finance_profile():
+            return self._build_finance_topic_prompt(avoid_story_references)
+        if self._is_psychology_profile():
+            return self._build_psychology_topic_prompt(avoid_story_references)
+        if self._is_physics_profile():
+            return self._build_physics_topic_prompt(avoid_story_references)
+
         avoid_block = ""
         if avoid_story_references:
             bullet_list = "\n".join(
-                f"        - {story}" for story in avoid_story_references[:15]
+                f"        - {story}" for story in avoid_story_references[:100]
             )
             avoid_block = f"""
 
@@ -269,18 +396,158 @@ class YouTube:
         """
 
         return f"""
-        Please generate a specific video idea about the following niche: {self.niche}.
+        Please generate a specific video idea about the following niche: {self.effective_niche}.
         The language is: {self.language}.
         Make it exactly one sentence.
         Prefer a fresh story that does not overlap with prior videos on this channel.{avoid_block}
-        Choose a real story with enough verified background to explain who, where, when, and why it matters.
-        Prefer a historical impossibility angle: a familiar person, place, institution, expedition, disaster, or system colliding with a detail that sounds impossible but is true.
+        Choose a real and reportable business or internet story with enough verified background to explain who, what, how, and why it mattered.
+        Prefer stories about weird businesses, viral products, creator moves, internet scams, platform mechanics, growth loops, pricing twists, monetization tricks, or strange consumer behavior.
         Prefer stories that are instantly interesting before explanation, not topics that only become interesting after a long setup.
-        Favor a familiar frame colliding with one impossible detail, contradiction, or reported anomaly.
-        Prefer one story, one mystery, one payoff rather than a broad listicle, theme, or bundle of incidents.
-        Prefer broad curiosity overlap across history, mystery, disaster, science, and true crime instead of narrow academic obscurity.
-        Prefer a reported documentary story, not a vague teaser premise.
-        Favor cases with concrete people, places, dates, institutions, or records that can support a tightly reported short.
+        Favor a familiar app, company, creator, product, or platform colliding with one surprising business detail, contradiction, or outcome.
+        Frame the idea as one familiar thing, one contradiction, one payoff.
+        Prefer one story, one tension, one payoff rather than a broad listicle, theme, or bundle of incidents.
+        Prefer a reported micro-doc story, not a vague trend summary or generic advice.
+        Favor cases with concrete companies, products, creators, launches, campaigns, features, or records that can support a tightly reported short.
+        Only return the topic, nothing else.
+        """
+
+    def _build_finance_topic_prompt(self, avoid_story_references: List[str]) -> str:
+        avoid_block = ""
+        if avoid_story_references:
+            bullet_list = "\n".join(
+                f"        - {story}" for story in avoid_story_references[:100]
+            )
+            avoid_block = f"""
+
+        Do not generate a topic that repeats or is substantially similar to these previously covered topics:
+{bullet_list}
+
+        Avoid the same financial concept, product, or money mechanic even if reworded.
+        """
+
+        return f"""
+        Generate a specific personal finance or money concept to explain in a 45-60 second animated YouTube Short.
+        The language is: {self.language}.
+        Make it exactly one sentence that names the concept or poses the money question clearly.
+        Prefer a fresh topic that does not overlap with prior videos on this channel.{avoid_block}
+
+        Choose topics from high-engagement categories where the math or mechanism surprises people:
+
+        TIER 1 — Highest engagement (counterintuitive money math):
+        - Compound interest reveals: how $5 a day becomes $1M over 40 years, why starting at 22 vs 32 doubles your retirement, the Rule of 72 for doubling money
+        - Credit card traps: how the minimum payment treadmill works, why 24% APR costs you $X on a $5,000 balance, how cash-back rewards are secretly funded by interchange fees merchants pay
+        - Mortgage secrets: how amortization front-loads 80% of interest in the first half of a 30-year loan, why a $300K mortgage actually costs $550K total, how one extra payment a year saves 5 years
+        - Inflation math: what $100 in 1990 buys today, how 3% inflation silently erodes a $500K retirement over 20 years, why keeping cash in a savings account is a guaranteed loss
+        - Investing fee traps: how a 1% fund fee costs more than $100,000 over a career, the index fund vs. active fund performance gap over 20 years
+
+        TIER 2 — Strong engagement (money concepts most people misunderstand):
+        - Tax math: how progressive tax brackets actually work (vs. the common misconception), why a Roth IRA beats a 401k for young earners, how capital gains tax is lower than income tax and why
+        - Insurance math: why term life beats whole life insurance financially, how deductibles and premiums trade off, the expected-value math behind extended warranties
+        - Salary negotiation math: the lifetime cost of accepting a $5,000 lower starting offer, how annual raise compounding works over a 30-year career
+        - Debt avalanche vs. snowball: the math difference in total interest paid, when psychological wins beat pure math
+
+        TIER 3 — Solid engagement (relatable everyday money moments):
+        - Subscription creep: how $9.99/month services add up, the average American's annual subscription total
+        - Car costs: how depreciation makes a new car lose $5,000 in the first year, the true hourly cost of car ownership
+        - Housing rent vs. buy: the break-even timeline calculator, how the 5% rule determines when renting is smarter
+
+        Prioritize Tier 1 and Tier 2 topics. Avoid vague financial advice and generic tips.
+        Prefer topics where a number, graph, or calculation is the "wow" moment — something that changes how the viewer thinks about their money.
+        The best topic names are surprising math claims: "Your minimum payment will take 22 years to clear a $5,000 balance", "How a 1% fee silently steals $150,000 from your retirement".
+        Prefer concepts with a clear visual: a growing curve, a shrinking bar, a side-by-side comparison, a timeline, or a cascading cost breakdown.
+        Keep it specific — name the exact concept or scenario, not a broad category.
+        Only return the topic, nothing else.
+        """
+
+    def _build_psychology_topic_prompt(self, avoid_story_references: List[str]) -> str:
+        avoid_block = ""
+        if avoid_story_references:
+            bullet_list = "\n".join(
+                f"        - {story}" for story in avoid_story_references[:100]
+            )
+            avoid_block = f"""
+
+        Do not generate a topic that repeats or is substantially similar to these previously covered topics:
+{bullet_list}
+
+        Avoid the same bias, effect, or psychological pattern even if reworded.
+        """
+
+        return f"""
+        Generate a specific psychology, cognitive bias, or human behavior concept to explain in a 45-60 second animated YouTube Short.
+        The language is: {self.language}.
+        Make it exactly one sentence that names the concept or poses the behavioral question clearly.
+        Prefer a fresh topic that does not overlap with prior videos on this channel.{avoid_block}
+
+        Choose topics from high-engagement categories where the human brain surprises itself:
+
+        TIER 1 — Highest engagement (counterintuitive behavior everyone recognizes in themselves):
+        - Cognitive biases: the decoy effect (why you always pick the middle-priced option), loss aversion (why losing $50 hurts more than gaining $50 feels good), the sunk cost fallacy (why you finish bad movies), anchoring bias (why the first price you see dominates all decisions), the IKEA effect (why you value things you build more than things you buy)
+        - Perception tricks: the Dunning-Kruger curve (why beginners feel confident and intermediates feel lost), the spotlight effect (why you think everyone noticed your mistake), choice paralysis (why more options lead to fewer sales)
+        - Habit and addiction loops: variable reward schedules (why slot machines and social media are the same mechanism), the habit loop (cue → routine → reward), why removing friction changes behavior more than motivation
+        - Social behavior: the bystander effect (why a crowd does nothing), conformity pressure (Asch's line experiment), why people tip more when the waiter writes their name
+
+        TIER 2 — Strong engagement (mental shortcuts and decision traps):
+        - Memory illusions: why eyewitness testimony is unreliable, how the peak-end rule means a vacation's last day dominates the whole memory, why we remember negative events more vividly
+        - The psychology of pricing: why $9.99 feels much cheaper than $10, how free shipping changes purchase behavior, why larger package sizes trick us into buying more
+        - Procrastination science: temporal discounting (why $100 today beats $150 in a year), implementation intentions (the one phrase that doubles follow-through), why "just start for 2 minutes" works
+        - Social proof mechanics: why restaurant menus mark "most popular" items, how Amazon reviews manipulate us, the bandwagon effect
+
+        TIER 3 — Solid engagement (famous psychology experiments and real-world effects):
+        - Classic experiments: the Milgram obedience experiment, the Stanford marshmallow test and what follow-up studies found, the Robbers Cave tribal conflict experiment
+        - Therapy-derived insights: why venting can make anger worse (catharsis myth), how cognitive reframing changes emotional response, the paradox of trying to suppress a thought
+
+        Prioritize Tier 1 and Tier 2 topics. Avoid vague pop-psychology platitudes.
+        Prefer topics where the viewer will say "wait, that's me" — self-recognition is the highest-shareability driver.
+        The best topic names are revealing claims: "Why you'll always pick the middle price on any menu", "The brain glitch that makes you finish movies you hate".
+        Prefer concepts with a clear visual: a decision tree, a before/after brain state, curves diverging, a timeline of a habit loop, a scale tipping.
+        Keep it specific — name the exact bias, effect, or experiment, not a broad category.
+        Only return the topic, nothing else.
+        """
+
+    def _build_physics_topic_prompt(self, avoid_story_references: List[str]) -> str:
+        avoid_block = ""
+        if avoid_story_references:
+            bullet_list = "\n".join(
+                f"        - {story}" for story in avoid_story_references[:100]
+            )
+            avoid_block = f"""
+
+        Do not generate a topic that repeats or is substantially similar to these previously covered topics:
+{bullet_list}
+
+        Avoid the same physical phenomenon, device, or natural process even if reworded.
+        """
+
+        return f"""
+        Generate a specific everyday physics or "how things actually work" concept to explain in a 45-60 second animated YouTube Short.
+        The language is: {self.language}.
+        Make it exactly one sentence that names the concept or poses the "how does this work?" question clearly.
+        Prefer a fresh topic that does not overlap with prior videos on this channel.{avoid_block}
+
+        Choose topics from high-engagement categories where the real mechanism surprises people:
+
+        TIER 1 — Highest engagement (familiar devices with surprising mechanisms):
+        - Sound and waves: how noise-canceling headphones generate an exact anti-wave, how Shazam fingerprints any song using frequency peaks, how a microphone converts air pressure to electricity, why your voice sounds different in a recording
+        - Light and optics: how a camera focuses (the lens equation), why the sky is blue but sunsets are red (Rayleigh scattering), how your phone screen makes colors with three dots, how night vision amplifies photons
+        - Everyday forces: why ice is slippery (pressure-melting vs. liquid layer debate), how planes generate lift (Bernoulli vs. Newtonian debate), why spinning a ball curves its flight path (Magnus effect), how a gyroscope resists falling over
+        - Invisible physics: how a microwave heats food without heating the plate, why metal in a microwave sparks, how wireless charging works (inductive coupling), why your phone compass works (Hall effect)
+
+        TIER 2 — Strong engagement (nature and body physics most people misunderstand):
+        - Water and fluids: why water drains clockwise vs. counterclockwise (Coriolis myth vs. reality), how surface tension lets insects walk on water, why hot water sometimes freezes faster than cold water (Mpemba effect)
+        - Heat and energy: how a refrigerator works (heat pump cycle), why blowing on soup cools it (evaporative cooling), how a thermos keeps things hot for hours, why a black car gets hotter than a white car
+        - Electricity: how a battery generates voltage (electrochemical potential), why birds don't get electrocuted on power lines but you would, how a touchscreen knows where your finger is (capacitive sensing)
+        - Body physics: why you see stars when you stand up too fast, how your ear converts air vibrations to hearing, why muscles can only pull (never push), how your knee joint is a four-bar linkage
+
+        TIER 3 — Solid engagement (surprising natural phenomena):
+        - Weather: how lightning chooses its path (stepped leaders), why hailstones have layers, how a rainbow forms at exactly 42 degrees, what causes thunder's rolling boom
+        - Space and gravity: why satellites don't fall (they're constantly falling), how GPS triangulates your position in real-time, why the moon always shows the same face, how a black hole's event horizon works without needing equations
+
+        Prioritize Tier 1 and Tier 2 topics. Avoid abstract physics that requires equations to appreciate.
+        Prefer topics where someone uses the device or sees the phenomenon every day but has no idea how it works.
+        The best topic names are "how does X actually work?" questions or surprising true claims: "Noise-canceling headphones generate sound to cancel sound", "Your microwave only heats water molecules".
+        Prefer concepts with a clear visual: wave diagrams, particle arrows, cross-section cutaways, force vectors, before/after comparisons, animated cycles.
+        Keep it specific — name the exact device, phenomenon, or mechanism, not a broad field.
         Only return the topic, nothing else.
         """
 
@@ -367,20 +634,47 @@ class YouTube:
                     references.append(reference)
         return references
 
+    def _story_anchor_bigrams(self, text: str) -> Set[tuple]:
+        """
+        Returns ordered bigrams of consecutive distinctive tokens in text order.
+
+        Used to detect shared named subjects ("pink sauce", "fyre festival") that
+        a broad token-overlap score may miss when the surrounding framing vocabulary
+        differs significantly between two topics.
+        """
+        ordered = [
+            token
+            for token in self._story_tokens(text)
+            if token not in GENERIC_STORY_TOKENS and len(token) >= 4
+        ]
+        return {(ordered[i], ordered[i + 1]) for i in range(len(ordered) - 1)}
+
     def _find_similar_video(self, candidate_topic: str, videos: List[dict]) -> Optional[dict]:
         best_match = None
         best_score = 0.0
+        candidate_bigrams = self._story_anchor_bigrams(candidate_topic)
 
         for video in videos:
+            # Only compare against short identifier fields (topic + title).
+            # Scripts and descriptions are full prose documents that inevitably
+            # share vocabulary with any new on-niche topic, causing false positives.
             comparisons = [
                 video.get("topic", ""),
                 video.get("title", ""),
-                video.get("description", ""),
-                video.get("script", ""),
             ]
 
             for comparison in comparisons:
                 score = self._story_similarity_score(candidate_topic, comparison)
+
+                # If both the candidate and the comparison share at least one anchor
+                # bigram (two consecutive distinctive tokens like "pink sauce" or
+                # "fyre festival"), treat them as covering the same named subject
+                # regardless of framing vocabulary differences.
+                if candidate_bigrams and comparison:
+                    shared_anchors = candidate_bigrams & self._story_anchor_bigrams(comparison)
+                    if shared_anchors:
+                        score = max(score, 0.80)
+
                 if score > best_score:
                     best_score = score
                     best_match = video
@@ -398,40 +692,146 @@ class YouTube:
             script (str): The script of the video.
         """
         sentence_length = get_script_sentence_length()
-        prompt = f"""
-        Generate a script for a YouTube Short in exactly {sentence_length} sentences.
 
-        The subject is: {self.subject}
-        The language is: {self.language}
-        The niche is: {self.niche}.
+        if self._is_finance_profile():
+            prompt = f"""
+        Write a narration voiceover script for a {sentence_length}-sentence animated personal finance YouTube Short.
 
-        Write the script like a compact narrated story about a real event.
-        Write with the discipline of a reported newspaper feature and the narrative pull of a top true crime podcast.
-        Every sentence must add a new concrete detail or move the story forward.
-        Give enough background context for the viewer to understand why the story matters.
-        Open with a pattern-break fact or claim that would make the viewer think "wait, what?"
-        Make the first sentence stand alone as a Shorts hook, even if the viewer stops after one line.
-        Do not bury the anomaly or contradiction in setup.
-        Keep the whole piece shaped like one story, one mystery, one payoff.
-        Pace it like a 35 to 45 second spoken short.
-        When the facts support it, frame the hook as a historical impossibility or unsettling contradiction.
-        Clearly distinguish confirmed facts from rumor, legend, or theory.
-        Do not invent facts or present speculation as certainty.
-        Do not use filler, introductions, conclusions, listicles, or educational framing.
-        Do not say things like "welcome back", "in this video", or "did you know".
-        Do not use markdown, titles, bullet points, speaker labels, or quotation marks around the full response.
-        Return only the raw script.
+        Topic: {self.subject}
+        Language: {self.language}
 
-        Use this beat structure as closely as possible:
-        1. Hook with the strangest or most unsettling claim.
-        2. Ground the story with who, where, or when.
-        3. Explain the core anomaly, disaster, or impossible-seeming detail.
-        4. Escalate with consequence, discovery, or rising tension.
-        5. Deliver the main reveal, confirmed outcome, or historical consequence.
-        6. End with a final sting, unresolved mystery, or haunting closing fact.
+        DEPTH REQUIREMENT — this must be a deep, analytical explanation, not a surface summary:
+        - Include the actual numbers, rates, and calculations. Do not vague-gesture at math — show it.
+          Good: "At 8 percent average annual return, $10,000 doubles every 9 years — that's $80,000 by year 27 without adding a single dollar."
+          Bad: "Compound interest grows your money over time."
+        - Name the precise mechanism. Explain WHY the effect happens, not just that it happens.
+          Good: "The key is that each year's interest earns its own interest — so the base keeps growing, and so does the gain."
+          Bad: "Your money makes money."
+        - Reference real benchmark data: 8% historical S&P 500 average, 24% average credit card APR, 7% average mortgage rate, 3% average inflation, 15% recommended savings rate.
+        - Walk through the calculation step by step over multiple sentences so the viewer can follow the math as the animation builds.
+        - Include the counterintuitive or uncomfortable truth — the thing banks, retailers, or employers don't advertise.
 
-        If the sentence count is lower than 6, combine adjacent beats while keeping a hook, context, anomaly, consequence, and closing line.
-        If the sentence count is higher than 6, use extra sentences only for concrete escalation details.
+        VISUAL SYNC — each sentence tells the animation what to show:
+        - Each sentence must describe a discrete visual beat: a bar growing, a number changing, a line diverging on a graph.
+        - First sentence: A specific dollar figure or percentage shock. The animation shows the contrast or the number.
+        - Middle sentences: The calculation unfolding. Each sentence = one step of the math animating on screen.
+        - Final sentence: The full picture — the surprising total, the hidden cost, the net difference — shown side by side.
+
+        Script constraints:
+        - Plain spoken English. No jargon without a one-phrase gloss.
+        - Short declarative sentences. One idea per sentence.
+        - Do not say "welcome back", "in this video", "subscribe", or any channel filler.
+        - Do not use markdown, bullet points, or speaker labels.
+        - Return only the raw narration script.
+        """
+        elif self._is_psychology_profile():
+            prompt = f"""
+        Write a narration voiceover script for a {sentence_length}-sentence animated psychology and human behavior YouTube Short.
+
+        Topic: {self.subject}
+        Language: {self.language}
+
+        DEPTH REQUIREMENT — this must be a deep, mechanistic explanation of the psychology, not a surface-level definition:
+        - Name the bias or effect by its technical name and define it precisely in one sentence.
+        - Explain the neurological or evolutionary mechanism — WHY the brain built this shortcut.
+          Good: "Loss aversion evolved because avoiding predators mattered more than finding food — missing a threat was fatal, missing a reward was just disappointing."
+          Bad: "Your brain is wired to avoid losses."
+        - Include the research finding that quantifies it. Cite real data:
+          Kahneman and Tversky: losses feel 2.25x more painful than equivalent gains
+          Milgram obedience study: 65% continued to maximum shock level
+          Dunning-Kruger: beginners rate themselves in the 62nd percentile on average
+          Asch conformity: 75% conformed at least once when confederates gave wrong answers
+          Cialdini's social proof: hotel towel reuse increased 26% with peer norms framing
+        - Walk through the cognitive mechanism step by step — name the trigger, the automatic response, and the downstream behavior.
+        - Show how the bias is deliberately exploited in real products, pricing, or UX design.
+        - End with the specific catch signal — the one cue that tells you this bias is active right now.
+
+        VISUAL SYNC — each sentence tells the animation what to show:
+        - Each sentence corresponds to a discrete visual beat on screen.
+        - First sentence: A visual hook that names the effect and shows the contrast.
+        - Middle sentences: Step-by-step diagram of the cognitive process — scales tipping, probability bars, decision branches, before/after comparisons animating.
+        - Final sentence: The practical takeaway shown as a visual state change or labeled rule.
+
+        Script constraints:
+        - Plain spoken English. No academic jargon without a plain-English gloss.
+        - Short declarative sentences. One idea per sentence.
+        - Do not say "welcome back", "in this video", "subscribe", or any channel filler.
+        - Do not use markdown, bullet points, or speaker labels.
+        - Return only the raw narration script.
+        """
+        elif self._is_physics_profile():
+            prompt = f"""
+        Write a narration voiceover script for a {sentence_length}-sentence animated everyday physics YouTube Short.
+
+        Topic: {self.subject}
+        Language: {self.language}
+
+        DEPTH REQUIREMENT — this must explain the actual physics mechanism at the process level, not just state that it works:
+        - Name the specific physical effect, wave behavior, force, or particle interaction — then explain each step of the process.
+          Good: "The microphone membrane vibrates at the exact frequency of the incoming sound. That vibration moves a coil of wire through a magnetic field. Moving a conductor through a magnet generates an electrical current — that's Faraday's law. The current mirrors the pressure wave exactly."
+          Bad: "Microphones convert sound to electricity."
+        - Walk through the chain of cause and effect: step 1 → step 2 → step 3 → output.
+        - Name the relevant physical principle by name when it fits naturally:
+          Bernoulli's principle, the Doppler effect, Rayleigh scattering, Faraday's law, Newton's third law, resonance, constructive/destructive interference, capacitive sensing, inductive coupling.
+        - Include one real number that makes the scale tangible:
+          GPS signals travel 20,000 km and must be timed to 30 nanoseconds. Noise-canceling headphones sample sound 3,000 times per second to compute the anti-wave.
+        - Address the common misconception directly — what the viewer thought and why the reality is more interesting.
+
+        VISUAL SYNC — each sentence tells the animation what to show:
+        - Each sentence corresponds to a discrete visual beat: a wave emerging, a force arrow appearing, a cross-section animating, a particle moving step by step.
+        - First sentence: Show the device or phenomenon and the common misconception versus the true mechanism.
+        - Middle sentences: Animate each step of the physical process in sequence — one sentence per step, one animation per sentence.
+        - Final sentence: The full mechanism resolved — show the complete cycle, the elegant result, or the scale of the effect.
+
+        Script constraints:
+        - Plain spoken English. No equations as formulas — translate them into words.
+        - Short declarative sentences. One idea per sentence.
+        - Do not say "welcome back", "in this video", "subscribe", or any channel filler.
+        - Do not use markdown, bullet points, or speaker labels.
+        - Return only the raw narration script.
+        """
+        else:
+            prompt = f"""
+        Write a narration voiceover script for a {sentence_length}-sentence business and internet micro-doc YouTube Short.
+
+        Subject: {self.subject}
+        Language: {self.language}
+        Niche: {self.effective_niche}
+
+        DEPTH REQUIREMENT — the viewer must learn something real and transferable, not just hear a story:
+        - Name the exact mechanism that made the business, product, or creator move work or fail.
+          Good: "They priced the hardware at cost and made every dollar on replacement cartridges — a classic razor-and-blades model, except the lifetime cartridge spend averaged $1,400 per customer."
+          Bad: "They had a clever business model."
+        - Include the actual numbers: revenue, user counts, growth rates, prices, margins, timelines, conversion rates, or valuations.
+          Good: "The waitlist hit 100,000 people before the product shipped. They charged $300 upfront. That's $30 million in committed demand with no inventory risk."
+          Bad: "They had a huge waitlist."
+        - Explain WHY the mechanism worked on a psychological or economic level — not just what happened.
+          Good: "FOMO made the waitlist itself feel like social proof. Paying to join signaled quality. By launch day, customers had already convinced themselves it was worth it."
+          Bad: "People were excited about it."
+        - Name the transferable pattern — the underlying principle that shows up in other businesses, platforms, or creator strategies.
+          Examples: artificial scarcity, community moat, distribution arbitrage, price anchoring, network effects on one side only, manufactured urgency, loss-leader acquisition, parasocial trust conversion.
+        - Address what failed, what the critics got wrong, or what the founder didn't see coming.
+        - Clearly distinguish confirmed facts from reported estimates or public speculation.
+
+        BEAT STRUCTURE — follow this shape closely:
+        1. Hook: The most counterintuitive number, claim, or outcome. Make it feel impossible.
+        2. Context: Who, what, when — just enough to orient the viewer in one sentence.
+        3. Mechanism: The exact business model, growth loop, platform trick, or pricing structure — explained step by step.
+        4. Why it worked: The psychological or economic reason people responded. Name the principle.
+        5. Escalation or consequence: What happened at scale — the traction, the backlash, the copy-cats, the collapse.
+        6. The real insight: What this story reveals about how money, attention, or platforms actually work.
+        7. Closing line: A judgment question or call to action — short, spoken, non-cringe. E.g. "Was this genius or just luck?" or "Follow for more."
+
+        If sentence count is under 6, compress beats 3-5 without losing the mechanism or the real insight.
+        If sentence count is over 6, add concrete escalation detail — more numbers, a second twist, or a named consequence.
+
+        Script constraints:
+        - Short declarative sentences. One idea per sentence. Easy to caption on screen.
+        - Plain spoken English. No jargon without a one-phrase gloss immediately after.
+        - Do not say "welcome back", "in this video", "did you know", or any channel filler.
+        - Do not use markdown, bullet points, titles, speaker labels, or quotation marks around the full response.
+        - Do not invent facts. If a number is an estimate, say "roughly" or "reportedly."
+        - Return only the raw script.
 
         Do not under any circumstance reference this prompt in your response.
         """
@@ -468,21 +868,92 @@ class YouTube:
             metadata (dict): The generated metadata.
         """
         max_attempts = 3
-        title = ""
-        for _ in range(max_attempts):
-            title = self.generate_response(
-                f"""
-                Generate a YouTube Shorts title for the following real story, including hashtags: {self.subject}.
-                Create a clean curiosity gap built around a historical impossibility, unsettling contradiction, or impossible-sounding true detail.
-                Lead with the contradiction, not the category label.
-                Make it sound like an impossible claim about a real event, person, place, or object.
-                Keep it specific, emotionally charged, and narrow: one story, one mystery, one payoff.
-                Avoid generic educational phrasing, vague teaser language, listicle framing, or documentary-label titles like "The X Mystery".
-                Use no more than 2 concise, high-signal hashtags.
+
+        if self._is_finance_profile():
+            title_prompt = f"""
+                Generate a YouTube Shorts title for the following personal finance concept: {self.subject}.
+                Lead with a specific number, dollar amount, or surprising financial claim that makes the stat feel personal.
+                Make it sound like a financial truth most people don't know but affects them directly.
+                Keep it under 70 characters when possible. Prefer 5-10 words.
+                Avoid generic advice framing. No "how to save money" style — lead with the shocking math.
+                Do not use hashtags.
                 Only return the title, nothing else.
                 Limit the title under 100 characters.
                 """
-            )
+            description_prompt_template = f"""
+                Generate a YouTube Shorts description for the following personal finance script: {{script}}.
+                Open with the key dollar figure or financial fact from the script that will grab attention.
+                Follow with 1-2 sentences that make the concept feel personally relevant to the viewer.
+                End with a question that invites comments, such as asking what the viewer would do differently.
+                Only return the description, nothing else.
+                Limit the description under {{max_len}} characters.
+                """
+        elif self._is_psychology_profile():
+            title_prompt = f"""
+                Generate a YouTube Shorts title for the following psychology and human behavior concept: {self.subject}.
+                Name the specific bias, effect, or mental pattern and lead with what it makes people do against their own interest.
+                Make it feel like a personal revelation — "you" do this.
+                Keep it under 70 characters when possible. Prefer 5-10 words.
+                Avoid vague self-help framing. Lead with the specific mechanism, not generic "your brain" language.
+                Do not use hashtags.
+                Only return the title, nothing else.
+                Limit the title under 100 characters.
+                """
+            description_prompt_template = f"""
+                Generate a YouTube Shorts description for the following psychology script: {{script}}.
+                Open with the name of the bias or effect and a one-sentence claim about what it makes people do.
+                Follow with 1-2 sentences that ground the concept in a real everyday situation the viewer will recognize.
+                End with a question that invites self-reflection or a debate about whether the viewer has experienced this.
+                Only return the description, nothing else.
+                Limit the description under {{max_len}} characters.
+                """
+        elif self._is_physics_profile():
+            title_prompt = f"""
+                Generate a YouTube Shorts title for the following everyday physics concept: {self.subject}.
+                Lead with the surprising true mechanism of the device or phenomenon — the counterintuitive truth most people don't know.
+                Make it sound like a revelation about something the viewer uses or sees every day.
+                Keep it under 70 characters when possible. Prefer 5-10 words.
+                Avoid textbook phrasing. Lead with "why", "how", or a surprising true claim.
+                Do not use hashtags.
+                Only return the title, nothing else.
+                Limit the title under 100 characters.
+                """
+            description_prompt_template = f"""
+                Generate a YouTube Shorts description for the following everyday physics script: {{script}}.
+                Open with the surprising real mechanism this video explains, in one vivid sentence.
+                Follow with 1-2 sentences that make the viewer appreciate the invisible physics in their daily life.
+                End with a question that invites comments, such as what other device the viewer wants explained.
+                Only return the description, nothing else.
+                Limit the description under {{max_len}} characters.
+                """
+        else:
+            title_prompt = f"""
+                Generate a YouTube Shorts title for the following real business or internet story: {self.subject}.
+                Create a clean curiosity gap built around a surprising business model, creator move, viral product, platform mechanic, scam, or monetization twist.
+                Lead with the contradiction, not the category label.
+                Make it sound like a surprising true claim about a real company, product, creator, app, or internet behavior.
+                Keep it specific, emotionally charged, and narrow: one story, one tension, one payoff.
+                prefer 5 to 10 words when possible.
+                Avoid generic educational phrasing, vague teaser language, listicle framing, or documentary-label titles.
+                Do not use hashtags in the title.
+                Only return the title, nothing else.
+                Limit the title under 100 characters.
+                """
+            description_prompt_template = f"""
+                Generate a YouTube Shorts description for the following script: {{script}}.
+                Start with a high-contrast opening line that feels cinematic and immediate.
+                Keep the description focused on one story, one tension, one payoff.
+                Make the viewer understand why it matters without spoiling the entire curiosity gap.
+                If appropriate, hint at the business lesson, creator takeaway, or modern implication.
+                Do not repeat the title verbatim or open with a flat summary sentence.
+                end with a short judgment question that can spark comments.
+                Only return the description, nothing else.
+                Limit the description under {{max_len}} characters.
+                """
+
+        title = ""
+        for _ in range(max_attempts):
+            title = self.generate_response(title_prompt)
 
             if len(title) <= 100:
                 break
@@ -496,16 +967,10 @@ class YouTube:
         description = ""
         for _ in range(max_attempts):
             description = self.generate_response(
-                f"""
-                Generate a YouTube Shorts description for the following script: {self.script}.
-                Start with a high-contrast opening line that feels cinematic and immediate.
-                Keep the description focused on one story, one mystery, one payoff.
-                Make the viewer understand why it matters without spoiling the entire curiosity gap.
-                If appropriate, hint at the unresolved tension or modern implication.
-                Do not repeat the title verbatim or open with a flat summary sentence.
-                Only return the description, nothing else.
-                Limit the description under {max_description_length} characters.
-                """
+                description_prompt_template.format(
+                    script=self.script,
+                    max_len=max_description_length,
+                )
             )
 
             if len(description) <= max_description_length:
@@ -632,6 +1097,19 @@ class YouTube:
         cleaned_prompt = cleaned_prompt.rstrip(".")
 
         lowered = cleaned_prompt.lower()
+        if self._is_weird_business_profile():
+            business_suffix = (
+                " Realistic business/editorial visual, modern app screens, dashboards, "
+                "storefronts, product packaging, creator setups, checkout flows, "
+                "analytics charts, social posts, or office scenes, grounded lighting, "
+                "clean composition, legible interface detail, not surreal AI art."
+            )
+
+            if "realistic business/editorial visual" not in lowered:
+                cleaned_prompt = f"{cleaned_prompt}.{business_suffix}"
+
+            return cleaned_prompt
+
         documentary_style_suffix = (
             " National Geographic-style documentary photography, authentic "
             "photojournalism, professional documentary camera language, "
@@ -674,16 +1152,14 @@ class YouTube:
         Each search term should consist of a full sentence,
         always add the main subject of the video.
 
-        Use vivid visual detail, but keep every prompt documentary-style
-        and non-graphic.
-        Make each prompt feel like National Geographic-style documentary photography
-        or a frame from real documentary footage, not stylized AI art.
-        Use professional camera language with a specific shot type,
-        camera angle, lens choice, and lighting or composition cues.
-        Focus on atmosphere, setting, weather, objects, distant figures,
-        authentic textures, practical lighting, and historically grounded detail.
-        Avoid gore, visible injury, dead bodies, medical trauma, panic close-ups,
-        screaming faces, or explicit suffering.
+        Use vivid visual detail, but keep every prompt realistic and grounded.
+        Favor app screens, dashboards, storefronts, ecommerce listings,
+        creator setups, product packaging, checkout flows, analytics charts,
+        office scenes, screenshots, interfaces, headlines, and realistic business photography.
+        Make each prompt feel like a polished editorial or commercial visual,
+        not a wilderness documentary, not a historical reenactment, and not stylized AI art.
+        Use clean camera language, modern interface detail, grounded lighting,
+        legible layouts, and commercially plausible composition.
 
         YOU MUST ONLY RETURN THE JSON-ARRAY OF STRINGS.
         YOU MUST NOT RETURN ANYTHING ELSE.
@@ -938,6 +1414,26 @@ class YouTube:
         self.script = re.sub(r"[^\w\s.?!]", "", self.script)
 
         tts_instance.synthesize(self.script, path)
+
+        speed = get_tts_speed()
+        # Build the audio filter chain: optional speed change + 0.75s silence tail so
+        # the video never hard-cuts mid-word and ends with a natural breath pause.
+        filters = []
+        if speed != 1.0:
+            filters.append(f"atempo={speed}")
+        filters.append("apad=pad_dur=0.75")
+
+        processed_path = path.replace(".wav", "_processed.wav")
+        subprocess.run(
+            [
+                "ffmpeg", "-y", "-i", path,
+                "-filter:a", ",".join(filters),
+                processed_path,
+            ],
+            check=True,
+            capture_output=True,
+        )
+        os.replace(processed_path, path)
 
         self.tts_path = path
 
@@ -1266,17 +1762,33 @@ class YouTube:
         max_duration = tts_clip.duration
         req_dur = max_duration / len(self.images)
 
-        # Make a generator that returns a TextClip when called with consecutive
-        generator = lambda txt: TextClip(
-            txt,
-            font=os.path.join(get_fonts_dir(), get_font()),
-            fontsize=100,
-            color="#FFFF00",
-            stroke_color="black",
-            stroke_width=5,
-            size=(1080, 1920),
-            method="caption",
-        )
+        # Build subtitle clips: phrase-level text with a semi-transparent dark background.
+        # Research-backed defaults: 3-6 words per card, white text, dark pill, lower-center
+        # position at ~72% of frame height. bg is composed behind each text card via
+        # ColorClip.set_opacity() rather than a solid bg_color on the TextClip itself.
+        _font_path = os.path.join(get_fonts_dir(), get_font())
+
+        def generator(txt):
+            text_clip = TextClip(
+                txt,
+                font=_font_path,
+                fontsize=88,
+                color="white",
+                stroke_color="black",
+                stroke_width=3,
+                size=(920, None),
+                method="caption",
+            )
+            w, h = text_clip.size
+            pad = 18
+            bg = ColorClip(
+                size=(w + pad * 2, h + pad * 2),
+                color=(0, 0, 0),
+            ).set_opacity(0.60)
+            return CompositeVideoClip(
+                [bg, text_clip.set_pos("center")],
+                size=(w + pad * 2, h + pad * 2),
+            )
 
         print(colored("[+] Combining images...", "blue"))
 
@@ -1296,9 +1808,11 @@ class YouTube:
         subtitles = None
         try:
             subtitles_path = self.generate_subtitles(self.tts_path)
-            equalize_subtitles(subtitles_path, 10)
+            equalize_subtitles(subtitles_path, get_subtitle_max_chars())
             subtitles = SubtitlesClip(subtitles_path, generator)
-            subtitles.set_pos(("center", "center"))
+            # Position centered horizontally, lower-center vertically (~72% down 1920px frame).
+            # set_pos returns a new clip in MoviePy 1.x — assign the result.
+            subtitles = subtitles.set_pos(("center", 1380))
         except Exception as e:
             raise RuntimeError(f"Failed to generate subtitles: {e}") from e
 
@@ -1320,6 +1834,371 @@ class YouTube:
 
         return combined_image_path
 
+    # ------------------------------------------------------------------
+    # Manim how-to channel methods
+    # ------------------------------------------------------------------
+
+    def _inject_portrait_safeguards(self, source: str) -> str:
+        """
+        Post-processes generated Manim code to enforce portrait safe-zone width clamping.
+        Inserts a ``if mob.width > 3.0: mob.scale_to_fit_width(3.0)`` guard after every
+        Text() or VGroup() assignment so that oversized text cannot overflow the screen
+        regardless of what font_size the LLM chose.
+        """
+        text_assign_re = re.compile(r'^(\s+)(\w+)\s*=\s*(?:Text|VGroup)\s*\(')
+        lines = source.split('\n')
+        result = []
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            m = text_assign_re.match(line)
+            if m:
+                indent = m.group(1)
+                varname = m.group(2)
+                # Collect lines until parentheses are balanced (handles multi-line calls)
+                block = [line]
+                depth = line.count('(') - line.count(')')
+                j = i + 1
+                while depth > 0 and j < len(lines):
+                    block.append(lines[j])
+                    depth += lines[j].count('(') - lines[j].count(')')
+                    j += 1
+                # Check if next non-empty line already scales this var
+                next_line = lines[j] if j < len(lines) else ''
+                already_scaled = (
+                    f'{varname}.scale_to_fit_width' in next_line
+                    or f'{varname}.scale(' in next_line
+                )
+                result.extend(block)
+                if not already_scaled:
+                    result.append(f'{indent}if {varname}.width > 3.0: {varname}.scale_to_fit_width(3.0)')
+                i = j
+            else:
+                result.append(line)
+                i += 1
+        return '\n'.join(result)
+
+    def _inject_manim_text_fallbacks(self, source: str) -> str:
+        """
+        Injects plain-text fallback helpers so generated scenes do not depend on
+        a system LaTeX installation when the model emits MathTex or Tex.
+
+        Args:
+            source (str): Raw generated scene source.
+
+        Returns:
+            str: Scene source with fallback helpers inserted when needed.
+        """
+        if "MathTex(" not in source and not re.search(r"(?<!\w)Tex\(", source):
+            return source
+
+        if "def MathTex(*parts, **kwargs):" in source:
+            return source
+
+        fallback_helpers = """
+def _safe_plain_text(*parts, **kwargs):
+    safe_kwargs = {}
+    for key in ("font_size", "color", "slant", "weight", "gradient", "t2c", "t2f", "t2g", "t2s", "line_spacing"):
+        if key in kwargs:
+            safe_kwargs[key] = kwargs[key]
+
+    joined_parts = " ".join(str(part) for part in parts)
+    joined_parts = joined_parts.replace("\\\\text", "")
+    joined_parts = joined_parts.replace("\\\\rightarrow", "->")
+    joined_parts = joined_parts.replace("\\\\to", "->")
+    joined_parts = joined_parts.replace("\\\\cdot", "*")
+    joined_parts = joined_parts.replace("\\\\times", "x")
+    joined_parts = joined_parts.replace("{", "")
+    joined_parts = joined_parts.replace("}", "")
+    joined_parts = joined_parts.replace("\\\\", "")
+    return Text(joined_parts, **safe_kwargs)
+
+
+def MathTex(*parts, **kwargs):
+    return _safe_plain_text(*parts, **kwargs)
+
+
+def Tex(*parts, **kwargs):
+    return _safe_plain_text(*parts, **kwargs)
+""".strip()
+
+        class_match = re.search(r"^class\s+ExplainerScene\b", source, flags=re.MULTILINE)
+        if class_match is None:
+            return f"{fallback_helpers}\n\n{source}"
+
+        before_class = source[:class_match.start()].rstrip()
+        from_class_onward = source[class_match.start():].lstrip()
+        return f"{before_class}\n\n{fallback_helpers}\n\n{from_class_onward}"
+
+    def generate_manim_code(self) -> str:
+        """
+        Prompts the LLM to generate a complete Manim Python scene file for the
+        current subject and script.
+
+        Returns:
+            scene_path (str): Path to the written .py scene file.
+        """
+        # Build a numbered beat list so the LLM can sync visuals to narration
+        raw_sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", self.script.strip()) if s.strip()]
+        narration_beats = "\n".join(
+            f"        Beat {i + 1}: {s}"
+            for i, s in enumerate(raw_sentences)
+        )
+
+        prompt = f"""
+        Generate a complete, self-contained Manim Python animation scene for a YouTube Short (9:16 portrait, 1080x1920).
+
+        Topic: {self.subject}
+        Narration (voiceover read aloud alongside the animation): {self.script}
+
+        ═══════════════════════════════════════
+        MANDATORY: VERTICAL 9:16 PORTRAIT LAYOUT
+        ═══════════════════════════════════════
+        Start the file with EXACTLY these four config lines before any other code:
+          from manim import *
+          config.pixel_width = 1080
+          config.pixel_height = 1920
+          config.frame_width = 4.5
+          config.frame_height = 8
+
+        COORDINATE SYSTEM — memorize these hard limits:
+          frame_width = 4.5  →  left edge = x -2.25,  right edge = x +2.25
+          frame_height = 8   →  bottom edge = y -4.0,  top edge = y +4.0
+
+        SAFE ZONE — every Mobject's bounding box MUST fit inside:
+          x: -1.8  to  +1.8
+          y: -1.4  to  +3.5  ← HARD LIMIT: bottom 40% is the subtitle overlay — never go below -1.4
+
+        SUBTITLE ZONE WARNING:
+          A subtitle text band is burned into the video at the bottom of the screen
+          (approximately pixel y=1380–1600, which is Manim y=-1.75 to -2.5).
+          Any Manim content placed below y=-1.4 will be HIDDEN under the subtitles.
+          Keep every visual completely above y=-1.4. There is NO footer zone.
+
+        FORBIDDEN — these positions will clip or be hidden:
+          ✗  LEFT * N  or  RIGHT * N  where N > 1.6  (full screen is only 2.25 wide)
+          ✗  UP * N   or  DOWN * N   where N > 3.3
+          ✗  DOWN * N  where N > 1.2  (subtitle zone below y=-1.4 — content will be covered)
+          ✗  .to_edge(LEFT), .to_edge(RIGHT)  — use explicit .move_to() with safe coords instead
+          ✗  Any VGroup or bar chart that spans more than 3.2 units wide
+          ✗  Two side-by-side columns unless each is ≤ 1.4 units wide with a ≤ 0.3 gap
+          ✗  Any Text placed below y=-1.4
+          ✗  Any Text that has not had .scale_to_fit_width(min(t.width, 3.0)) applied
+
+        TEXT SIZING AND MANDATORY WIDTH CLAMPING:
+          After EVERY Text() you create, immediately call .scale_to_fit_width(3.0) on it.
+          This is not optional — every single Text() must be clamped:
+
+            hook = Text("YOUR TEXT\\nHERE", font_size=32)
+            hook.scale_to_fit_width(3.0)        # ← REQUIRED for every Text
+            hook.move_to(np.array([0, 2.8, 0]))
+
+          Font size guidelines (portrait — these are upper limits, go smaller if wrapping):
+            Title / hook line:      font_size = 28–36,  wrap after 14 characters using "\\n"
+            Body explanation text:  font_size = 22–28,  wrap after 20 characters using "\\n"
+            Diagram labels:         font_size = 16–22
+            Any VGroup: call .scale_to_fit_width(3.0) on the whole VGroup after assembling it
+
+        LAYOUT ZONES — use these y positions (subtitle zone occupies below y=-1.4):
+          Top label:       y ≈ +3.0   (short title, question, or hook text)
+          Upper visual:    y ≈ +1.5   (primary chart, diagram, or key value)
+          Center:          y ≈  0.0   (animation transforms)
+          Lower visual:    y ≈ -0.8   (secondary comparison or step)
+          Footer takeaway: y ≈ -1.2   (minimum allowable — do NOT go lower)
+
+        POSITIONING — always use explicit coordinates:
+          .move_to(np.array([x, y, 0]))   ← preferred
+          .shift(UP * 1.2)                ← acceptable if small N
+          NEVER trust default centering for portrait — everything drifts off-screen
+
+        ════════════════════════════════════════
+        MANDATORY: SYNC EVERY VISUAL TO THE NARRATION
+        ════════════════════════════════════════
+        The animation must show exactly what each narration sentence describes.
+        One beat = one sentence = one distinct visual animation step.
+        Do NOT animate generic transitions — each beat must illustrate the specific
+        claim made in that sentence.
+
+        Narration beats:
+{narration_beats}
+
+        Beat → visual mapping rules:
+        - Beat 1 (hook): Bold text or dramatic visual contrast that mirrors the hook claim
+        - Middle beats: Animate the EXACT mechanism described — grow bars as the number grows,
+          move an arrow when direction is mentioned, split a bar when a fee is deducted,
+          show the calculation building in real-time as the sentence says it
+        - Final beat: Show the "aha" payoff — final state, conclusion, or surprising comparison
+
+        ═══════════════════════════
+        GENERAL SCENE REQUIREMENTS
+        ═══════════════════════════
+        - Define exactly one scene class named `ExplainerScene` that inherits from `Scene`.
+        - Total animation runtime: 45–60 seconds. Use self.wait() calls to match narration pacing.
+        - Color palette: dark background (default), WHITE for text, YELLOW for highlights,
+          GREEN for positive/gain, RED for negative/loss/cost, BLUE for neutral data.
+        - Use Text() only. Do NOT use MathTex, Tex, or LaTeX. Write math as plain strings.
+        - Animations to use: Write, FadeIn, FadeOut, Create, Transform, GrowFromCenter,
+          DrawBorderThenFill, MoveToTarget, ReplacementTransform, LaggedStart.
+        - Do NOT use: ThreeDScene, OpenGLRenderer, external images, SVG files, audio code,
+          always_redraw, ValueTracker-based updaters (keep it simple and reliable).
+
+        Return ONLY raw Python code. No markdown fences, no explanation text outside the code.
+        """
+
+        completion = self.generate_response(prompt)
+
+        # Strip markdown code fences if the LLM wrapped the output
+        completion = re.sub(r"^```python\s*\n?", "", completion.strip(), flags=re.IGNORECASE)
+        completion = re.sub(r"^```\s*\n?", "", completion.strip())
+        completion = re.sub(r"\n?```\s*$", "", completion.strip())
+        completion = self._inject_manim_text_fallbacks(completion)
+        completion = self._inject_portrait_safeguards(completion)
+
+        if "ExplainerScene" not in completion:
+            raise RuntimeError("Generated Manim code does not contain ExplainerScene class.")
+
+        scene_path = os.path.join(ROOT_DIR, ".mp", str(uuid4()) + "_scene.py")
+        with open(scene_path, "w", encoding="utf-8") as f:
+            f.write(completion)
+
+        if get_verbose():
+            info(f' => Wrote Manim scene to "{scene_path}"')
+
+        return scene_path
+
+    def render_manim(self, scene_path: str) -> str:
+        """
+        Renders a Manim scene file to an MP4 via the manim CLI.
+
+        Args:
+            scene_path (str): Path to the .py scene file.
+
+        Returns:
+            video_path (str): Path to the rendered MP4 file.
+        """
+        import glob
+
+        media_dir = os.path.join(ROOT_DIR, ".mp", "manim_media")
+        os.makedirs(media_dir, exist_ok=True)
+
+        scene_stem = os.path.splitext(os.path.basename(scene_path))[0]
+
+        _manim_bin = os.path.join(os.path.dirname(sys.executable), "manim")
+        cmd = [
+            _manim_bin, "render",
+            scene_path,
+            "ExplainerScene",
+            "-ql",
+            "--media_dir", media_dir,
+        ]
+
+        if get_verbose():
+            info(f" => Running manim: {' '.join(cmd)}")
+
+        result = subprocess.run(cmd, capture_output=True, text=True, cwd=ROOT_DIR)
+
+        if result.returncode != 0:
+            error_output = (result.stderr or result.stdout or "").strip()
+            raise RuntimeError(f"Manim render failed:\n{error_output}")
+
+        # Locate the rendered MP4 (quality suffix varies, e.g. 480p15)
+        pattern = os.path.join(media_dir, "videos", scene_stem, "*", "ExplainerScene.mp4")
+        matches = sorted(glob.glob(pattern))
+
+        if not matches:
+            raise RuntimeError(
+                f"Manim render completed but no MP4 found matching: {pattern}"
+            )
+
+        rendered_path = matches[-1]
+        output_path = os.path.join(ROOT_DIR, ".mp", str(uuid4()) + "_manim.mp4")
+        os.rename(rendered_path, output_path)
+
+        if get_verbose():
+            info(f' => Rendered Manim video to "{output_path}"')
+
+        return output_path
+
+    def combine_manim(self, manim_video_path: str) -> str:
+        """
+        Combines a Manim-rendered video with TTS audio, background music, and subtitles.
+
+        Args:
+            manim_video_path (str): Path to the Manim MP4.
+
+        Returns:
+            path (str): Path to the final combined MP4.
+        """
+        combined_path = os.path.join(ROOT_DIR, ".mp", str(uuid4()) + ".mp4")
+        threads = get_threads()
+
+        tts_clip = AudioFileClip(self.tts_path)
+        max_duration = tts_clip.duration
+
+        manim_clip = VideoFileClip(manim_video_path)
+
+        # Loop Manim video if it is shorter than TTS; trim if longer
+        if manim_clip.duration < max_duration:
+            loops_needed = int(max_duration / manim_clip.duration) + 1
+            manim_clip = concatenate_videoclips([manim_clip.copy() for _ in range(loops_needed)])
+        manim_clip = manim_clip.subclip(0, max_duration).set_fps(30)
+
+        # Ensure portrait 1080×1920
+        if (manim_clip.w, manim_clip.h) != (1080, 1920):
+            manim_clip = manim_clip.resize((1080, 1920))
+
+        _font_path_manim = os.path.join(get_fonts_dir(), get_font())
+
+        def generator(txt):
+            text_clip = TextClip(
+                txt,
+                font=_font_path_manim,
+                fontsize=88,
+                color="white",
+                stroke_color="black",
+                stroke_width=3,
+                size=(920, None),
+                method="caption",
+            )
+            w, h = text_clip.size
+            pad = 18
+            bg = ColorClip(
+                size=(w + pad * 2, h + pad * 2),
+                color=(0, 0, 0),
+            ).set_opacity(0.60)
+            return CompositeVideoClip(
+                [bg, text_clip.set_pos("center")],
+                size=(w + pad * 2, h + pad * 2),
+            )
+
+        subtitles = None
+        try:
+            subtitles_path = self.generate_subtitles(self.tts_path)
+            equalize_subtitles(subtitles_path, get_subtitle_max_chars())
+            subtitles = SubtitlesClip(subtitles_path, generator)
+            subtitles = subtitles.set_pos(("center", 1380))
+        except Exception as e:
+            raise RuntimeError(f"Failed to generate subtitles: {e}") from e
+
+        random_song = choose_random_manim_song()
+        random_song_clip = AudioFileClip(random_song).set_fps(44100)
+        random_song_clip = random_song_clip.fx(afx.volumex, 0.1)
+        comp_audio = CompositeAudioClip([tts_clip.set_fps(44100), random_song_clip])
+
+        final_clip = manim_clip.set_audio(comp_audio)
+        final_clip = final_clip.set_duration(max_duration)
+
+        if subtitles is not None:
+            final_clip = CompositeVideoClip([final_clip, subtitles])
+
+        final_clip.write_videofile(combined_path, threads=threads, audio_codec="aac")
+
+        success(f'Wrote Manim Video to "{combined_path}"')
+
+        return combined_path
+
+    # ------------------------------------------------------------------
+
     def generate_video(self, tts_instance: TTS) -> str:
         """
         Generates a YouTube Short based on the provided niche and language.
@@ -1339,20 +2218,31 @@ class YouTube:
         # Generate the Metadata
         self.generate_metadata()
 
-        # Generate the Image Prompts
-        image_prompts = self.generate_prompts()
+        if self._is_manim_profile():
+            # Generate Manim animation code and render it
+            scene_path = self.generate_manim_code()
+            manim_video_path = self.render_manim(scene_path)
 
-        # Generate the Images
-        for prompt in image_prompts:
-            image_path = self.generate_image(prompt)
-            if not image_path:
-                raise RuntimeError(f"Failed to generate image for prompt: {prompt}")
+            # Generate the TTS
+            self.generate_script_to_speech(tts_instance)
 
-        # Generate the TTS
-        self.generate_script_to_speech(tts_instance)
+            # Combine Manim video with TTS + music + subtitles
+            path = self.combine_manim(manim_video_path)
+        else:
+            # Generate the Image Prompts
+            image_prompts = self.generate_prompts()
 
-        # Combine everything
-        path = self.combine()
+            # Generate the Images
+            for prompt in image_prompts:
+                image_path = self.generate_image(prompt)
+                if not image_path:
+                    raise RuntimeError(f"Failed to generate image for prompt: {prompt}")
+
+            # Generate the TTS
+            self.generate_script_to_speech(tts_instance)
+
+            # Combine everything
+            path = self.combine()
 
         if get_verbose():
             info(f" => Generated Video: {path}")

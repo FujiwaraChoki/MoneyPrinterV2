@@ -123,6 +123,36 @@ class YouTubeTopicDedupTests(unittest.TestCase):
 
         self.assertIsNone(similar_video)
 
+    def test_find_similar_video_blocks_same_named_subject_with_different_framing(self) -> None:
+        youtube = self.build_youtube()
+
+        similar_video = youtube._find_similar_video(
+            "Pink Sauce: how a single viral TikTok condiment brand exposed the reality of scaling without safety checks.",
+            [
+                {
+                    "title": "How a viral TikTok recipe turned into a supply chain nightmare.",
+                    "topic": "The bizarre rise of the 'Pink Sauce' influencer saga, where a single viral recipe launch revealed the chaotic, unregulated reality of a creator trying to turn a TikTok trend into a multi-million dollar condiment empire overnight.",
+                }
+            ],
+        )
+
+        self.assertIsNotNone(similar_video)
+
+    def test_find_similar_video_does_not_block_different_business_stories(self) -> None:
+        youtube = self.build_youtube()
+
+        similar_video = youtube._find_similar_video(
+            "Fyre Festival: how a single Instagram post sold 5000 tickets to an empty field.",
+            [
+                {
+                    "title": "How WeWork's $47 billion valuation collapsed inside one year",
+                    "topic": "The bizarre rise and collapse of WeWork, the co-working space startup that burned through billions by treating office leases as a tech company scale play.",
+                }
+            ],
+        )
+
+        self.assertIsNone(similar_video)
+
     def test_generate_topic_retries_when_candidate_matches_previous_story(self) -> None:
         youtube = self.build_youtube()
         youtube.generate_response = Mock(

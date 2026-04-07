@@ -4,6 +4,25 @@ import json
 from typing import List
 from config import ROOT_DIR
 
+YOUTUBE_DEFAULT_NICHE = "weird business / internet / creator-economy micro-doc Shorts"
+YOUTUBE_LEGACY_NICHES = {
+    "strange real events, unexplained cases, disasters, and historical incidents that sound fictional",
+    "strange real events",
+    "true crime and strange real events",
+    "unexplained disappearances and strange real events",
+}
+
+
+def _normalize_youtube_account(account: dict) -> tuple[dict, bool]:
+    normalized_account = dict(account or {})
+    current_niche = str(normalized_account.get("niche") or "").strip()
+
+    if current_niche in YOUTUBE_LEGACY_NICHES:
+        normalized_account["niche"] = YOUTUBE_DEFAULT_NICHE
+        return normalized_account, True
+
+    return normalized_account, False
+
 def get_cache_path() -> str:
     """
     Gets the path to the cache file.
@@ -88,8 +107,25 @@ def get_accounts(provider: str) -> List[dict]:
         if 'accounts' not in parsed:
             return []
 
-        # Get accounts dictionary
-        return parsed['accounts']
+        accounts = parsed['accounts']
+
+        if provider != "youtube":
+            return accounts
+
+        normalized_accounts = []
+        did_migrate = False
+        for account in accounts:
+            normalized_account, changed = _normalize_youtube_account(account)
+            normalized_accounts.append(normalized_account)
+            did_migrate = did_migrate or changed
+
+        if did_migrate:
+            with open(cache_path, 'w') as write_file:
+                json.dump({
+                    "accounts": normalized_accounts
+                }, write_file, indent=4)
+
+        return normalized_accounts
 
 def add_account(provider: str, account: dict) -> None:
     """

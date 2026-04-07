@@ -22,6 +22,13 @@ except ImportError:
     _WeasyPrintRenderer = None  # type: ignore
     _WEASYPRINT_AVAILABLE = False
 
+try:
+    from etsy.render_typst import TypstRenderer as _TypstRenderer
+    _TYPST_AVAILABLE = True
+except ImportError:
+    _TypstRenderer = None  # type: ignore
+    _TYPST_AVAILABLE = False
+
 
 class EtsyRenderTests(unittest.TestCase):
     renderer_class = PdfRenderer
@@ -172,8 +179,6 @@ class EtsyRenderTests(unittest.TestCase):
         self.assertTrue(any(path.endswith("page-preview-2.png") for path in manifest["preview_images"]))
 
     def test_weasyprint_importable(self):
-        import weasyprint  # noqa: F401
-        import jinja2      # noqa: F401
         import fitz        # noqa: F401
 
     def test_font_files_exist(self):
@@ -218,3 +223,90 @@ class WeasyPrintRenderTests(EtsyRenderTests):
             b"/Type/Page" in pdf_bytes or b"/Type /Page" in pdf_bytes,
             "Expected /Type/Page or /Type /Page in PDF bytes",
         )
+
+@unittest.skipUnless(_TYPST_AVAILABLE, "render_typst requires typst binary")
+class TypstRenderTests(EtsyRenderTests):
+    """Run the full EtsyRenderTests suite with TypstRenderer."""
+
+    renderer_class = _TypstRenderer  # type: ignore
+
+    def test_typst_binary_found(self) -> None:
+        import shutil
+        self.assertIsNotNone(shutil.which("typst"), "typst binary not on PATH")
+
+    def test_renderer_stores_registered_fonts_attribute(self) -> None:
+        renderer = self.renderer_class()
+        self.assertTrue(hasattr(renderer, "_registered_fonts"))
+        self.assertIsInstance(renderer._registered_fonts, frozenset)
+
+    def test_weasyprint_importable(self):
+        # Not applicable for Typst renderer — just check fitz is present
+        import fitz  # noqa: F401
+
+    def test_typst_cover_uses_family_specific_heading_copy(self) -> None:
+        import fitz
+
+        renderer = self.renderer_class()
+        run_dir = self.make_run_dir_with_product_spec()
+
+        etsy_io.write_json(
+            os.path.join(run_dir, "artifacts", "product_spec.json"),
+            {
+                "run_id": os.path.basename(run_dir),
+                "product_type": "planner",
+                "audience": "Boho-style brides seeking holistic wellness and stress management during wedding planning",
+                "title_theme": "Ethereal Bridal Wellness & Mindful Planning Sanctuary",
+                "page_count": 6,
+                "page_size": "LETTER",
+                "sections": [
+                    {"name": "Mindful Intentions", "purpose": "Setting emotional goals and wedding vision alignment", "page_span": 2},
+                    {"name": "Holistic Health Tracker", "purpose": "Monitoring sleep, hydration, nutrition, and movement", "page_span": 2},
+                    {"name": "Ritual & Self-Care Log", "purpose": "Scheduling daily affirmations and skincare rituals", "page_span": 2},
+                ],
+                "style_notes": {
+                    "font_family": "Playfair Display and Montserrat",
+                    "accent_color": "#D4AF37",
+                    "spacing_density": "airy",
+                    "decor_style": "bohemian botanical with line-art wildflowers and earthy terracotta tones",
+                },
+                "output_files": ["product/bridal-wellness.pdf"],
+            },
+        )
+        etsy_io.write_json(
+            os.path.join(run_dir, "artifacts", "design_system.json"),
+            {
+                "run_id": os.path.basename(run_dir),
+                "palette": {
+                    "primary": "#D4AF37",
+                    "secondary": "#E8D7BC",
+                    "background": "#F9F7F2",
+                },
+                "typography": {
+                    "heading_font": "Cinzel Decorative",
+                    "body_font": "Montserrat Light",
+                },
+                "layout": {
+                    "template_name": "ethereal-wellness-sanctuary-planner",
+                    "header_style": "minimalist-serif-with-botanical-line-art-accents",
+                    "page_frame_style": "delicate-gold-foil-thin-border-with-organic-leaf-motifs",
+                    "template_family": "cottagecore",
+                },
+                "mockup_style": {
+                    "background_color": "#F4F1EA",
+                    "scene_style": "flat-lay-with-dried-eucalyptus-silk-ribbons-and-soft-natural-sunlight-shadows",
+                },
+            },
+        )
+
+        manifest_path = renderer.run(run_dir)
+        manifest = etsy_io.read_json(manifest_path)
+        pdf_path = os.path.join(run_dir, manifest["product_files"][0])
+
+        document = fitz.open(pdf_path)
+        try:
+            first_page_text = document[0].get_text()
+        finally:
+            document.close()
+
+        self.assertIn("Ethereal Bridal Wellness", first_page_text)
+        self.assertIn("GatheredInside", first_page_text.replace(" ", ""))

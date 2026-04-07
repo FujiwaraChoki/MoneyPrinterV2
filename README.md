@@ -27,6 +27,7 @@ MPV2 (MoneyPrinter Version 2) is, as the name suggests, the second version of th
 - [x] YouTube Shorts Automator (with CRON Jobs => `scheduler`)
 - [x] Affiliate Marketing (Amazon + Twitter)
 - [x] Find local businesses & cold outreach
+- [x] Etsy digital products workflow for planner, tracker, and worksheet listings
 
 ## Versions
 
@@ -82,6 +83,7 @@ bash scripts/setup_local.sh
 - create `config.json` from `config.example.json` when needed
 - create `venv/` if it does not exist
 - install Python dependencies
+- install a `money` launcher into `~/.local/bin`
 - seed local defaults such as `openrouter_base_url`, `imagemagick_path`, and a detected Firefox profile when available
 - run `scripts/preflight_local.py`
 
@@ -90,6 +92,13 @@ It does **not** provision OpenRouter credentials or choose a model for you. You 
 ## Usage
 
 Run everything from the project root:
+
+```bash
+bash scripts/setup_local.sh
+money
+```
+
+If you prefer the manual path, this still works:
 
 ```bash
 source venv/bin/activate
@@ -104,10 +113,22 @@ A minimal OpenRouter-backed text-generation setup looks like this:
 ```json
 {
   "openrouter_api_key": "your-openrouter-api-key",
-  "openrouter_model": "openai/gpt-4.1-mini",
+  "openrouter_model": "google/gemma-4-26b-a4b-it",
+  "openrouter_fallback_models": [
+    "google/gemma-4-31b-it",
+    "qwen/qwen3.6-plus:free"
+  ],
   "openrouter_base_url": "https://openrouter.ai/api/v1"
 }
 ```
+
+Recommended low-cost text setup for this repo:
+
+- primary: `google/gemma-4-26b-a4b-it`
+- first fallback: `google/gemma-4-31b-it`
+- second fallback: `qwen/qwen3.6-plus:free`
+
+You can also set fallbacks through `OPENROUTER_FALLBACK_MODELS` as a comma-separated list.
 
 If you prefer environment fallbacks for local testing:
 
@@ -118,6 +139,20 @@ source venv/bin/activate
 python scripts/preflight_local.py
 python src/main.py
 ```
+
+### Etsy workflow
+
+Choose `Etsy Digital Products` from the main menu to start the Etsy pipeline.
+
+The current MVP flow:
+
+- researches a planner, tracker, or worksheet opportunity
+- generates a normalized product spec
+- renders a PDF plus preview image
+- creates five PNG listing mockups
+- writes seller-ready listing files for titles, description, tags, and a checklist
+
+Outputs are stored under `.mp/etsy/<timestamp>-<slug>/` with separate `artifacts/`, `product/`, `mockups/`, and `listing/` folders. The CLI also supports resuming incomplete Etsy runs from the first unfinished stage.
 
 ## Documentation
 

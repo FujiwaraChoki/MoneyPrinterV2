@@ -25,6 +25,14 @@ FONTS = {
     "Lato-Bold.ttf": (
         "https://github.com/google/fonts/raw/main/ofl/lato/Lato-Bold.ttf"
     ),
+    # DM Sans variable font — clean, modern, premium sans-serif (trending 2024-2026)
+    # Same file for Regular and Bold (variable wght axis covers 100-900)
+    "DMSans-Regular.ttf": (
+        "https://github.com/google/fonts/raw/main/ofl/dmsans/DMSans%5Bopsz%2Cwght%5D.ttf"
+    ),
+    "DMSans-Bold.ttf": (
+        "https://github.com/google/fonts/raw/main/ofl/dmsans/DMSans%5Bopsz%2Cwght%5D.ttf"
+    ),
 }
 
 

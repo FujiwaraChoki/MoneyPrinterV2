@@ -46,6 +46,10 @@ _FONT_MAP: dict[str, str] = {
     "playfair display bold": "Playfair Display",
     "lato": "Lato",
     "lato bold": "Lato",
+    "dm sans": "DM Sans",
+    "dm-sans": "DM Sans",
+    "dm sans bold": "DM Sans",
+    "dmsans": "DM Sans",
 }
 
 
@@ -180,7 +184,7 @@ class WeasyPrintRenderer:
 
     def _resolve_font(self, font_name: str | None) -> str:
         key = str(font_name or "").strip().lower()
-        return _FONT_MAP.get(key, "Lato")
+        return _FONT_MAP.get(key, "DM Sans")
 
     @staticmethod
     def _html_to_pdf_bytes(html: str) -> bytes:

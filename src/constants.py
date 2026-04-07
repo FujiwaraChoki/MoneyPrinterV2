@@ -7,9 +7,6 @@ TWITTER_POST_BUTTON_XPATH = "/html/body/div[1]/div/div/div[2]/main/div/div/div/d
 
 OPTIONS = [
     "YouTube Shorts Automation",
-    "Twitter Bot",
-    "Affiliate Marketing",
-    "Outreach",
     "Quit"
 ]
 
@@ -17,6 +14,7 @@ TWITTER_OPTIONS = [
     "Post something",
     "Show all Posts",
     "Setup CRON Job",
+    "View CRON Jobs",
     "Quit"
 ]
 
@@ -31,6 +29,7 @@ YOUTUBE_OPTIONS = [
     "Upload Short",
     "Show all Shorts",
     "Setup CRON Job",
+    "View CRON Jobs",
     "Quit"
 ]
 

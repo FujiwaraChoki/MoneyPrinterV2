@@ -1,53 +1,78 @@
 <!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><style>{{ css }}
-.priority-box { background: white; border: 1pt solid var(--secondary); border-radius: 8pt; padding: 0.08in 0.14in; margin-bottom: 0.1in; }
-.priority-title { font-family: var(--heading-font); font-weight: 700; font-size: 10pt; color: var(--primary); margin-bottom: 6pt; }
-.priority-row { display: flex; align-items: center; gap: 8pt; margin-bottom: 6pt; }
-.priority-circle { width: 10pt; height: 10pt; border-radius: 50%; border: 0.8pt solid #CBD5E1; flex-shrink: 0; }
-.priority-line { flex: 1; border-bottom: 0.8pt solid #CBD5E1; min-height: 14pt; }
-.time-table { width: 100%; border-collapse: collapse; }
-.time-table tr:nth-child(even) td { background: #F8FAFC; }
-.time-cell { font-family: var(--heading-font); font-weight: 700; font-size: 8.5pt; color: var(--primary); padding: 4pt 6pt; border-right: 1.5pt solid var(--secondary); width: 0.7in; white-space: nowrap; }
-.content-cell { font-family: var(--body-font); font-size: 8.5pt; color: #475569; padding: 4pt 8pt; border-bottom: 0.7pt solid #E2E8F0; }
-</style></head>
+<head>
+<meta charset="utf-8">
+<style>{{ css }}</style>
+<style>
+.time-grid { width: 100%; border-collapse: collapse; }
+.time-grid td { vertical-align: top; padding: 0; }
+.tg-time {
+    width: 0.55in;
+    padding-right: 8pt;
+    padding-top: 4pt;
+    font-family: var(--body-font);
+    font-size: 7.5pt;
+    font-weight: 700;
+    color: var(--muted);
+    text-align: right;
+    white-space: nowrap;
+    border-top: 0.5pt solid var(--line);
+}
+.tg-write { min-height: 0.3in; border-top: 0.5pt solid var(--line); }
+.tg-accent { width: 3pt; background: var(--secondary); border-top: 0.5pt solid var(--line); }
+</style>
+</head>
 <body>
 <div class="page">
-  <div class="header-bar">
-    <span class="theme-label">{{ title_theme }}</span>
-    <span class="page-title">{{ title }}</span>
-    <span class="page-num">{{ page_number }} / {{ page_count }}</span>
-  </div>
-  <div class="sub-header">
-    <span class="badge">{{ page_type }}</span>
-    <span class="section-name">{{ section_name }}</span>
-  </div>
-  <div class="content-zone">
-    <div class="priority-box">
-      <div class="priority-title">TODAY'S PRIORITIES</div>
-      {% for label in ["Morning Priority", "Afternoon Priority", "Evening Priority"] %}
-      <div class="priority-row">
-        <div class="priority-circle"></div>
-        <div class="priority-line"></div>
-      </div>
-      {% endfor %}
+    <div class="header-bar">
+        <div class="theme-label">{{ section_name }}</div>
+        <div class="page-title">{{ title }}</div>
+        <div class="page-num">{{ page_number }} / {{ page_count }}</div>
     </div>
-    <table class="time-table">
-      {% set time_slots = ["6:00 AM","7:00 AM","8:00 AM","9:00 AM","10:00 AM","11:00 AM","12:00 PM","1:00 PM","2:00 PM","3:00 PM","4:00 PM","5:00 PM","6:00 PM","7:00 PM","8:00 PM"] %}
-      {% for slot in time_slots %}
-      <tr>
-        <td class="time-cell">{{ slot }}</td>
-        <td class="content-cell">{% if loop.index0 < body|length %}{{ body[loop.index0] }}{% endif %}</td>
-      </tr>
-      {% endfor %}
-    </table>
-  </div>
-  <div class="footer">
-    <div class="footer-row">
-      <span class="footer-left">Instant digital download for personal planning use</span>
-      <span class="footer-right">MoneyPrinter+ Generator</span>
+    <div class="accent-strip"></div>
+
+    <div class="content-zone" style="padding-bottom: 0.08in;">
+        <div class="field-row">
+            <span class="field-label">Today's Focus</span>
+            <div class="field-line"></div>
+        </div>
+        <div class="field-row">
+            <span class="field-label">Date</span>
+            <div class="field-line" style="max-width: 1.6in;"></div>
+            <span class="field-label" style="margin-left: 0.2in;">Energy</span>
+            <div class="dot-row" style="margin-left: 4pt; margin-bottom: 2pt;">
+                <div class="dot-circle"></div>
+                <div class="dot-circle"></div>
+                <div class="dot-circle"></div>
+                <div class="dot-circle"></div>
+                <div class="dot-circle"></div>
+            </div>
+        </div>
     </div>
-  </div>
+    <hr class="rule" style="margin: 0 0.6in 0.1in 0.6in;">
+
+    <div class="content-zone" style="padding-top: 0; padding-bottom: 0.08in;">
+        <table class="time-grid">
+            {% set slots = body if body else ["5 AM","6 AM","7 AM","8 AM","9 AM","10 AM","11 AM","12 PM","1 PM","2 PM","3 PM","4 PM","5 PM","6 PM","7 PM","8 PM","9 PM","10 PM"] %}
+            {% for slot in slots %}
+            <tr>
+                <td class="tg-time">{{ slot }}</td>
+                <td class="tg-accent"></td>
+                <td class="tg-write"></td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <hr class="rule" style="margin: 0 0.6in 0.08in 0.6in;">
+
+    <div class="content-zone" style="padding-top: 0;">
+        <div class="card card-primary">
+            <div class="card-label">Notes &amp; Follow-Ups</div>
+            {% for _ in range(3) %}
+            <div class="line"></div>
+            {% endfor %}
+        </div>
+    </div>
 </div>
 </body>
 </html>

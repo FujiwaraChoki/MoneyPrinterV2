@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import sys
+import time
 import unittest
 from unittest.mock import Mock
 from unittest.mock import patch
@@ -115,6 +116,10 @@ class YouTubeVideoPersistenceTests(unittest.TestCase):
         with open(image_path, "wb") as handle:
             handle.write(b"image")
 
+        # Backdate image so it's older than the 2-hour stale threshold
+        old_ts = time.time() - 3 * 3600
+        os.utime(image_path, (old_ts, old_ts))
+
         self.utils.rem_temp_files()
 
         self.assertTrue(os.path.exists(video_path))
@@ -144,6 +149,10 @@ class YouTubeVideoPersistenceTests(unittest.TestCase):
             handle.write(b"tracked")
         with open(untracked_video_path, "wb") as handle:
             handle.write(b"untracked")
+
+        # Backdate untracked video so it's older than the 2-hour stale threshold
+        old_ts = time.time() - 3 * 3600
+        os.utime(untracked_video_path, (old_ts, old_ts))
 
         self.utils.rem_temp_files()
 

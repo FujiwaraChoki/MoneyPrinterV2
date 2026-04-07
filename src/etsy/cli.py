@@ -8,7 +8,7 @@ from etsy.io import discover_runs
 from etsy.page_blueprint import PageBlueprintAgent
 from etsy.pipeline import EtsyPipeline
 from etsy.product_spec import ProductSpecAgent
-from etsy.render_weasyprint import WeasyPrintRenderer
+from etsy.render_typst import TypstRenderer
 from etsy.research import ResearchAgent
 from llm_provider import generate_text
 from status import info
@@ -28,9 +28,9 @@ def build_etsy_pipeline() -> EtsyPipeline:
         ProductSpecAgent(generate_text),
         DesignSystemAgent(generate_text),
         PageBlueprintAgent(generate_text),
-        WeasyPrintRenderer(),
+        TypstRenderer(),
         MockupAgent(),
-        ListingPackageAgent(),
+        ListingPackageAgent(generate_text),
     )
 
 

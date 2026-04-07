@@ -2,6 +2,7 @@ import json
 import os
 import random
 import shutil
+import time
 import zipfile
 import requests
 import platform
@@ -59,6 +60,12 @@ def rem_temp_files() -> None:
     mp_dir = os.path.join(ROOT_DIR, ".mp")
     preserved_video_paths = _get_preserved_rendered_video_paths(mp_dir)
 
+    # Do not delete files that were modified within the last 2 hours.
+    # Multiple main.py processes may run simultaneously (manual run + cron jobs).
+    # Each calls rem_temp_files() at the start of its menu loop, which would
+    # otherwise wipe temp PNGs/WAVs currently being used by another instance.
+    stale_threshold = time.time() - (2 * 60 * 60)
+
     files = os.listdir(mp_dir)
 
     for file in files:
@@ -68,6 +75,17 @@ def rem_temp_files() -> None:
             continue
 
         if file.endswith(".mp4") and os.path.abspath(path) in preserved_video_paths:
+            continue
+
+        # Never delete persistent output subdirectories
+        if file == "etsy":
+            continue
+
+        # Skip recently modified files to avoid clobbering in-progress sessions
+        try:
+            if os.path.getmtime(path) > stale_threshold:
+                continue
+        except OSError:
             continue
 
         if os.path.isdir(path) and not os.path.islink(path):
@@ -180,13 +198,46 @@ def fetch_songs() -> None:
 
 def choose_random_song() -> str:
     """
-    Chooses a random song from the songs/ directory.
+    Chooses a random song from the Songs/ directory (weird-business niche).
+
+    Returns:
+        str: The path to the chosen song.
+    """
+    return choose_random_song_from_dir(os.path.join(ROOT_DIR, "Songs"))
+
+
+def choose_random_manim_song() -> str:
+    """
+    Chooses a random song from the Songs-manim/ directory (Manim niches).
+    Falls back to Songs/ if Songs-manim/ does not exist or is empty.
+
+    Returns:
+        str: The path to the chosen song.
+    """
+    manim_dir = os.path.join(ROOT_DIR, "Songs-manim")
+    if os.path.isdir(manim_dir):
+        songs = [
+            name
+            for name in os.listdir(manim_dir)
+            if os.path.isfile(os.path.join(manim_dir, name))
+            and name.lower().endswith((".mp3", ".wav", ".m4a", ".aac", ".ogg"))
+        ]
+        if songs:
+            return choose_random_song_from_dir(manim_dir)
+    return choose_random_song_from_dir(os.path.join(ROOT_DIR, "Songs"))
+
+
+def choose_random_song_from_dir(songs_dir: str) -> str:
+    """
+    Chooses a random audio file from the given directory.
+
+    Args:
+        songs_dir (str): Absolute path to the directory containing audio files.
 
     Returns:
         str: The path to the chosen song.
     """
     try:
-        songs_dir = os.path.join(ROOT_DIR, "Songs")
         songs = [
             name
             for name in os.listdir(songs_dir)
@@ -194,10 +245,10 @@ def choose_random_song() -> str:
             and name.lower().endswith((".mp3", ".wav", ".m4a", ".aac", ".ogg"))
         ]
         if len(songs) == 0:
-            raise RuntimeError("No audio files found in Songs directory")
+            raise RuntimeError(f"No audio files found in {songs_dir}")
         song = random.choice(songs)
         success(f" => Chose song: {song}")
-        return os.path.join(ROOT_DIR, "Songs", song)
+        return os.path.join(songs_dir, song)
     except Exception as e:
         error(f"Error occurred while choosing random song: {str(e)}")
         raise

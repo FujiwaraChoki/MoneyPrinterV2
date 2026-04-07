@@ -82,16 +82,14 @@ class YouTubeUploadDiagnosticsTests(unittest.TestCase):
     def test_upload_video_recreates_browser_when_previous_attempt_closed_it(self) -> None:
         youtube = self.youtube_module.YouTube.__new__(self.youtube_module.YouTube)
         youtube.browser = None
-        youtube.service = "service"
-        youtube.options = "options"
 
         fresh_browser = Mock()
 
         with patch.object(
-            self.youtube_module.webdriver,
-            "Firefox",
+            self.youtube_module.YouTube,
+            "_create_browser",
             return_value=fresh_browser,
-        ) as firefox_mock, patch.object(
+        ) as create_browser_mock, patch.object(
             self.youtube_module.YouTube,
             "get_channel_id",
             side_effect=RuntimeError("boom"),
@@ -99,7 +97,7 @@ class YouTubeUploadDiagnosticsTests(unittest.TestCase):
             result = youtube.upload_video()
 
         self.assertFalse(result)
-        firefox_mock.assert_called_once_with(service="service", options="options")
+        create_browser_mock.assert_called_once_with()
         fresh_browser.quit.assert_called_once_with()
         self.assertIsNone(youtube.browser)
 

@@ -195,6 +195,10 @@ class PreflightLocalTests(unittest.TestCase):
             os.path.join(ROOT_DIR, "scripts", "setup_local.sh"),
             os.path.join(scripts_dir, "setup_local.sh"),
         )
+        shutil.copyfile(
+            os.path.join(ROOT_DIR, "scripts", "install_money_command.py"),
+            os.path.join(scripts_dir, "install_money_command.py"),
+        )
 
         with open(os.path.join(repo_root, "requirements.txt"), "w", encoding="utf-8") as handle:
             handle.write("")
@@ -238,6 +242,9 @@ class PreflightLocalTests(unittest.TestCase):
             text=True,
         )
 
+        launcher_path = os.path.join(env["HOME"], ".local", "bin", "money")
+        shell_rc_path = os.path.join(env["HOME"], ".zshrc")
+
         with open(os.path.join(repo_root, "config.json"), "r", encoding="utf-8") as handle:
             config = json.load(handle)
 
@@ -247,6 +254,16 @@ class PreflightLocalTests(unittest.TestCase):
         self.assertNotEqual(config.get("llm_provider"), "local_ollama")
         self.assertIn(config.get("ollama_model", ""), ("", None))
         self.assertIn(config.get("ollama_base_url", ""), ("", None))
+        self.assertTrue(os.path.exists(launcher_path))
+
+        with open(launcher_path, "r", encoding="utf-8") as handle:
+            launcher_contents = handle.read()
+
+        with open(shell_rc_path, "r", encoding="utf-8") as handle:
+            shell_rc_contents = handle.read()
+
+        self.assertIn('exec "$ROOT_DIR/venv/bin/python" "$ROOT_DIR/src/main.py" "$@"', launcher_contents)
+        self.assertIn('export PATH="$HOME/.local/bin:$PATH"', shell_rc_contents)
 
 
 if __name__ == "__main__":

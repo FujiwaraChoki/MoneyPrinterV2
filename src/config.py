@@ -111,6 +111,23 @@ def get_openrouter_model() -> str:
         configured = json.load(file).get("openrouter_model", "")
         return configured or os.environ.get("OPENROUTER_MODEL", "")
 
+def get_openrouter_fallback_models() -> list[str]:
+    """
+    Gets the ordered OpenRouter text-model fallback list.
+
+    Returns:
+        models (list[str]): Ordered OpenRouter text model identifiers
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        config_json = json.load(file)
+
+    raw_models = config_json.get("openrouter_fallback_models")
+    if isinstance(raw_models, list):
+        return [str(model).strip() for model in raw_models if str(model).strip()]
+
+    env_value = os.environ.get("OPENROUTER_FALLBACK_MODELS", "")
+    return [model.strip() for model in env_value.split(",") if model.strip()]
+
 def get_openrouter_base_url() -> str:
     """
     Gets the OpenRouter base URL.
@@ -342,7 +359,54 @@ def get_whisper_compute_type() -> str:
     """
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file).get("whisper_compute_type", "int8")
-    
+
+def get_tts_speed() -> float:
+    """
+    Gets the TTS playback speed multiplier.
+
+    Values below 0.5 or above 2.0 are clamped to those bounds
+    (the range supported by a single ffmpeg atempo stage).
+    Returns 1.0 when the config key is missing or invalid.
+
+    Returns:
+        speed (float): Speed multiplier in [0.5, 2.0]
+    """
+    _SPEED_MIN = 0.5
+    _SPEED_MAX = 2.0
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        raw = json.load(file).get("tts_speed", 1.0)
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        return 1.0
+    if value < _SPEED_MIN:
+        return _SPEED_MIN
+    if value > _SPEED_MAX:
+        return _SPEED_MAX
+    return value
+
+def get_subtitle_max_chars() -> int:
+    """
+    Gets the maximum number of characters per subtitle card.
+
+    Higher values produce longer phrase-level captions (e.g. 45 ≈ 4–6 words).
+    Lower values produce shorter word-level captions (e.g. 10 ≈ 1 word).
+    Falls back to 45 when the config key is missing or invalid.
+
+    Returns:
+        max_chars (int): Maximum characters per subtitle card
+    """
+    _DEFAULT = 45
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        raw = json.load(file).get("subtitle_max_chars", _DEFAULT)
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return _DEFAULT
+    if value < 1:
+        return _DEFAULT
+    return value
+
 def equalize_subtitles(srt_path: str, max_chars: int = 10) -> None:
     """
     Equalizes the subtitles in a SRT file.
@@ -355,6 +419,7 @@ def equalize_subtitles(srt_path: str, max_chars: int = 10) -> None:
         None
     """
     srt_equalizer.equalize_srt_file(srt_path, srt_path, max_chars)
+
     
 def get_font() -> str:
     """

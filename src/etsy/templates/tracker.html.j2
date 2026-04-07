@@ -1,64 +1,101 @@
 <!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><style>{{ css }}
-.tracker-table { width: 100%; border-collapse: collapse; margin-bottom: 0.12in; }
-.tracker-header th { font-family: var(--heading-font); font-weight: 700; font-size: 9.5pt; color: var(--primary); padding: 4pt 2pt; text-align: center; border-bottom: 1.5pt solid var(--secondary); }
-.tracker-header th.habit-col { text-align: left; padding-left: 6pt; }
-.tracker-table tbody tr:nth-child(even) td { background: #F8FAFC; }
-.habit-name-cell { font-family: var(--body-font); font-size: 9.5pt; color: #1E293B; padding: 6pt 6pt; border-bottom: 0.5pt solid #E2E8F0; font-weight: 700; }
-.circle-cell { text-align: center; padding: 6pt 2pt; border-bottom: 0.5pt solid #E2E8F0; }
-.tracker-circle { display: inline-block; width: 18pt; height: 18pt; border-radius: 50%; border: 1.2pt solid var(--secondary); }
-.count-cell { border: 1pt solid var(--secondary); border-radius: 4pt; width: 28pt; text-align: center; padding: 4pt 2pt; }
-.intention-box { background: white; border: 1pt solid var(--secondary); border-radius: 8pt; padding: 0.08in 0.14in; }
-.intention-title { font-family: var(--heading-font); font-weight: 700; font-size: 8.5pt; color: var(--primary); margin-bottom: 6pt; }
-</style></head>
+<head>
+<meta charset="utf-8">
+<style>{{ css }}</style>
+<style>
+.tracker-table { width: 100%; border-collapse: collapse; }
+.tracker-table th, .tracker-table td { text-align: center; vertical-align: middle; padding: 0; }
+.tracker-table th {
+    font-family: var(--body-font);
+    font-size: 6.5pt;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    padding-bottom: 4pt;
+    border-bottom: 1pt solid var(--line);
+}
+.th-habit { text-align: left !important; padding-left: 4pt; width: 1.5in; }
+.td-habit {
+    text-align: left;
+    padding: 5pt 0 5pt 4pt;
+    font-family: var(--body-font);
+    font-size: 8.5pt;
+    color: var(--dark);
+    border-bottom: 0.5pt solid var(--line);
+    width: 1.5in;
+}
+.td-day { border-bottom: 0.5pt solid var(--line); padding: 4pt 2pt; }
+.tracker-circle {
+    width: 11pt;
+    height: 11pt;
+    border-radius: 50%;
+    border: 1pt solid var(--secondary);
+    display: inline-block;
+}
+.td-pct { border-bottom: 0.5pt solid var(--line); font-family: var(--body-font); font-size: 7.5pt; color: var(--muted); padding: 4pt 2pt; width: 0.32in; }
+.th-pct { width: 0.32in; }
+</style>
+</head>
 <body>
 <div class="page">
-  <div class="header-bar">
-    <span class="theme-label">{{ title_theme }}</span>
-    <span class="page-title">{{ title }}</span>
-    <span class="page-num">{{ page_number }} / {{ page_count }}</span>
-  </div>
-  <div class="sub-header">
-    <span class="badge">{{ page_type }}</span>
-    <span class="section-name">{{ section_name }}</span>
-  </div>
-  <div class="content-zone">
-    <table class="tracker-table">
-      <thead class="tracker-header">
-        <tr>
-          <th class="habit-col">HABIT</th>
-          {% for day in ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"] %}
-          <th>{{ day }}</th>
-          {% endfor %}
-          <th>#</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for i in range(5) %}
-        <tr>
-          <td class="habit-name-cell">{% if i < body|length %}{{ body[i] }}{% else %}Habit {{ i + 1 }}{% endif %}</td>
-          {% for d in range(7) %}
-          <td class="circle-cell"><div class="tracker-circle"></div></td>
-          {% endfor %}
-          <td class="circle-cell"><div style="width:26pt;height:22pt;border:1pt solid var(--secondary);border-radius:4pt;display:inline-block;"></div></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    <div class="intention-box">
-      <div class="intention-title">WEEKLY INTENTION:</div>
-      {% for j in range(2) %}
-      <div class="writing-line"></div>
-      {% endfor %}
+    <div class="header-bar">
+        <div class="theme-label">{{ section_name }}</div>
+        <div class="page-title">{{ title }}</div>
+        <div class="page-num">{{ page_number }} / {{ page_count }}</div>
     </div>
-  </div>
-  <div class="footer">
-    <div class="footer-row">
-      <span class="footer-left">Instant digital download for personal planning use</span>
-      <span class="footer-right">MoneyPrinter+ Generator</span>
+    <div class="accent-strip"></div>
+
+    <div class="content-zone" style="padding-bottom: 0.08in;">
+        <div class="field-row">
+            <span class="field-label">Month</span>
+            <div class="field-line" style="max-width: 1.5in;"></div>
+            <span class="field-label" style="margin-left: 0.25in;">Year</span>
+            <div class="field-line" style="max-width: 0.8in;"></div>
+            <span class="field-label" style="margin-left: 0.25in;">Intention</span>
+            <div class="field-line"></div>
+        </div>
     </div>
-  </div>
+    <hr class="rule" style="margin: 0 0.6in 0.1in 0.6in;">
+
+    <div class="content-zone" style="padding-top: 0; padding-bottom: 0.1in;">
+        {% set habits = body if body else ["Habit 1","Habit 2","Habit 3","Habit 4","Habit 5","Habit 6","Habit 7"] %}
+        <table class="tracker-table">
+            <thead>
+                <tr>
+                    <th class="th-habit">Habit</th>
+                    {% for d in range(1, 32) %}<th style="width: 0.21in;">{{ d }}</th>{% endfor %}
+                    <th class="th-pct">%</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for habit in habits %}
+                <tr>
+                    <td class="td-habit">{{ habit }}</td>
+                    {% for _ in range(31) %}
+                    <td class="td-day"><div class="tracker-circle"></div></td>
+                    {% endfor %}
+                    <td class="td-pct">&nbsp;</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <hr class="rule" style="margin: 0 0.6in 0.08in 0.6in;">
+
+    <div class="content-zone" style="padding-top: 0;">
+        <div class="card-tint">
+            <div class="card-label-dark">Monthly Reflection</div>
+            <div class="field-row">
+                <span class="field-label">What worked?</span>
+                <div class="field-line"></div>
+            </div>
+            <div class="field-row">
+                <span class="field-label">What to improve?</span>
+                <div class="field-line"></div>
+            </div>
+        </div>
+    </div>
 </div>
 </body>
 </html>

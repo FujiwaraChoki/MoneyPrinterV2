@@ -52,6 +52,8 @@ class MainRuntimeTests(unittest.TestCase):
             "main",
             "art",
             "cache",
+            "etsy",
+            "etsy.cli",
             "utils",
             "status",
             "llm_provider",
@@ -237,6 +239,28 @@ class MainRuntimeTests(unittest.TestCase):
         self.assertIn("new youtube line", merged)
         self.assertNotIn("old youtube line", merged)
 
+    def test_get_crontab_job_lines_returns_only_matching_job_body(self) -> None:
+        existing = "\n".join(
+            [
+                "MAILTO=\"\"",
+                "# MONEYPRINTER_V2 youtube yt-1 BEGIN",
+                "0 10 * * * PATH=/usr/bin; export PATH; cd /tmp && python cron.py",
+                "0 16 * * * PATH=/usr/bin; export PATH; cd /tmp && python cron.py",
+                "# MONEYPRINTER_V2 youtube yt-1 END",
+                "# MONEYPRINTER_V2 twitter tw-1 BEGIN",
+                "0 9 * * * PATH=/usr/bin; export PATH; cd /tmp && python cron.py",
+                "# MONEYPRINTER_V2 twitter tw-1 END",
+            ]
+        )
+
+        self.assertEqual(
+            self.main.get_crontab_job_lines(existing, "youtube", "yt-1"),
+            [
+                "0 10 * * * PATH=/usr/bin; export PATH; cd /tmp && python cron.py",
+                "0 16 * * * PATH=/usr/bin; export PATH; cd /tmp && python cron.py",
+            ],
+        )
+
     def test_install_cron_job_treats_missing_crontab_as_empty(self) -> None:
         missing = subprocess.CompletedProcess(
             ["crontab", "-l"],
@@ -264,6 +288,19 @@ class MainRuntimeTests(unittest.TestCase):
         self.assertIn("0 10 * * *", write_call.kwargs["input"])
         self.assertIn("youtube yt-1", write_call.kwargs["input"])
 
+    def test_main_exposes_youtube_only_top_level_menu_and_option_two_quits(self) -> None:
+        self.assertEqual(self.main.OPTIONS, ["YouTube Shorts Automation", "Quit"])
+
+        with patch("builtins.input", return_value="2"), patch.object(
+            self.main,
+            "get_verbose",
+            return_value=False,
+        ):
+            with self.assertRaises(SystemExit) as raised:
+                self.main.main()
+
+        self.assertEqual(raised.exception.code, 0)
+
     def test_main_guides_cron_setup_with_custom_days_and_times(self) -> None:
         youtube_instance = Mock()
 
@@ -272,7 +309,7 @@ class MainRuntimeTests(unittest.TestCase):
         tts_module = types.ModuleType("classes.Tts")
         tts_module.TTS = Mock(return_value=Mock())
 
-        option_answers = iter(["3", "4"])
+        option_answers = iter(["3", "5"])
 
         def fake_question(message: str, *_args, **_kwargs) -> str:
             if "Select an account to start" in message:
@@ -324,6 +361,56 @@ class MainRuntimeTests(unittest.TestCase):
             ["15 9 * * 1,3,5", "45 16 * * 1,3,5"],
         )
 
+    def test_main_views_youtube_cron_jobs_for_selected_account(self) -> None:
+        youtube_instance = Mock()
+
+        youtube_module = types.ModuleType("classes.YouTube")
+        youtube_module.YouTube = Mock(return_value=youtube_instance)
+        tts_module = types.ModuleType("classes.Tts")
+        tts_module.TTS = Mock(return_value=Mock())
+
+        option_answers = iter(["4", "5"])
+
+        def fake_question(message: str, *_args, **_kwargs) -> str:
+            if "Select an account to start" in message:
+                return "1"
+            if "Select an option" in message:
+                return next(option_answers)
+            raise AssertionError(f"Unexpected question prompt: {message}")
+
+        with patch.dict(
+            sys.modules,
+            {
+                "classes.YouTube": youtube_module,
+                "classes.Tts": tts_module,
+            },
+        ), patch("builtins.input", return_value="1"), patch.object(
+            self.main,
+            "get_accounts",
+            return_value=[
+                {
+                    "id": "yt-1",
+                    "nickname": "channel",
+                    "firefox_profile": "/tmp/firefox",
+                    "niche": "true crime",
+                    "language": "english",
+                }
+            ],
+        ), patch.object(
+            self.main,
+            "question",
+            side_effect=fake_question,
+        ), patch.object(
+            self.main,
+            "rem_temp_files",
+        ), patch.object(
+            self.main,
+            "show_cron_jobs",
+        ) as show_cron_jobs_mock:
+            self.main.main()
+
+        show_cron_jobs_mock.assert_called_once_with("youtube", "yt-1")
+
     def test_install_cron_job_raises_clear_error_when_crontab_binary_missing(self) -> None:
         with patch.object(
             self.main.subprocess,
@@ -347,7 +434,7 @@ class MainRuntimeTests(unittest.TestCase):
         tts_module = types.ModuleType("classes.Tts")
         tts_module.TTS = Mock(return_value=Mock())
 
-        option_answers = iter(["1", "4"])
+        option_answers = iter(["1", "5"])
 
         def fake_question(message: str, *_args, **_kwargs) -> str:
             if "Select an account to start" in message:
@@ -412,7 +499,7 @@ class MainRuntimeTests(unittest.TestCase):
         tts_module = types.ModuleType("classes.Tts")
         tts_module.TTS = Mock(return_value=Mock())
 
-        option_answers = iter(["1", "4"])
+        option_answers = iter(["1", "5"])
 
         def fake_question(message: str, *_args, **_kwargs) -> str:
             if "Select an account to start" in message:
@@ -477,7 +564,7 @@ class MainRuntimeTests(unittest.TestCase):
         tts_module = types.ModuleType("classes.Tts")
         tts_module.TTS = Mock(return_value=Mock())
 
-        option_answers = iter(["1", "4"])
+        option_answers = iter(["1", "5"])
 
         def fake_question(message: str, *_args, **_kwargs) -> str:
             if "Select an account to start" in message:
@@ -541,7 +628,7 @@ class MainRuntimeTests(unittest.TestCase):
         tts_module = types.ModuleType("classes.Tts")
         tts_module.TTS = Mock(return_value=Mock())
 
-        option_answers = iter(["2", "4"])
+        option_answers = iter(["2", "5"])
         cached_videos = [
             {
                 "title": "Cached title",
@@ -625,7 +712,7 @@ class MainRuntimeTests(unittest.TestCase):
         tts_module = types.ModuleType("classes.Tts")
         tts_module.TTS = Mock(return_value=Mock())
 
-        option_answers = iter(["2", "4"])
+        option_answers = iter(["2", "5"])
         cached_videos = [
             {
                 "title": "Cached title",
@@ -713,7 +800,7 @@ class MainRuntimeTests(unittest.TestCase):
         tts_module = types.ModuleType("classes.Tts")
         tts_module.TTS = Mock(return_value=Mock())
 
-        option_answers = iter(["2", "4"])
+        option_answers = iter(["2", "5"])
         cached_videos = [
             {
                 "title": "Cached title",
@@ -789,7 +876,7 @@ class MainRuntimeTests(unittest.TestCase):
         tts_module = types.ModuleType("classes.Tts")
         tts_module.TTS = Mock(return_value=Mock())
 
-        option_answers = iter(["2", "4"])
+        option_answers = iter(["2", "5"])
         cached_videos = [
             {
                 "title": "Cached title",
@@ -885,7 +972,7 @@ class MainRuntimeTests(unittest.TestCase):
         tts_module = types.ModuleType("classes.Tts")
         tts_module.TTS = Mock(return_value=Mock())
 
-        option_answers = iter(["2", "4"])
+        option_answers = iter(["2", "5"])
         cached_videos = [
             {
                 "title": "Cached title",
@@ -966,7 +1053,7 @@ class MainRuntimeTests(unittest.TestCase):
         tts_module = types.ModuleType("classes.Tts")
         tts_module.TTS = Mock(return_value=Mock())
 
-        option_answers = iter(["2", "4"])
+        option_answers = iter(["2", "5"])
         cached_videos = [
             {
                 "title": "Cached title",
@@ -1039,7 +1126,7 @@ class MainRuntimeTests(unittest.TestCase):
         tts_module = types.ModuleType("classes.Tts")
         tts_module.TTS = Mock(return_value=Mock())
 
-        option_answers = iter(["2", "4"])
+        option_answers = iter(["2", "5"])
         cached_videos = [
             {
                 "title": "Cached title",
@@ -1115,7 +1202,7 @@ class MainRuntimeTests(unittest.TestCase):
         tts_module = types.ModuleType("classes.Tts")
         tts_module.TTS = Mock(return_value=Mock())
 
-        option_answers = iter(["2", "4"])
+        option_answers = iter(["2", "5"])
         cached_videos = [
             {
                 "title": "Missing file",
@@ -1310,7 +1397,7 @@ class MainRuntimeTests(unittest.TestCase):
         tts_module = types.ModuleType("classes.Tts")
         tts_module.TTS = Mock(return_value=Mock())
 
-        option_answers = iter(["2", "4"])
+        option_answers = iter(["2", "5"])
         cached_videos = [
             {
                 "title": "Cached title",
@@ -1414,7 +1501,7 @@ class MainRuntimeTests(unittest.TestCase):
         tts_module = types.ModuleType("classes.Tts")
         tts_module.TTS = Mock(return_value=Mock())
 
-        option_answers = iter(["2", "4"])
+        option_answers = iter(["2", "5"])
         cached_videos = [
             {
                 "title": "Cached title",

@@ -1,62 +1,97 @@
 <!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><style>{{ css }}
-.content-layout { display: flex; flex-direction: column; gap: 0.1in; height: 7.4in; }
-.zone1 { flex: 42; }
-.zone2 { flex: 37; }
-.zone3 { flex: 21; background: var(--primary); border-radius: 10pt; padding: 0.1in 0.16in; }
-.zone3-title { font-family: var(--heading-font); font-weight: 700; font-size: 9.5pt; color: white; margin-bottom: 6pt; }
-.zone3-line { border-bottom: 0.8pt solid rgba(255,255,255,0.6); min-height: 16pt; margin-bottom: 4pt; }
-.num-label { font-family: var(--heading-font); font-weight: 700; font-size: 10.5pt; color: var(--primary); width: 14pt; flex-shrink: 0; }
-</style></head>
+<head>
+<meta charset="utf-8">
+<style>{{ css }}</style>
+<style>
+.two-col { display: flex; gap: 0.2in; margin-bottom: 0.1in; }
+.col-left  { flex: 55; }
+.col-right { flex: 40; }
+.time-row  { display: flex; align-items: flex-end; gap: 5pt; margin-bottom: 0.04in; }
+.time-label {
+    font-family: var(--body-font);
+    font-size: 7.5pt;
+    font-weight: 700;
+    color: var(--muted);
+    width: 0.45in;
+    text-align: right;
+    flex-shrink: 0;
+    padding-bottom: 3pt;
+}
+</style>
+</head>
 <body>
 <div class="page">
-  <div class="header-bar">
-    <span class="theme-label">{{ title_theme }}</span>
-    <span class="page-title">{{ title }}</span>
-    <span class="page-num">{{ page_number }} / {{ page_count }}</span>
-  </div>
-  <div class="sub-header">
-    <span class="badge">{{ page_type }}</span>
-    <span class="section-name">{{ section_name }}</span>
-  </div>
-  <div class="content-zone">
-    <div class="content-layout">
-      <div class="zone1 panel">
-        <div class="panel-title">TODAY'S TOP PRIORITIES</div>
-        {% for i in range(5) %}
-        <div class="checkbox-row">
-          <span class="num-label">{{ i + 1 }}</span>
-          <div class="checkbox-circle"></div>
-          <div style="flex:1;">
-            {% if i < body|length %}<div class="hint-text">{{ body[i] }}</div>{% endif %}
-            <div class="writing-line"></div>
-          </div>
+    <div class="header-bar">
+        <div class="theme-label">{{ section_name }}</div>
+        <div class="page-title">{{ title }}</div>
+        <div class="page-num">{{ page_number }} / {{ page_count }}</div>
+    </div>
+    <div class="accent-strip"></div>
+
+    <div class="content-zone" style="padding-bottom: 0.08in;">
+        <div class="field-row">
+            <span class="field-label">Date</span>
+            <div class="field-line"></div>
+            <span class="field-label" style="margin-left: 0.18in;">Energy</span>
+            <div class="dot-row" style="margin-bottom: 2pt; margin-left: 4pt;">
+                <div class="dot-circle"></div>
+                <div class="dot-circle"></div>
+                <div class="dot-circle"></div>
+                <div class="dot-circle"></div>
+                <div class="dot-circle"></div>
+            </div>
         </div>
-        {% endfor %}
-      </div>
-      <div class="zone2 panel">
-        <div class="panel-title">NOTES  &amp;  BRAIN DUMP</div>
-        {% for j in range(5) %}
-        <div class="writing-line"></div>
-        {% endfor %}
-      </div>
-      <div class="zone3">
-        <div class="zone3-title">TODAY'S WIN  ★</div>
-        <div class="zone3-line"></div>
-        <div class="zone3-line"></div>
-      </div>
     </div>
-  </div>
-  <div class="footer">
-    <div class="footer-row">
-      <span class="footer-left">Instant digital download for personal planning use</span>
-      <span class="footer-right">MoneyPrinter+ Generator</span>
+    <hr class="rule" style="margin: 0 0.6in 0.1in 0.6in;">
+
+    <div class="content-zone" style="padding-top: 0.05in; padding-bottom: 0.05in;">
+        <div class="two-col">
+            <div class="col-left">
+                <div class="card-label">Top Priorities</div>
+                {% for i in range(1, 6) %}
+                <div class="priority-item">
+                    <span class="priority-num">{{ i }}</span>
+                    <div class="priority-check"></div>
+                    <div class="line" style="flex: 1; margin-bottom: 0;"></div>
+                </div>
+                {% endfor %}
+                <div style="margin-top: 0.12in;">
+                    <div class="card-label">Notes</div>
+                    {% for _ in range(4) %}
+                    <div class="line"></div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-right">
+                <div class="card-label">Schedule</div>
+                {% for slot in ["6 AM","7 AM","8 AM","9 AM","10 AM","11 AM","12 PM","1 PM","2 PM","3 PM","4 PM","5 PM","6 PM","7 PM","8 PM"] %}
+                <div class="time-row">
+                    <span class="time-label">{{ slot }}</span>
+                    <div class="line" style="flex: 1; margin-bottom: 0;"></div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
     </div>
-    <div class="footer-row">
-      <span class="footer-left">Designed for {{ audience }}</span>
+    <hr class="rule" style="margin: 0 0.6in 0.08in 0.6in;">
+
+    <div class="content-zone" style="padding-top: 0; padding-bottom: 0.08in;">
+        <div class="card card-secondary">
+            <div class="card-label">Brain Dump</div>
+            {% for _ in range(5) %}
+            <div class="line"></div>
+            {% endfor %}
+        </div>
     </div>
-  </div>
+
+    <div class="content-zone" style="padding-top: 0;">
+        <div class="card-filled">
+            <div class="card-label-white">Today's Win</div>
+            <div class="line-white"></div>
+            <div class="line-white"></div>
+        </div>
+    </div>
 </div>
 </body>
 </html>

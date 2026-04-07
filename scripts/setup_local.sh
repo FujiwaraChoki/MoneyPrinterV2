@@ -85,6 +85,9 @@ PY
 echo "[setup] Running local preflight..."
 "$PYTHON_BIN" scripts/preflight_local.py || true
 
+echo "[setup] Installing money command..."
+"$PYTHON_BIN" scripts/install_money_command.py
+
 echo ""
 echo "[setup] Done."
-echo "[setup] Start app with: source venv/bin/activate && python3 src/main.py"
+echo "[setup] Start app with: money"

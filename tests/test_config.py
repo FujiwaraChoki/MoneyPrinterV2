@@ -238,6 +238,45 @@ class OpenRouterConfigTests(ConfigTestCase):
 
         self.assertEqual(models, ["model-a", "model-b", "model-c"])
 
+    def test_openrouter_fallback_models_prefers_config_list(self) -> None:
+        self.write_config(
+            {
+                "openrouter_fallback_models": [
+                    "google/gemma-4-31b-it",
+                    "qwen/qwen3.6-plus:free",
+                ]
+            }
+        )
+
+        with self.patch_root_dir(), patch.dict(
+            os.environ,
+            {"OPENROUTER_FALLBACK_MODELS": "ignored/model"},
+            clear=False,
+        ):
+            models = config.get_openrouter_fallback_models()
+
+        self.assertEqual(
+            models,
+            [
+                "google/gemma-4-31b-it",
+                "qwen/qwen3.6-plus:free",
+            ],
+        )
+
+    def test_openrouter_fallback_models_use_env_when_config_missing(self) -> None:
+        self.write_config({})
+
+        with self.patch_root_dir(), patch.dict(
+            os.environ,
+            {
+                "OPENROUTER_FALLBACK_MODELS": " model-a , model-b ,, model-c ",
+            },
+            clear=False,
+        ):
+            models = config.get_openrouter_fallback_models()
+
+        self.assertEqual(models, ["model-a", "model-b", "model-c"])
+
 
 class VideoMotionConfigTests(ConfigTestCase):
     def test_script_sentence_length_defaults_to_six(self) -> None:
@@ -323,6 +362,76 @@ class VideoMotionConfigTests(ConfigTestCase):
                     pan_intensity = config.get_video_pan_intensity()
 
                 self.assertEqual(pan_intensity, 0.03)
+
+
+class SubtitleConfigTests(ConfigTestCase):
+    def test_subtitle_max_chars_returns_configured_value(self) -> None:
+        self.write_config({"subtitle_max_chars": 60})
+
+        with self.patch_root_dir():
+            result = config.get_subtitle_max_chars()
+
+        self.assertEqual(result, 60)
+
+    def test_subtitle_max_chars_defaults_to_45_when_missing(self) -> None:
+        self.write_config({})
+
+        with self.patch_root_dir():
+            result = config.get_subtitle_max_chars()
+
+        self.assertEqual(result, 45)
+
+    def test_subtitle_max_chars_minimum_is_one(self) -> None:
+        for bad_value in (0, -5, "abc"):
+            with self.subTest(value=bad_value):
+                self.write_config({"subtitle_max_chars": bad_value})
+
+                with self.patch_root_dir():
+                    result = config.get_subtitle_max_chars()
+
+                self.assertEqual(result, 45)
+
+
+class TtsSpeedConfigTests(ConfigTestCase):
+    def test_tts_speed_returns_configured_value(self) -> None:
+        self.write_config({"tts_speed": 1.3})
+
+        with self.patch_root_dir():
+            result = config.get_tts_speed()
+
+        self.assertAlmostEqual(result, 1.3)
+
+    def test_tts_speed_defaults_to_1_when_missing(self) -> None:
+        self.write_config({})
+
+        with self.patch_root_dir():
+            result = config.get_tts_speed()
+
+        self.assertAlmostEqual(result, 1.0)
+
+    def test_tts_speed_clamps_below_minimum(self) -> None:
+        self.write_config({"tts_speed": 0.3})
+
+        with self.patch_root_dir():
+            result = config.get_tts_speed()
+
+        self.assertAlmostEqual(result, 0.5)
+
+    def test_tts_speed_clamps_above_maximum(self) -> None:
+        self.write_config({"tts_speed": 5.0})
+
+        with self.patch_root_dir():
+            result = config.get_tts_speed()
+
+        self.assertAlmostEqual(result, 2.0)
+
+    def test_tts_speed_invalid_string_falls_back_to_default(self) -> None:
+        self.write_config({"tts_speed": "fast"})
+
+        with self.patch_root_dir():
+            result = config.get_tts_speed()
+
+        self.assertAlmostEqual(result, 1.0)
 
 
 if __name__ == "__main__":

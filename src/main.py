@@ -121,12 +121,7 @@ def merge_crontab_block(
     return "\n".join(merged_lines).rstrip() + "\n"
 
 
-def install_cron_job(
-    purpose: str,
-    account_id: str,
-    frequency_option: int | list[str],
-    model: str | None = None,
-) -> str:
+def read_existing_crontab() -> str:
     try:
         read_result = subprocess.run(
             ["crontab", "-l"],
@@ -140,15 +135,72 @@ def install_cron_job(
         ) from exc
 
     if read_result.returncode == 0:
-        existing_crontab = read_result.stdout
-    else:
-        missing_crontab_text = f"{read_result.stdout}\n{read_result.stderr}".lower()
-        if "no crontab" in missing_crontab_text:
-            existing_crontab = ""
-        else:
-            raise RuntimeError(
-                f"Failed to read existing crontab: {(read_result.stderr or read_result.stdout).strip()}"
-            )
+        return read_result.stdout
+
+    missing_crontab_text = f"{read_result.stdout}\n{read_result.stderr}".lower()
+    if "no crontab" in missing_crontab_text:
+        return ""
+
+    raise RuntimeError(
+        f"Failed to read existing crontab: {(read_result.stderr or read_result.stdout).strip()}"
+    )
+
+
+def get_crontab_job_lines(
+    existing_crontab: str,
+    purpose: str,
+    account_id: str,
+) -> list[str]:
+    begin_marker = f"# MONEYPRINTER_V2 {purpose} {account_id} BEGIN"
+    end_marker = f"# MONEYPRINTER_V2 {purpose} {account_id} END"
+
+    job_lines = []
+    collecting = False
+
+    for line in str(existing_crontab or "").splitlines():
+        stripped = line.strip()
+        if stripped == begin_marker:
+            collecting = True
+            continue
+        if collecting and stripped == end_marker:
+            break
+        if collecting and stripped:
+            job_lines.append(stripped)
+
+    return job_lines
+
+
+def show_cron_jobs(purpose: str, account_id: str) -> list[str]:
+    existing_crontab = read_existing_crontab()
+    job_lines = get_crontab_job_lines(existing_crontab, purpose, account_id)
+
+    if not job_lines:
+        warning(f"No CRON jobs scheduled for {purpose} account '{account_id}'.")
+        return []
+
+    info(f"Installed CRON jobs for {purpose} account '{account_id}':", False)
+    cron_table = PrettyTable()
+    cron_table.field_names = ["Schedule", "Command"]
+
+    for line in job_lines:
+        schedule, separator, remainder = line.partition(" PATH=")
+        command = f"PATH={remainder}" if separator else line
+        cron_table.add_row([
+            colored(schedule.strip(), "cyan"),
+            colored(command.strip(), "green"),
+        ])
+
+    print(cron_table)
+    return job_lines
+
+
+def install_cron_job(
+    purpose: str,
+    account_id: str,
+    frequency_option: int | list[str],
+    model: str | None = None,
+) -> str:
+    existing_crontab = read_existing_crontab()
 
     new_block = build_crontab_block(purpose, account_id, frequency_option, model)
     merged_crontab = merge_crontab_block(
@@ -593,33 +645,29 @@ def maybe_crosspost_selected_youtube_short(youtube, videos: list[dict]) -> bool:
 
 def main():
     """Main entry point for the application, providing a menu-driven interface
-    to manage YouTube, Twitter bots, Affiliate Marketing, and Outreach tasks.
+    for YouTube Shorts automation.
 
     This function allows users to:
-    1. Start the YouTube Shorts Automater to manage YouTube accounts, 
+    1. Start the YouTube Shorts Automater to manage YouTube accounts,
        generate and upload videos, and set up CRON jobs.
-    2. Start a Twitter Bot to manage Twitter accounts, post tweets, and 
-       schedule posts using CRON jobs.
-    3. Manage Affiliate Marketing by creating pitches and sharing them via 
-       Twitter accounts.
-    4. Initiate an Outreach process for engagement and promotion tasks.
-    5. Exit the application.
+    2. Exit the application.
 
-    The function continuously prompts users for input, validates it, and 
+    The function continuously prompts users for input, validates it, and
     executes the selected option until the user chooses to quit.
 
     Args:
         None
 
     Returns:
-        None"""
+        None
+    """
 
     # Get user input
     # user_input = int(question("Select an option: "))
     valid_input = False
     while not valid_input:
         try:
-    # Show user options
+            # Show user options
             info("\n============ OPTIONS ============", False)
 
             for idx, option in enumerate(OPTIONS):
@@ -653,7 +701,11 @@ def main():
                 success(f" => Generated ID: {generated_uuid}")
                 nickname = question(" => Enter a nickname for this account: ")
                 fp_profile = question(" => Enter the path to the Firefox profile: ")
-                niche = question(" => Enter the account niche: ")
+                niche = question(
+                    " => Enter the account niche [weird business / internet / creator-economy micro-doc Shorts]: "
+                ).strip()
+                if not niche:
+                    niche = "weird business / internet / creator-economy micro-doc Shorts"
                 language = question(" => Enter the account language: ")
 
                 account_data = {
@@ -676,9 +728,35 @@ def main():
                 table.add_row([cached_accounts.index(account) + 1, colored(account["id"], "cyan"), colored(account["nickname"], "blue"), colored(account["niche"], "green")])
 
             print(table)
-            info("Type 'd' to delete an account.", False)
+            info("Type 'n' to add a new account or 'd' to delete an account.", False)
 
-            user_input = question("Select an account to start (or 'd' to delete): ").strip()
+            user_input = question("Select an account to start (or 'n' to add / 'd' to delete): ").strip()
+
+            if user_input.lower() == "n":
+                generated_uuid = str(uuid4())
+
+                success(f" => Generated ID: {generated_uuid}")
+                nickname = question(" => Enter a nickname for this account: ")
+                fp_profile = question(" => Enter the path to the Firefox profile: ")
+                niche = question(
+                    " => Enter the account niche [weird business / internet / creator-economy micro-doc Shorts]: "
+                ).strip()
+                if not niche:
+                    niche = "weird business / internet / creator-economy micro-doc Shorts"
+                language = question(" => Enter the account language: ")
+
+                account_data = {
+                    "id": generated_uuid,
+                    "nickname": nickname,
+                    "firefox_profile": fp_profile,
+                    "niche": niche,
+                    "language": language,
+                    "videos": [],
+                }
+
+                add_account("youtube", account_data)
+                success("Account configured successfully!")
+                return
 
             if user_input.lower() == "d":
                 delete_input = question("Enter account number to delete: ").strip()
@@ -772,200 +850,12 @@ def main():
                         install_cron_job("youtube", selected_account["id"], schedules)
                         success("Set up CRON Job.")
                     elif user_input == 4:
+                        show_cron_jobs("youtube", selected_account["id"])
+                    elif user_input == 5:
                         if get_verbose():
                             info(" => Climbing Options Ladder...", False)
                         break
     elif user_input == 2:
-        info("Starting Twitter Bot...")
-
-        cached_accounts = get_accounts("twitter")
-
-        if len(cached_accounts) == 0:
-            warning("No accounts found in cache. Create one now?")
-            user_input = question("Yes/No: ")
-
-            if user_input.lower() == "yes":
-                generated_uuid = str(uuid4())
-
-                success(f" => Generated ID: {generated_uuid}")
-                nickname = question(" => Enter a nickname for this account: ")
-                fp_profile = question(" => Enter the path to the Firefox profile: ")
-                topic = question(" => Enter the account topic: ")
-
-                add_account("twitter", {
-                    "id": generated_uuid,
-                    "nickname": nickname,
-                    "firefox_profile": fp_profile,
-                    "topic": topic,
-                    "posts": []
-                })
-        else:
-            table = PrettyTable()
-            table.field_names = ["ID", "UUID", "Nickname", "Account Topic"]
-
-            for account in cached_accounts:
-                table.add_row([cached_accounts.index(account) + 1, colored(account["id"], "cyan"), colored(account["nickname"], "blue"), colored(account["topic"], "green")])
-
-            print(table)
-            info("Type 'd' to delete an account.", False)
-
-            user_input = question("Select an account to start (or 'd' to delete): ").strip()
-
-            if user_input.lower() == "d":
-                delete_input = question("Enter account number to delete: ").strip()
-                account_to_delete = None
-
-                for account in cached_accounts:
-                    if str(cached_accounts.index(account) + 1) == delete_input:
-                        account_to_delete = account
-                        break
-
-                if account_to_delete is None:
-                    error("Invalid account selected. Please try again.", "red")
-                else:
-                    confirm = question(f"Are you sure you want to delete '{account_to_delete['nickname']}'? (Yes/No): ").strip().lower()
-
-                    if confirm == "yes":
-                        remove_account("twitter", account_to_delete["id"])
-                        success("Account removed successfully!")
-                    else:
-                        warning("Account deletion canceled.", False)
-
-                return
-
-            selected_account = None
-
-            for account in cached_accounts:
-                if str(cached_accounts.index(account) + 1) == user_input:
-                    selected_account = account
-
-            if selected_account is None:
-                error("Invalid account selected. Please try again.", "red")
-                main()
-            else:
-                from classes.Twitter import Twitter
-
-                twitter = Twitter(selected_account["id"], selected_account["nickname"], selected_account["firefox_profile"], selected_account["topic"])
-
-                while True:
-                    
-                    info("\n============ OPTIONS ============", False)
-
-                    for idx, twitter_option in enumerate(TWITTER_OPTIONS):
-                        print(colored(f" {idx + 1}. {twitter_option}", "cyan"))
-
-                    info("=================================\n", False)
-
-                    # Get user input
-                    user_input = int(question("Select an option: "))
-
-                    if user_input == 1:
-                        twitter.post()
-                    elif user_input == 2:
-                        posts = twitter.get_posts()
-
-                        posts_table = PrettyTable()
-
-                        posts_table.field_names = ["ID", "Date", "Content"]
-
-                        for post in posts:
-                            posts_table.add_row([
-                                posts.index(post) + 1,
-                                colored(post["date"], "blue"),
-                                colored(post["content"][:60] + "...", "green")
-                            ])
-
-                        print(posts_table)
-                    elif user_input == 3:
-                        try:
-                            schedules = prompt_for_cron_schedules()
-                        except ValueError as exc:
-                            warning(str(exc))
-                            continue
-
-                        if schedules is None:
-                            continue
-
-                        install_cron_job("twitter", selected_account["id"], schedules)
-                        success("Set up CRON Job.")
-                    elif user_input == 4:
-                        if get_verbose():
-                            info(" => Climbing Options Ladder...", False)
-                        break
-    elif user_input == 3:
-        info("Starting Affiliate Marketing...")
-
-        cached_products = get_products()
-
-        if len(cached_products) == 0:
-            warning("No products found in cache. Create one now?")
-            user_input = question("Yes/No: ")
-
-            if user_input.lower() == "yes":
-                affiliate_link = question(" => Enter the affiliate link: ")
-                twitter_uuid = question(" => Enter the Twitter Account UUID: ")
-
-                # Find the account
-                account = None
-                for acc in get_accounts("twitter"):
-                    if acc["id"] == twitter_uuid:
-                        account = acc
-
-                add_product({
-                    "id": str(uuid4()),
-                    "affiliate_link": affiliate_link,
-                    "twitter_uuid": twitter_uuid
-                })
-
-                from classes.AFM import AffiliateMarketing
-
-                afm = AffiliateMarketing(affiliate_link, account["firefox_profile"], account["id"], account["nickname"], account["topic"])
-
-                afm.generate_pitch()
-                afm.share_pitch("twitter")
-        else:
-            table = PrettyTable()
-            table.field_names = ["ID", "Affiliate Link", "Twitter Account UUID"]
-
-            for product in cached_products:
-                table.add_row([cached_products.index(product) + 1, colored(product["affiliate_link"], "cyan"), colored(product["twitter_uuid"], "blue")])
-
-            print(table)
-
-            user_input = question("Select a product to start: ")
-
-            selected_product = None
-
-            for product in cached_products:
-                if str(cached_products.index(product) + 1) == user_input:
-                    selected_product = product
-
-            if selected_product is None:
-                error("Invalid product selected. Please try again.", "red")
-                main()
-            else:
-                # Find the account
-                account = None
-                for acc in get_accounts("twitter"):
-                    if acc["id"] == selected_product["twitter_uuid"]:
-                        account = acc
-
-                from classes.AFM import AffiliateMarketing
-
-                afm = AffiliateMarketing(selected_product["affiliate_link"], account["firefox_profile"], account["id"], account["nickname"], account["topic"])
-
-                afm.generate_pitch()
-                afm.share_pitch("twitter")
-
-    elif user_input == 4:
-        info("Starting Outreach...")
-
-        from classes.Outreach import Outreach
-
-        outreach = Outreach()
-
-        outreach.start()
-    elif user_input == 5:
         if get_verbose():
             print(colored(" => Quitting...", "blue"))
         sys.exit(0)

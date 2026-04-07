@@ -4,7 +4,11 @@
   "headless": false,
   "openrouter_api_key": "",
   "openrouter_base_url": "https://openrouter.ai/api/v1",
-  "openrouter_model": "",
+  "openrouter_model": "google/gemma-4-26b-a4b-it",
+  "openrouter_fallback_models": [
+    "google/gemma-4-31b-it",
+    "qwen/qwen3.6-plus:free"
+  ],
   "image_provider": "googleai_studio",
   "openrouter_image_models": [],
   "twitter_language": "English",
@@ -32,6 +36,8 @@
   "whisper_compute_type": "int8",
   "assembly_ai_api_key": "",
   "tts_voice": "Jasper",
+  "tts_speed": 1.0,
+  "subtitle_max_chars": 45,
   "font": "BebasNeue-Regular.ttf",
   "imagemagick_path": "Path to magick.exe or on linux/macOS just /usr/bin/convert",
   "script_sentence_length": 6,
