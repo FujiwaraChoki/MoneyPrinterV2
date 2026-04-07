@@ -9,6 +9,7 @@ from classes.Twitter import Twitter
 from classes.YouTube import YouTube
 from llm_provider import select_model
 from post_bridge_integration import maybe_crosspost_youtube_short
+from native_crosspost import maybe_crosspost_native
 
 def main():
     """Main function to post content to Twitter or upload videos to YouTube.
@@ -89,8 +90,13 @@ def main():
                         title=youtube.metadata.get("title", ""),
                         interactive=False,
                     )
+                    maybe_crosspost_native(
+                        video_path=youtube.video_path,
+                        title=youtube.metadata.get("title", ""),
+                        interactive=False,
+                    )
                 else:
-                    warning("YouTube upload failed. Skipping Post Bridge cross-post.")
+                    warning("YouTube upload failed. Skipping cross-posts.")
                 break
     else:
         error("Invalid Purpose, exiting...")

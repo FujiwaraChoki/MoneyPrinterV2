@@ -32,6 +32,19 @@
   "font": "bold_font.ttf",
   "imagemagick_path": "Path to magick.exe or on linux/macOS just /usr/bin/convert",
   "script_sentence_length": 4,
+  "instagram": {
+    "enabled": false,
+    "access_token": "",
+    "account_id": "",
+    "auto_crosspost": false
+  },
+  "tiktok": {
+    "enabled": false,
+    "client_key": "",
+    "client_secret": "",
+    "access_token": "",
+    "auto_crosspost": false
+  },
   "post_bridge": {
     "enabled": false,
     "api_key": "",
