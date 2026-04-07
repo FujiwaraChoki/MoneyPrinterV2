@@ -73,6 +73,10 @@
 
 ### 3. 开源 AI 项目上线前，哪些风险必须先处理，哪些可以后补？
 
+当前状态：
+
+- 已有文章草稿：`docs/assets/Article_RisksMustHandleFirst.md`
+
 角色：
 
 - checklist 到 SOP 的桥梁文
