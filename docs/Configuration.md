@@ -1,126 +1,147 @@
 # Configuration
 
-All your configurations will be in a file in the root directory, called `config.json`, which is a copy of `config.example.json`. You can change the values in `config.json` to your liking.
+MoneyPrinter V2 reads runtime settings from `config.json` in the repository root. The easiest way to create it is still:
 
-## Values
+```bash
+cp config.example.json config.json
+```
 
-- `verbose`: `boolean` - If `true`, the application will print out more information.
-- `firefox_profile`: `string` - The path to your Firefox profile. This is used to use your Social Media Accounts without having to log in every time you run the application.
-- `headless`: `boolean` - If `true`, the application will run in headless mode. This means that the browser will not be visible.
-- `openrouter_api_key`: `string` - OpenRouter API key for text generation. Resolution order: `config.json` first, then `OPENROUTER_API_KEY`.
-- `openrouter_base_url`: `string` - Base URL for OpenRouter requests. Resolution order: `config.json` first, otherwise `https://openrouter.ai/api/v1`.
-- `openrouter_model`: `string` - OpenRouter model to use for text generation (for example `openai/gpt-4.1-mini`). Resolution order: `config.json` first, then `OPENROUTER_MODEL`.
-- `image_provider`: `string` - Image generation provider strategy. Options: `googleai_studio`, `openrouter_only`, `openrouter_then_googleai`.
-- `openrouter_image_models`: `string[]` - Ordered OpenRouter image models to try before falling back. If empty, OpenRouter image generation is skipped.
-- `twitter_language`: `string` - The language that will be used to generate & post tweets.
-- `nanobanana2_api_base_url`: `string` - Nano Banana 2 API base URL (default: `https://generativelanguage.googleapis.com/v1beta`).
-- `nanobanana2_api_key`: `string` - API key for Nano Banana 2 (Gemini image API). If empty, MPV2 falls back to environment variable `GEMINI_API_KEY`.
-- `nanobanana2_model`: `string` - Nano Banana 2 model name (default: `gemini-3.1-flash-image-preview`).
-- `nanobanana2_aspect_ratio`: `string` - Aspect ratio for generated images (default: `9:16`).
-- `threads`: `number` - The amount of threads that will be used to execute operations, e.g. writing to a file using MoviePy.
-- `is_for_kids`: `boolean` - If `true`, the application will upload the video to YouTube Shorts as a video for kids.
-- `google_maps_scraper`: `string` - The URL to the Google Maps scraper. This will be used to scrape Google Maps for local businesses. It is recommended to use the default value.
-- `zip_url`: `string` - The URL to the ZIP file that contains the to be used Songs for the YouTube Shorts Automater.
-- `email`: `object`:
-    - `smtp_server`: `string` - Your SMTP server.
-    - `smtp_port`: `number` - The port of your SMTP server.
-    - `username`: `string` - Your email address.
-    - `password`: `string` - Your email password.
-- `google_maps_scraper_niche`: `string` - The niche you want to scrape Google Maps for.
-- `scraper_timeout`: `number` - The timeout for the Google Maps scraper.
-- `outreach_message_subject`: `string` - The subject of your outreach message. `{{COMPANY_NAME}}` will be replaced with the company name.
-- `outreach_message_body_file`: `string` - The file that contains the body of your outreach message, should be HTML. `{{COMPANY_NAME}}` will be replaced with the company name.
-- `stt_provider`: `string` - Provider for subtitle transcription. Default is `local_whisper`. Options:
-    * `local_whisper`
-    * `third_party_assemblyai`
-- `whisper_model`: `string` - Whisper model for local transcription (for example `base`, `small`, `medium`, `large-v3`).
-- `whisper_device`: `string` - Device for local Whisper (`auto`, `cpu`, `cuda`).
-- `whisper_compute_type`: `string` - Compute type for local Whisper (`int8`, `float16`, etc.).
-- `assembly_ai_api_key`: `string` - Your Assembly AI API key. Get yours from [here](https://www.assemblyai.com/app/).
-- `tts_voice`: `string` - Voice for KittenTTS text-to-speech. Default is `Jasper`. Options: `Bella`, `Jasper`, `Luna`, `Bruno`, `Rosie`, `Hugo`, `Kiki`, `Leo`.
-- `font`: `string` - The font that will be used to generate images. This should be a `.ttf` file in the `fonts/` directory.
-- `imagemagick_path`: `string` - The path to the ImageMagick binary. This is used by MoviePy to manipulate images. Install ImageMagick from [here](https://imagemagick.org/script/download.php) and set the path to the `magick.exe` on Windows, or on Linux/MacOS the path to `convert` (usually /usr/bin/convert).
-- `script_sentence_length`: `number` - The number of sentences in the generated video script (default: `6`).
-- `video_motion_style`: `string` - Motion treatment for rendered image clips. Options: `static`, `cinematic`. Invalid values fall back to `static`.
-- `video_zoom_intensity`: `number` - End zoom multiplier for cinematic mode. Invalid or too-small values fall back to `1.12`.
-- `video_pan_enabled`: `boolean` - Whether cinematic mode should add horizontal pan drift. Defaults to `true`.
-- `video_pan_intensity`: `number` - Horizontal drift amount as a fraction of frame width for cinematic mode. Invalid or non-positive values fall back to `0.03`.
-- `post_bridge`: `object`:
-    - `enabled`: `boolean` - Enables Post Bridge cross-posting after successful YouTube uploads.
-    - `api_key`: `string` - Your Post Bridge API key. If empty, MPV2 falls back to `POST_BRIDGE_API_KEY`.
-    - `platforms`: `string[]` - Platforms to target. Supported values in v1 are `tiktok`, `instagram`, and `twitter`.
-    - `account_ids`: `number[]` - Optional fixed Post Bridge account IDs to avoid account-selection prompts.
-    - `auto_crosspost`: `boolean` - If `true`, cross-post automatically after a successful YouTube upload. If `false`, interactive runs ask and cron runs skip.
+This guide documents the supported YouTube Shorts workflow. `config.example.json` may still include a few legacy or experimental keys that are not part of the current top-level documented product surface.
 
-## Example
+## Recommended Baseline
 
 ```json
 {
   "verbose": true,
-  "firefox_profile": "",
+  "firefox_profile": "/path/to/firefox/profile",
   "headless": false,
   "openrouter_api_key": "",
   "openrouter_base_url": "https://openrouter.ai/api/v1",
-  "openrouter_model": "",
+  "openrouter_model": "google/gemma-4-26b-a4b-it",
+  "openrouter_fallback_models": [
+    "google/gemma-4-31b-it",
+    "qwen/qwen3.6-plus:free"
+  ],
   "image_provider": "googleai_studio",
   "openrouter_image_models": [],
-  "twitter_language": "English",
   "nanobanana2_api_base_url": "https://generativelanguage.googleapis.com/v1beta",
   "nanobanana2_api_key": "",
   "nanobanana2_model": "gemini-3.1-flash-image-preview",
   "nanobanana2_aspect_ratio": "9:16",
-  "threads": 2,
-  "zip_url": "",
-  "is_for_kids": false,
-  "google_maps_scraper": "https://github.com/gosom/google-maps-scraper/archive/refs/tags/v0.9.7.zip",
-  "email": {
-    "smtp_server": "smtp.gmail.com",
-    "smtp_port": 587,
-    "username": "",
-    "password": ""
-  },
-  "google_maps_scraper_niche": "",
-  "scraper_timeout": 300,
-  "outreach_message_subject": "I have a question...",
-  "outreach_message_body_file": "outreach_message.html",
   "stt_provider": "local_whisper",
   "whisper_model": "base",
   "whisper_device": "auto",
   "whisper_compute_type": "int8",
   "assembly_ai_api_key": "",
   "tts_voice": "Jasper",
+  "tts_speed": 1.0,
+  "subtitle_max_chars": 45,
   "font": "BebasNeue-Regular.ttf",
-  "imagemagick_path": "Path to magick.exe or on linux/macOS just /usr/bin/convert",
+  "imagemagick_path": "/usr/bin/convert",
   "script_sentence_length": 6,
   "video_motion_style": "static",
   "video_zoom_intensity": 1.12,
   "video_pan_enabled": true,
   "video_pan_intensity": 0.03,
+  "threads": 2,
+  "zip_url": "",
+  "is_for_kids": false,
   "post_bridge": {
     "enabled": false,
     "api_key": "",
-    "platforms": ["tiktok", "instagram", "twitter"],
+    "platforms": ["tiktok", "instagram"],
     "account_ids": [],
     "auto_crosspost": false
   }
 }
 ```
 
+## Required Keys
+
+- `firefox_profile`: Absolute path to the Firefox profile already signed into the YouTube account you want to automate.
+- `openrouter_api_key`: OpenRouter API key. Falls back to `OPENROUTER_API_KEY`.
+- `openrouter_model`: Primary text model used for script and metadata generation. Falls back to `OPENROUTER_MODEL`.
+- `imagemagick_path`: Path to `magick` or `convert`, depending on your platform.
+
+For the default image path, you also need:
+
+- `nanobanana2_api_key`: Gemini image API key. Falls back to `GEMINI_API_KEY`.
+
+## Core Shorts Settings
+
+- `verbose`: Enables extra CLI logging.
+- `headless`: Runs browser automation without a visible window when `true`.
+- `is_for_kids`: Controls the YouTube upload setting for made-for-kids content.
+- `threads`: Worker count used by render-heavy steps.
+- `zip_url`: Optional ZIP source for background songs.
+
+## Text Generation
+
+- `openrouter_base_url`: Defaults to `https://openrouter.ai/api/v1` when blank.
+- `openrouter_fallback_models`: Ordered fallback list when the primary model fails or is rate-limited.
+- `script_sentence_length`: Target number of sentences in the generated script.
+
+## Image Generation
+
+- `image_provider`: Current supported strategies are `googleai_studio`, `openrouter_only`, and `openrouter_then_googleai`.
+- `openrouter_image_models`: Ordered list of OpenRouter image models to try when `image_provider` uses an OpenRouter path.
+- `nanobanana2_api_base_url`: Gemini image endpoint base URL.
+- `nanobanana2_model`: Image model identifier.
+- `nanobanana2_aspect_ratio`: Should stay `9:16` for Shorts unless you are deliberately changing the render pipeline.
+
+## Voiceover And Subtitles
+
+- `stt_provider`: `local_whisper` or `third_party_assemblyai`.
+- `whisper_model`: Local Whisper model name.
+- `whisper_device`: `auto`, `cpu`, or `cuda`.
+- `whisper_compute_type`: Precision / quantization mode for local Whisper.
+- `assembly_ai_api_key`: Only needed when using AssemblyAI.
+- `tts_voice`: KittenTTS voice.
+- `tts_speed`: Playback speed multiplier for synthesized narration.
+- `subtitle_max_chars`: Maximum subtitle segment width before rebalancing.
+- `font`: Subtitle font file stored in `fonts/`.
+
+## Motion And Render Tuning
+
+- `video_motion_style`: `static` or `cinematic`.
+- `video_zoom_intensity`: End zoom multiplier for cinematic mode.
+- `video_pan_enabled`: Enables horizontal drift in cinematic mode.
+- `video_pan_intensity`: Horizontal drift amount as a fraction of frame width.
+
+## Post Bridge
+
+`post_bridge` is optional. Use it when you want to publish through Post Bridge or cross-post a completed YouTube Short to other platforms.
+
+- `enabled`: Turns the integration on.
+- `api_key`: Falls back to `POST_BRIDGE_API_KEY` when blank.
+- `platforms`: Ordered list of target platforms. The documented flow uses `youtube`, `tiktok`, and `instagram`.
+- `account_ids`: Optional fixed Post Bridge account IDs. Keep these in the same order as `platforms`.
+- `auto_crosspost`: Runs automatically after success instead of prompting in interactive mode.
+
+See [PostBridge.md](./PostBridge.md) for behavior details.
+
 ## Environment Variable Fallbacks
 
-- `OPENROUTER_API_KEY`: used when `openrouter_api_key` is empty.
-- `OPENROUTER_MODEL`: used when `openrouter_model` is empty.
-- `openrouter_base_url` does not read from an environment variable; if it is empty, MPV2 uses `https://openrouter.ai/api/v1`.
-- `GEMINI_API_KEY`: used when `nanobanana2_api_key` is empty.
-- `POST_BRIDGE_API_KEY`: used when `post_bridge.api_key` is empty.
+- `OPENROUTER_API_KEY`
+- `OPENROUTER_MODEL`
+- `GEMINI_API_KEY`
+- `POST_BRIDGE_API_KEY`
 
 Example:
 
 ```bash
-export OPENROUTER_API_KEY="your_openrouter_api_key_here"
-export OPENROUTER_MODEL="openai/gpt-4.1-mini"
-export GEMINI_API_KEY="your_api_key_here"
-export POST_BRIDGE_API_KEY="your_post_bridge_api_key_here"
+export OPENROUTER_API_KEY="your-openrouter-api-key"
+export OPENROUTER_MODEL="google/gemma-4-26b-a4b-it"
+export GEMINI_API_KEY="your-gemini-api-key"
+export POST_BRIDGE_API_KEY="your-post-bridge-api-key"
 ```
 
-See [PostBridge.md](./PostBridge.md) for the full Post Bridge setup and behavior details.
+## Validation
+
+Run the local preflight after changing config:
+
+```bash
+python scripts/preflight_local.py
+```
+
+The preflight checks OpenRouter, Nano Banana 2, ImageMagick, Firefox profile availability, and local Whisper imports when applicable.

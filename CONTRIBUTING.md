@@ -1,15 +1,39 @@
 # Contributing
 
-MoneyPrinterV2 is an open source project and we encourage contributions. However, we ask that you follow these guidelines when opening a Pull Request (PR):
+MoneyPrinter V2 is currently maintained around a YouTube Shorts-first workflow. Contributions are welcome when they make that workflow more reliable, easier to operate, or better documented.
 
-1. **The `main` branch is the default branch.** All PRs should be opened against the `main` branch.
-2. **All PRs should be opened against an issue.** If there is no issue for your PR, please open one first and then open a PR against it.
-3. **All PRs should be opened with a clear title and description.** The title should be a short description of the changes and the description should be a more detailed explanation of the changes.
-4. **Only one feature or bug fix per PR.** If you have multiple changes, please open multiple PRs.
-5. **All PRs should be opened with the `WIP` label if they are not ready to be merged.** If your PR is not ready to be merged, please open it with the `WIP` label and remove the label when it is ready to be merged.
+## Before You Open A PR
 
-If you have any questions about contributing, please open an issue and ask. We are happy to help you get started.
+1. Make sure your change fits the current repo direction: Shorts generation, publishing, scheduling, diagnostics, or closely related tooling.
+2. For larger changes, open an issue or discussion first so the scope and direction are clear.
+3. Keep each PR focused. Small, reviewable changes move faster than broad refactors.
 
-# Code of Conduct
+## Pull Request Expectations
 
-We have adopted a Code of Conduct that we expect project participants to adhere to. Please read [the full text](CODE_OF_CONDUCT.md) so that you can understand what actions will and will not be tolerated.
+1. Target the repository's active default branch.
+2. Use a clear title and description that explain the behavior change.
+3. Include tests when you change runtime behavior.
+4. Update docs when setup, configuration, or operator workflow changes.
+5. Avoid unrelated cleanup in the same PR.
+
+## Local Validation
+
+Run the checks that match your change before opening a PR. Common examples are:
+
+```bash
+python -m pytest
+python scripts/preflight_local.py
+```
+
+If you only changed docs, say so in the PR description.
+
+## Scope Guidance
+
+This repo no longer treats Twitter bots, affiliate marketing, outreach automation, or other fork-era product categories as the public top-level product surface. PRs that reintroduce those areas should be discussed before implementation.
+
+## Code Of Conduct
+
+Project participants are expected to follow [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+*** Delete File: /Users/cris/.config/superpowers/worktrees/MoneyPrinterV2/mpv2-openrouter/docs/AffiliateMarketing.md
+*** Delete File: /Users/cris/.config/superpowers/worktrees/MoneyPrinterV2/mpv2-openrouter/docs/TwitterBot.md
+*** Delete File: /Users/cris/.config/superpowers/worktrees/MoneyPrinterV2/mpv2-openrouter/.github/FUNDING.yml

@@ -1,18 +1,23 @@
-# MPV2 Roadmap
+# MoneyPrinter V2 Roadmap
 
-This document outlines the features that need to be implemented in MPV2.
+The current roadmap is focused on the Shorts pipeline. Older fork-era product ideas are intentionally out of scope for the documented repo direction.
 
-## Features
+## Near-Term Priorities
 
-- [ ] Automated Cold Calling
-- [ ] Item Flipping (such as sneakers)
-- [ ] Create a Short based on long-form content
-- [ ] Subtitles for Shorts
+- Improve topic selection and prompt-pack quality for repeatable niche-specific Shorts.
+- Make render retries and publish diagnostics easier to understand from the CLI.
+- Expand provider resilience across text, image, and subtitle generation.
+- Improve saved-run review so unfinished or partially published Shorts are easier to recover.
+- Tighten scheduling ergonomics around recurring posting windows.
 
-## Adding a new feature
+## Medium-Term Areas
 
-If you want to add a new feature to MPV2, please create a new issue and label it with `enhancement`. After that, create a new branch and start working on the feature. Once you are done, create a pull request and assign it to the issue you created earlier.
+- Support turning longer source material into Shorts-ready drafts.
+- Add stronger analytics and history summaries around generated and published Shorts.
+- Expand reusable account presets so each channel can keep its own tone and publishing defaults.
 
-## Contributing
+## Contribution Fit
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
+The best contributions are the ones that improve the current YouTube Shorts workflow without pulling the top-level product surface back into unrelated automation categories.
+
+See [../CONTRIBUTING.md](../CONTRIBUTING.md) for contribution expectations.
