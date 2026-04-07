@@ -34,6 +34,8 @@ The following work is already represented in committed docs or repo changes:
 - a cross-project execution summary now exists in `docs/FinancialFreedomExecutionStack.md`
 - a first-pass topic ledger / measurement spec now exists in `docs/TopicLedgerMeasurementSpec.md`
 - a minimum distribution validation plan now exists in `docs/DistributionValidationPlan.md`
+- a first distribution execution kit now exists in `docs/DistributionExecutionKit.md`
+- a traffic strategy note now exists in `docs/FzhangTrafficStrategy.md`
 
 Current gap summary:
 
@@ -237,9 +239,9 @@ If the answer to 1-3 is "no", it is probably off-strategy.
 
 ## Executable Shortlist
 
-1. Upgrade the checklist landing page so visitors immediately understand it is an execution asset, not a gated copy of a public article.
-2. Stabilize the first real owned-audience path: confirmation, welcome email, visible subscription management, and low-frequency topic sends.
-3. Add first-pass measurement for the checklist funnel: page views, submits, confirmed subscribers, and downstream clicks.
+1. Execute the first 3 to 5 real distribution actions for article 1 / article 2 and log them in `docs/distribution-log.csv`.
+2. Use the first real sample to distinguish whether the current bottleneck is traffic, article-to-checklist click-through, or checklist / confirmation conversion.
+3. Only after the first distribution sample exists, decide whether article 3 should move from bridge draft into regular distribution and SOP-intent testing.
 
 ## Portfolio Rule
 
