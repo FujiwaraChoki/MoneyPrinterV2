@@ -17,6 +17,7 @@ from classes.Outreach import Outreach
 from classes.AFM import AffiliateMarketing
 from llm_provider import list_models, select_model, get_active_model
 from post_bridge_integration import maybe_crosspost_youtube_short
+from native_crosspost import maybe_crosspost_native
 
 def main():
     """Main entry point for the application, providing a menu-driven interface
@@ -171,8 +172,13 @@ def main():
                                     title=youtube.metadata.get("title", ""),
                                     interactive=True,
                                 )
+                                maybe_crosspost_native(
+                                    video_path=youtube.video_path,
+                                    title=youtube.metadata.get("title", ""),
+                                    interactive=True,
+                                )
                             else:
-                                warning("YouTube upload failed. Skipping Post Bridge cross-post.")
+                                warning("YouTube upload failed. Skipping cross-posts.")
                     elif user_input == 2:
                         videos = youtube.get_videos()
 

@@ -340,6 +340,51 @@ def get_script_sentence_length() -> int:
         else:
             return 4
 
+def get_instagram_config() -> dict:
+    """
+    Gets the Instagram API configuration from config.json.
+
+    Returns:
+        config (dict): Instagram configuration with access_token and account_id.
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        config_json = json.load(file)
+
+    raw = config_json.get("instagram", {})
+    if not isinstance(raw, dict):
+        raw = {}
+
+    return {
+        "enabled": bool(raw.get("enabled", False)),
+        "access_token": str(raw.get("access_token", "") or os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")).strip(),
+        "account_id": str(raw.get("account_id", "") or os.environ.get("INSTAGRAM_BUSINESS_ACCOUNT_ID", "")).strip(),
+        "auto_crosspost": bool(raw.get("auto_crosspost", False)),
+    }
+
+
+def get_tiktok_config() -> dict:
+    """
+    Gets the TikTok API configuration from config.json.
+
+    Returns:
+        config (dict): TikTok configuration with access_token and client credentials.
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        config_json = json.load(file)
+
+    raw = config_json.get("tiktok", {})
+    if not isinstance(raw, dict):
+        raw = {}
+
+    return {
+        "enabled": bool(raw.get("enabled", False)),
+        "client_key": str(raw.get("client_key", "") or os.environ.get("TIKTOK_CLIENT_KEY", "")).strip(),
+        "client_secret": str(raw.get("client_secret", "") or os.environ.get("TIKTOK_CLIENT_SECRET", "")).strip(),
+        "access_token": str(raw.get("access_token", "") or os.environ.get("TIKTOK_ACCESS_TOKEN", "")).strip(),
+        "auto_crosspost": bool(raw.get("auto_crosspost", False)),
+    }
+
+
 def get_post_bridge_config() -> dict:
     """
     Gets the Post Bridge configuration with safe defaults.
