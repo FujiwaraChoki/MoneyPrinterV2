@@ -33,6 +33,7 @@ The following work is already represented in committed docs or repo changes:
 - the first content batch and paid SOP path now have execution specs in `docs/assets/`
 - a cross-project execution summary now exists in `docs/FinancialFreedomExecutionStack.md`
 - a first-pass topic ledger / measurement spec now exists in `docs/TopicLedgerMeasurementSpec.md`
+- a minimum distribution validation plan now exists in `docs/DistributionValidationPlan.md`
 
 Current gap summary:
 
@@ -42,6 +43,7 @@ Current gap summary:
 - welcome email, unsubscribe visibility, tagging, and low-frequency topic sends still need final verification
 - `shop.fzhang.dev` payment architecture is now decided in principle, but not yet implemented in code
 - `InsForge` is intentionally deferred unless the shop backend becomes a real bottleneck after payment integration
+- distribution validation has a plan, but still needs real channel actions and logged results
 
 ## North Star
 
@@ -190,6 +192,14 @@ Execution note:
 
 - first-pass measurement spec: `docs/TopicLedgerMeasurementSpec.md`
 - seeded ledger file: `docs/topic-ledger.csv`
+- seeded distribution log: `docs/distribution-log.csv`
+
+## Phase 8: Distribution Validation
+
+- [x] Define a minimum distribution validation plan for the deployment cluster
+- [ ] Execute the first 3 to 5 real distribution actions
+- [ ] Log channel-level results in `docs/distribution-log.csv`
+- [ ] Distinguish whether the current bottleneck is traffic, CTA click-through, or capture conversion
 
 ## Decision Filters
 

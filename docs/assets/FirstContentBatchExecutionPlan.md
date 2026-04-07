@@ -170,3 +170,14 @@
 - 同类问题反复出现
 
 如果这些信号不出现，就先继续优化主题与漏斗，不急着扩 product lane。
+
+## Distribution Validation
+
+Current rule:
+
+- do not assume low subscriber count automatically means weak content
+- first build a minimum distribution sample before making that judgment
+
+Execution reference:
+
+- `docs/DistributionValidationPlan.md`
