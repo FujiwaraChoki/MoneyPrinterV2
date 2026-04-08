@@ -5,6 +5,7 @@ import csv
 import time
 import glob
 import shlex
+import hashlib
 import zipfile
 import yagmail
 import requests
@@ -74,8 +75,20 @@ class Outreach:
             info("=> Scraper already unzipped. Skipping unzip.")
             return
 
-        r = requests.get(zip_link)
-        z = zipfile.ZipFile(io.BytesIO(r.content))
+        r = requests.get(zip_link, timeout=60)
+        r.raise_for_status()
+        archive_bytes = r.content
+
+        expected_checksum = get_google_maps_scraper_sha256()
+        if expected_checksum:
+            archive_checksum = hashlib.sha256(archive_bytes).hexdigest()
+            if archive_checksum.lower() != expected_checksum.lower():
+                raise ValueError(
+                    "Downloaded Google Maps scraper archive checksum does not match "
+                    "google_maps_scraper_sha256."
+                )
+
+        z = zipfile.ZipFile(io.BytesIO(archive_bytes))
         for member in z.namelist():
             if ".." in member or member.startswith("/"):
                 warning(f"Skipping suspicious path in archive: {member}")
