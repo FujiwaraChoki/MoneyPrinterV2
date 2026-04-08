@@ -13,6 +13,12 @@ from llm_provider import generate_text
 from config import *
 from status import *
 from uuid import uuid4
+from content_profile import (
+    build_profile_context,
+    has_service_strategy,
+    load_case_brief,
+    normalize_content_profile,
+)
 from constants import *
 from typing import List
 from moviepy.editor import *
@@ -47,6 +53,52 @@ class YouTube:
     7. Combine Concatenated Images with the Text-to-Speech [DONE]
     """
 
+    def _variant_instruction(self) -> str:
+        """
+        Returns specialized guidance for the selected service-led content variant.
+
+        Returns:
+            instruction (str): Variant-specific prompt guidance
+        """
+        variant = self.content_profile.get("content_variant", "general")
+
+        if variant == "deployment":
+            return (
+                "Emphasize repo-to-production setup, environment mismatches, hosting trade-offs, and why local success often fails after deployment."
+            )
+        if variant == "hardening":
+            return (
+                "Emphasize auth, exposed surfaces, secret handling, backup gaps, abuse prevention, and practical risk reduction."
+            )
+        if variant == "customization":
+            return (
+                "Emphasize adapting an existing project to a workflow, buyer requirement, UI change, or integration path."
+            )
+
+        return (
+            "Emphasize concrete implementation lessons that can naturally lead into reusable content assets, downloadable resources, or low-touch monetization."
+        )
+
+    def _asset_instruction(self) -> str:
+        """
+        Returns specialized guidance for the selected asset destination.
+
+        Returns:
+            instruction (str): Asset-specific prompt guidance
+        """
+        asset_type = self.content_profile.get("asset_type", "")
+        capture_type = self.content_profile.get("capture_type", "")
+        monetization_type = self.content_profile.get("monetization_type", "")
+        asset_name = self.content_profile.get("asset_name", "")
+
+        return (
+            f"Primary asset type: {asset_type or 'general content asset'}. "
+            f"Capture type: {capture_type or 'none'}. "
+            f"Monetization type: {monetization_type or 'none'}. "
+            f"Asset name: {asset_name or 'none'}. "
+            "The video should help build reusable audience and asset value before pushing direct services."
+        )
+
     def __init__(
         self,
         account_uuid: str,
@@ -54,6 +106,7 @@ class YouTube:
         fp_profile_path: str,
         niche: str,
         language: str,
+        content_profile: dict | None = None,
     ) -> None:
         """
         Constructor for YouTube Class.
@@ -73,6 +126,8 @@ class YouTube:
         self._fp_profile_path: str = fp_profile_path
         self._niche: str = niche
         self._language: str = language
+        self.content_profile = normalize_content_profile(content_profile)
+        self.case_brief = load_case_brief(self.content_profile)
 
         self.images = []
 
@@ -138,9 +193,35 @@ class YouTube:
         Returns:
             topic (str): The generated topic.
         """
-        completion = self.generate_response(
-            f"Please generate a specific video idea that takes about the following topic: {self.niche}. Make it exactly one sentence. Only return the topic, nothing else."
-        )
+        if has_service_strategy(self.content_profile):
+            completion = self.generate_response(
+                f"""
+                You are planning a short-form educational video that grows durable content assets and owned audience around technical workflows.
+
+                Domain / niche: {self.niche}
+                Language: {self.language}
+                {build_profile_context(self.content_profile)}
+                Reusable case brief:
+                {self.case_brief or "None"}
+                Variant guidance:
+                {self._variant_instruction()}
+                Asset guidance:
+                {self._asset_instruction()}
+
+                Generate one concrete short-video angle in exactly one sentence.
+
+                Requirements:
+                - Make it practical, credibility-first, and useful enough to support long-tail discovery.
+                - Prefer deployment lessons, security pitfalls, implementation trade-offs, cost trade-offs, or reusable workflow outcomes.
+                - Avoid vague motivation, generic AI news, and broad listicles.
+                - The angle should feel like something a builder would search, save, or subscribe for.
+                - Only return the topic sentence.
+                """
+            )
+        else:
+            completion = self.generate_response(
+                f"Please generate a specific video idea that takes about the following topic: {self.niche}. Make it exactly one sentence. Only return the topic, nothing else."
+            )
 
         if not completion:
             error("Failed to generate Topic.")
@@ -157,28 +238,61 @@ class YouTube:
             script (str): The script of the video.
         """
         sentence_length = get_script_sentence_length()
-        prompt = f"""
-        Generate a script for a video in {sentence_length} sentences, depending on the subject of the video.
+        if has_service_strategy(self.content_profile):
+            prompt = f"""
+            Write a short-form video script in {sentence_length} short sentences.
 
-        The script is to be returned as a string with the specified number of paragraphs.
+            Subject: {self.subject}
+            Language: {self.language}
+            Domain / niche: {self.niche}
+            {build_profile_context(self.content_profile)}
+            Reusable case brief:
+            {self.case_brief or "None"}
+            Variant guidance:
+            {self._variant_instruction()}
+            Asset guidance:
+            {self._asset_instruction()}
 
-        Here is an example of a string:
-        "This is an example string."
+            Script goals:
+            - Attract the right reader/viewer, not broad entertainment traffic.
+            - Sound like a calm technical operator explaining a real-world lesson.
+            - Make the audience feel "this is worth saving or subscribing for".
 
-        Do not under any circumstance reference this prompt in your response.
+            Structure:
+            - Sentence 1: Name a concrete problem, failure mode, or costly mistake.
+            - Sentence 2: Explain why it happens or what most people miss.
+            - Sentence 3: Show the practical fix, principle, or workflow.
+            - Sentence 4: Describe the reusable outcome, next step, or soft asset CTA.
 
-        Get straight to the point, don't start with unnecessary things like, "welcome to this video".
+            Rules:
+            - No markdown, no title, no bullet points.
+            - No hype, no empty inspiration, no "welcome back".
+            - Do not mention the prompt or the sentence count.
+            - Only return the raw script.
+            """
+        else:
+            prompt = f"""
+            Generate a script for a video in {sentence_length} sentences, depending on the subject of the video.
 
-        Obviously, the script should be related to the subject of the video.
-        
-        YOU MUST NOT EXCEED THE {sentence_length} SENTENCES LIMIT. MAKE SURE THE {sentence_length} SENTENCES ARE SHORT.
-        YOU MUST NOT INCLUDE ANY TYPE OF MARKDOWN OR FORMATTING IN THE SCRIPT, NEVER USE A TITLE.
-        YOU MUST WRITE THE SCRIPT IN THE LANGUAGE SPECIFIED IN [LANGUAGE].
-        ONLY RETURN THE RAW CONTENT OF THE SCRIPT. DO NOT INCLUDE "VOICEOVER", "NARRATOR" OR SIMILAR INDICATORS OF WHAT SHOULD BE SPOKEN AT THE BEGINNING OF EACH PARAGRAPH OR LINE. YOU MUST NOT MENTION THE PROMPT, OR ANYTHING ABOUT THE SCRIPT ITSELF. ALSO, NEVER TALK ABOUT THE AMOUNT OF PARAGRAPHS OR LINES. JUST WRITE THE SCRIPT
-        
-        Subject: {self.subject}
-        Language: {self.language}
-        """
+            The script is to be returned as a string with the specified number of paragraphs.
+
+            Here is an example of a string:
+            "This is an example string."
+
+            Do not under any circumstance reference this prompt in your response.
+
+            Get straight to the point, don't start with unnecessary things like, "welcome to this video".
+
+            Obviously, the script should be related to the subject of the video.
+            
+            YOU MUST NOT EXCEED THE {sentence_length} SENTENCES LIMIT. MAKE SURE THE {sentence_length} SENTENCES ARE SHORT.
+            YOU MUST NOT INCLUDE ANY TYPE OF MARKDOWN OR FORMATTING IN THE SCRIPT, NEVER USE A TITLE.
+            YOU MUST WRITE THE SCRIPT IN THE LANGUAGE SPECIFIED IN [LANGUAGE].
+            ONLY RETURN THE RAW CONTENT OF THE SCRIPT. DO NOT INCLUDE "VOICEOVER", "NARRATOR" OR SIMILAR INDICATORS OF WHAT SHOULD BE SPOKEN AT THE BEGINNING OF EACH PARAGRAPH OR LINE. YOU MUST NOT MENTION THE PROMPT, OR ANYTHING ABOUT THE SCRIPT ITSELF. ALSO, NEVER TALK ABOUT THE AMOUNT OF PARAGRAPHS OR LINES. JUST WRITE THE SCRIPT
+            
+            Subject: {self.subject}
+            Language: {self.language}
+            """
         completion = self.generate_response(prompt)
 
         # Apply regex to remove *
@@ -195,7 +309,10 @@ class YouTube:
 
         self.script = completion
 
-        return completion
+        if has_service_strategy(self.content_profile):
+            self.script = self.review_script(self.script)
+
+        return self.script
 
     def generate_metadata(self) -> dict:
         """
@@ -204,20 +321,74 @@ class YouTube:
         Returns:
             metadata (dict): The generated metadata.
         """
-        title = self.generate_response(
-            f"Please generate a YouTube Video Title for the following subject, including hashtags: {self.subject}. Only return the title, nothing else. Limit the title under 100 characters."
-        )
+        if has_service_strategy(self.content_profile):
+            title = self.generate_response(
+                f"""
+                Generate a YouTube Shorts title for this technical service-led video.
+
+                Subject: {self.subject}
+                Domain / niche: {self.niche}
+                {build_profile_context(self.content_profile)}
+                Reusable case brief:
+                {self.case_brief or "None"}
+                Variant guidance:
+                {self._variant_instruction()}
+                Asset guidance:
+                {self._asset_instruction()}
+
+                Requirements:
+                - Under 90 characters
+                - Specific and useful, not clickbait
+                - May use 1-2 targeted hashtags if they help
+                - Should signal a real deployment, security, automation, or implementation lesson
+                - Prefer searchable clarity over generic persuasion
+                - Only return the title
+                """
+            )
+        else:
+            title = self.generate_response(
+                f"Please generate a YouTube Video Title for the following subject, including hashtags: {self.subject}. Only return the title, nothing else. Limit the title under 100 characters."
+            )
 
         if len(title) > 100:
             if get_verbose():
                 warning("Generated Title is too long. Retrying...")
             return self.generate_metadata()
 
-        description = self.generate_response(
-            f"Please generate a YouTube Video Description for the following script: {self.script}. Only return the description, nothing else."
-        )
+        if has_service_strategy(self.content_profile):
+            description = self.generate_response(
+                f"""
+                Generate a concise YouTube video description for a technical case-study short.
+
+                Subject: {self.subject}
+                Script: {self.script}
+                Domain / niche: {self.niche}
+                {build_profile_context(self.content_profile)}
+                Reusable case brief:
+                {self.case_brief or "None"}
+                Variant guidance:
+                {self._variant_instruction()}
+                Asset guidance:
+                {self._asset_instruction()}
+
+                Requirements:
+                - Summarize the lesson in 2-4 short lines
+                - Sound practical and trustworthy
+                - Mention the target outcome for the audience
+                - Include a soft CTA to subscribe, download, or learn more
+                - If a CTA URL is present in the context, include it naturally
+                - Only return the description
+                """
+            )
+        else:
+            description = self.generate_response(
+                f"Please generate a YouTube Video Description for the following script: {self.script}. Only return the description, nothing else."
+            )
 
         self.metadata = {"title": title, "description": description}
+
+        if has_service_strategy(self.content_profile):
+            self.metadata = self.review_metadata(self.metadata)
 
         return self.metadata
 
@@ -230,31 +401,61 @@ class YouTube:
         """
         n_prompts = len(self.script) / 3
 
-        prompt = f"""
-        Generate {n_prompts} Image Prompts for AI Image Generation,
-        depending on the subject of a video.
-        Subject: {self.subject}
+        if has_service_strategy(self.content_profile):
+            prompt = f"""
+            Generate {int(n_prompts)} vertical image prompts for an AI-generated technical case-study short.
 
-        The image prompts are to be returned as
-        a JSON-Array of strings.
+            Subject: {self.subject}
+            Script: {self.script}
+            Domain / niche: {self.niche}
+            {build_profile_context(self.content_profile)}
+            Reusable case brief:
+            {self.case_brief or "None"}
+            Variant guidance:
+            {self._variant_instruction()}
+            Asset guidance:
+            {self._asset_instruction()}
 
-        Each search term should consist of a full sentence,
-        always add the main subject of the video.
+            Visual direction:
+            - product UI mockups
+            - terminal / dashboard / architecture visuals
+            - secure infrastructure scenes
+            - workflow diagrams, checklists, resource-pack style visuals
+            - realistic modern SaaS or engineering imagery
 
-        Be emotional and use interesting adjectives to make the
-        Image Prompt as detailed as possible.
+            Rules:
+            - Return a JSON array of strings only
+            - Each prompt should be a full sentence
+            - Keep prompts grounded, professional, and visually coherent
+            - Avoid fantasy art, surrealism, and generic motivational imagery
+            - Do not repeat the script verbatim
+            """
+        else:
+            prompt = f"""
+            Generate {n_prompts} Image Prompts for AI Image Generation,
+            depending on the subject of a video.
+            Subject: {self.subject}
 
-        YOU MUST ONLY RETURN THE JSON-ARRAY OF STRINGS.
-        YOU MUST NOT RETURN ANYTHING ELSE.
-        YOU MUST NOT RETURN THE SCRIPT.
+            The image prompts are to be returned as
+            a JSON-Array of strings.
 
-        The search terms must be related to the subject of the video.
-        Here is an example of a JSON-Array of strings:
-        ["image prompt 1", "image prompt 2", "image prompt 3"]
+            Each search term should consist of a full sentence,
+            always add the main subject of the video.
 
-        For context, here is the full text:
-        {self.script}
-        """
+            Be emotional and use interesting adjectives to make the
+            Image Prompt as detailed as possible.
+
+            YOU MUST ONLY RETURN THE JSON-ARRAY OF STRINGS.
+            YOU MUST NOT RETURN ANYTHING ELSE.
+            YOU MUST NOT RETURN THE SCRIPT.
+
+            The search terms must be related to the subject of the video.
+            Here is an example of a JSON-Array of strings:
+            ["image prompt 1", "image prompt 2", "image prompt 3"]
+
+            For context, here is the full text:
+            {self.script}
+            """
 
         completion = (
             str(self.generate_response(prompt))
@@ -293,6 +494,98 @@ class YouTube:
         success(f"Generated {len(image_prompts)} Image Prompts.")
 
         return image_prompts
+
+    def review_script(self, draft: str) -> str:
+        """
+        Reviews a generated script before publishing.
+
+        Args:
+            draft (str): Initial script
+
+        Returns:
+            script (str): Reviewed script
+        """
+        reviewed = self.generate_response(
+            f"""
+            Review and improve this short-form technical service script.
+
+            Draft:
+            {draft}
+
+            Context:
+            Subject: {self.subject}
+            Language: {self.language}
+            Domain / niche: {self.niche}
+            {build_profile_context(self.content_profile)}
+            Reusable case brief:
+            {self.case_brief or "None"}
+            Variant guidance:
+            {self._variant_instruction()}
+            Asset guidance:
+            {self._asset_instruction()}
+
+            Requirements:
+            - Keep it concise and practical
+            - Remove hype, filler, and vague wording
+            - Keep the tone calm and operator-like
+            - Make the reusable value to the reader obvious
+            - Only return the final script
+            """
+        )
+
+        cleaned = re.sub(r"\*", "", reviewed).strip()
+        return cleaned or draft
+
+    def review_metadata(self, draft_metadata: dict) -> dict:
+        """
+        Reviews title and description before publishing.
+
+        Args:
+            draft_metadata (dict): Draft metadata
+
+        Returns:
+            metadata (dict): Reviewed metadata
+        """
+        reviewed = self.generate_response(
+            f"""
+            Review this YouTube Shorts metadata for a technical service-led video.
+
+            Draft title: {draft_metadata.get("title", "")}
+            Draft description: {draft_metadata.get("description", "")}
+
+            Context:
+            Subject: {self.subject}
+            Domain / niche: {self.niche}
+            {build_profile_context(self.content_profile)}
+            Reusable case brief:
+            {self.case_brief or "None"}
+            Variant guidance:
+            {self._variant_instruction()}
+            Asset guidance:
+            {self._asset_instruction()}
+
+            Return valid JSON only with this schema:
+            {{
+              "title": "reviewed title",
+              "description": "reviewed description"
+            }}
+
+            Requirements:
+            - Specific, credible, no hype
+            - Keep title under 90 characters
+            - Keep description concise and CTA-aware
+            - Prefer owned asset capture over direct service selling
+            """
+        )
+
+        cleaned = reviewed.replace("```json", "").replace("```", "").strip()
+        try:
+            parsed = json.loads(cleaned)
+            title = str(parsed.get("title", "")).strip() or draft_metadata.get("title", "")
+            description = str(parsed.get("description", "")).strip() or draft_metadata.get("description", "")
+            return {"title": title, "description": description}
+        except Exception:
+            return draft_metadata
 
     def _persist_image(self, image_bytes: bytes, provider_label: str) -> str:
         """

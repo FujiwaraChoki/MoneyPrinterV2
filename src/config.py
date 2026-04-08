@@ -183,6 +183,16 @@ def get_google_maps_scraper_zip_url() -> str:
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file)["google_maps_scraper"]
 
+def get_google_maps_scraper_sha256() -> str:
+    """
+    Gets the optional SHA256 checksum for the Google Maps scraper archive.
+
+    Returns:
+        checksum (str): Expected SHA256 checksum or empty string
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return str(json.load(file).get("google_maps_scraper_sha256", "")).strip()
+
 def get_google_maps_scraper_niche() -> str:
     """
     Gets the niche for the Google Maps scraper.

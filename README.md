@@ -1,5 +1,7 @@
 # MoneyPrinter V2
 
+Frank's fork is being repurposed from a generic faceless-content tool into a long-term income asset printer: long-tail content generation, cross-platform distribution, owned-audience capture, and monetization experiments around AI / developer workflows.
+
 Sponsored by Post Bridge
 
 <a href="https://www.post-bridge.com/?ref=moneyprinter">
@@ -15,8 +17,8 @@ Sponsored by Post Bridge
 [![GitHub stars](https://img.shields.io/github/stars/FujiwaraChoki/MoneyPrinterV2?style=for-the-badge)](https://github.com/FujiwaraChoki/MoneyPrinterV2/stargazers)
 [![Discord](https://img.shields.io/discord/1134848537704804432?style=for-the-badge)](https://dsc.gg/fuji-community)
 
-An Application that automates the process of making money online.
-MPV2 (MoneyPrinter Version 2) is, as the name suggests, the second version of the MoneyPrinter project. It is a complete rewrite of the original project, with a focus on a wider range of features and a more modular architecture.
+An application that automates repetitive parts of online monetization.
+MPV2 (MoneyPrinter Version 2) is, as the name suggests, the second version of the MoneyPrinter project. This fork keeps the modular core, but is being redirected toward owned content assets, conversion paths, and low-touch revenue experiments instead of pure service lead generation.
 
 > **Note:** MPV2 needs Python 3.12 to function effectively.
 > Watch the YouTube video [here](https://youtu.be/wAZ_ZSuIqfk)
@@ -27,6 +29,19 @@ MPV2 (MoneyPrinter Version 2) is, as the name suggests, the second version of th
 - [x] YouTube Shorts Automator (with CRON Jobs => `scheduler`)
 - [x] Affiliate Marketing (Amazon + Twitter)
 - [x] Find local businesses & cold outreach
+- [x] Service-led content profiles for case-study style YouTube / X accounts
+- [x] Cross-post YouTube uploads to TikTok / Instagram via Post Bridge
+
+## This Fork's Goal
+
+This fork is being re-optimized around long-term monetizable assets:
+
+- publish reusable content with long-tail utility
+- turn distribution into owned audience instead of one-off impressions
+- direct attention toward assets such as newsletters, resource packs, templates, and selective affiliate offers
+- treat service revenue as optional bootstrap fuel, not the end state
+
+See [docs/FrankMoneyPrinter.md](docs/FrankMoneyPrinter.md) for the specialization strategy, [docs/FinancialFreedomPath.md](docs/FinancialFreedomPath.md) for the staged monetization path, [docs/FirstAssetSpec.md](docs/FirstAssetSpec.md) for the first asset decision, and [docs/Roadmap.md](docs/Roadmap.md) for the implementation phases.
 
 ## Versions
 
