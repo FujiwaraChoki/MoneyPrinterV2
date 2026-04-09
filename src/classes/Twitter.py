@@ -10,13 +10,13 @@ from status import *
 from llm_provider import generate_text
 from typing import List, Optional
 from datetime import datetime
-from termcolor import colored
 from selenium_firefox import *
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.firefox.options import Options
 from webdriver_manager.firefox import GeckoDriverManager
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
@@ -88,7 +88,7 @@ class Twitter:
         post_content: str = text if text is not None else self.generate_post()
         now: datetime = datetime.now()
 
-        print(colored(" => Posting to Twitter:", "blue"), post_content[:30] + "...")
+        info(f" => Posting to Twitter: {post_content[:30]}...")
         body = post_content
 
         text_box = None
@@ -104,7 +104,7 @@ class Twitter:
                 text_box.click()
                 text_box.send_keys(body)
                 break
-            except Exception:
+            except TimeoutException:
                 continue
 
         if text_box is None:
@@ -125,14 +125,14 @@ class Twitter:
                 post_button = self.wait.until(EC.element_to_be_clickable(selector))
                 post_button.click()
                 break
-            except Exception:
+            except TimeoutException:
                 continue
 
         if post_button is None:
             raise RuntimeError("Could not find the Post button on X compose screen.")
 
         if verbose:
-            print(colored(" => Pressed [ENTER] Button on Twitter..", "blue"))
+            info(" => Pressed [ENTER] Button on Twitter..")
         time.sleep(2)
 
         # Add the post to the cache
