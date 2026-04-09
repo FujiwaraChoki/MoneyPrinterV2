@@ -116,7 +116,14 @@ class TTS:
         return self._synthesize_kitten(text, output_file)
 
     def _synthesize_kitten(self, text: str, output_file: str) -> str:
-        from kittentts import KittenTTS as KittenModel
+        try:
+            from kittentts import KittenTTS as KittenModel
+        except ImportError:
+            raise ImportError(
+                "kittentts is not installed. Either install it manually:\n"
+                "  pip install kittentts@https://github.com/KittenML/KittenTTS/releases/download/0.8.1/kittentts-0.8.1-py3-none-any.whl\n"
+                "Or switch to Edge TTS (recommended) by setting tts_provider to 'edge_tts' in config.json"
+            )
 
         model = KittenModel(KITTEN_MODEL)
         audio = model.generate(text, voice=self._voice)

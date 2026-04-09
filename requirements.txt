@@ -2,7 +2,6 @@ wheel
 termcolor
 schedule
 requests
-kittentts @ https://github.com/KittenML/KittenTTS/releases/download/0.8.1/kittentts-0.8.1-py3-none-any.whl
 edge-tts
 soundfile
 prettytable
@@ -18,3 +17,5 @@ faster-whisper
 srt_equalizer
 undetected_chromedriver
 platformdirs
+# Optional: KittenTTS (local TTS, English only). Install manually if needed:
+# pip install kittentts@https://github.com/KittenML/KittenTTS/releases/download/0.8.1/kittentts-0.8.1-py3-none-any.whl
