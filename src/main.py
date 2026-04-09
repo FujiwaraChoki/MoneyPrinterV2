@@ -205,7 +205,9 @@ def main():
                         command = ["python", cron_script_path, "youtube", selected_account['id'], get_active_model()]
 
                         def job():
-                            subprocess.run(command)
+                            result = subprocess.run(command)
+                            if result.returncode != 0:
+                                warning(f"CRON job exited with code {result.returncode}")
 
                         if user_input == 1:
                             # Upload Once
@@ -336,7 +338,9 @@ def main():
                         command = ["python", cron_script_path, "twitter", selected_account['id'], get_active_model()]
 
                         def job():
-                            subprocess.run(command)
+                            result = subprocess.run(command)
+                            if result.returncode != 0:
+                                warning(f"CRON job exited with code {result.returncode}")
 
                         if user_input == 1:
                             # Post Once a day
