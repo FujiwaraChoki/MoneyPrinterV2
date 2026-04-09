@@ -228,6 +228,15 @@ def get_outreach_message_body_file() -> str:
     """
     return _load_config()["outreach_message_body_file"]
 
+def get_tts_provider() -> str:
+    """
+    Gets the TTS provider from the config file.
+
+    Returns:
+        provider (str): The TTS provider (edge_tts or kitten_tts)
+    """
+    return _load_config().get("tts_provider", "edge_tts")
+
 def get_tts_voice() -> str:
     """
     Gets the TTS voice from the config file.
@@ -235,7 +244,16 @@ def get_tts_voice() -> str:
     Returns:
         voice (str): The TTS voice
     """
-    return _load_config().get("tts_voice", "Jasper")
+    return _load_config().get("tts_voice", "en-US-AriaNeural")
+
+def get_subtitle_style() -> str:
+    """
+    Gets the subtitle style preset.
+
+    Returns:
+        style (str): The subtitle style name
+    """
+    return _load_config().get("subtitle_style", "yellow_bold")
 
 def get_assemblyai_api_key() -> str:
     """

@@ -18,42 +18,225 @@ from classes.AFM import AffiliateMarketing
 from llm_provider import list_models, select_model, get_active_model
 from post_bridge_integration import maybe_crosspost_youtube_short
 
+
+# ------------------------------------------------------------------
+# Quick Generate — one-prompt video creation
+# ------------------------------------------------------------------
+
+def _pick_number(prompt_text: str, max_val: int, default: int = 1) -> int:
+    """Helper to pick a number from 1..max_val with a default."""
+    while True:
+        raw = input(colored(f"{prompt_text} [{default}]: ", "magenta")).strip()
+        if raw == "":
+            return default
+        try:
+            val = int(raw)
+            if 1 <= val <= max_val:
+                return val
+            warning(f"Please enter a number between 1 and {max_val}.")
+        except ValueError:
+            warning("Please enter a valid number.")
+
+
+def quick_generate():
+    """Interactive one-prompt video generation flow.
+
+    Guides the user through:
+    1. Entering a video topic/prompt
+    2. Picking a language
+    3. Picking a TTS provider and voice
+    4. Picking a subtitle style
+    5. Generating the complete video
+    """
+    info("\n=========== QUICK GENERATE ===========", False)
+    info("  One prompt -> complete video", False)
+    info("======================================\n", False)
+
+    # --- 1. Prompt ---
+    topic = ""
+    while not topic.strip():
+        topic = input(colored("  Describe your video: ", "magenta")).strip()
+        if not topic:
+            warning("Please enter a topic or idea.")
+
+    # --- 2. Language ---
+    info("\n  Language:", False)
+    for idx, (lang_name, _code) in enumerate(LANGUAGES):
+        print(colored(f"   {idx + 1}. {lang_name}", "cyan"))
+    print(colored(f"   {len(LANGUAGES) + 1}. Other (type it)", "cyan"))
+
+    lang_choice = _pick_number("  Select language", len(LANGUAGES) + 1, default=1)
+    if lang_choice <= len(LANGUAGES):
+        language_name, language_code = LANGUAGES[lang_choice - 1]
+    else:
+        language_name = input(colored("  Enter language name: ", "magenta")).strip() or "English"
+        language_code = input(colored("  Enter language code (e.g. en, es): ", "magenta")).strip() or "en"
+
+    # --- 3. TTS Provider ---
+    info("\n  TTS Provider:", False)
+    print(colored("   1. Edge TTS  (300+ voices, free, high quality)", "cyan"))
+    print(colored("   2. Kitten TTS (8 voices, local, English only)", "cyan"))
+    tts_provider_choice = _pick_number("  Select TTS provider", 2, default=1)
+    tts_provider = "edge_tts" if tts_provider_choice == 1 else "kitten_tts"
+
+    # --- 4. Voice ---
+    info(f"\n  Loading voices for {language_name}...", False)
+    voices = TTS.list_voices(provider=tts_provider, language_filter=language_code)
+
+    if not voices:
+        warning(f"  No voices found for '{language_code}'. Showing all voices...")
+        voices = TTS.list_voices(provider=tts_provider)
+
+    if not voices:
+        error("  No voices available for this provider.")
+        return
+
+    # Show paginated voice list (max 20)
+    display_voices = voices[:20]
+    info(f"\n  Available voices ({len(voices)} total, showing top {len(display_voices)}):", False)
+    for idx, v in enumerate(display_voices):
+        gender_tag = v.get("gender", "")[:1]  # M or F
+        label = f"{v['name']} ({gender_tag})"
+        print(colored(f"   {idx + 1}. {label}", "cyan"))
+
+    if len(voices) > 20:
+        print(colored(f"   ... and {len(voices) - 20} more. Type a voice name directly to search.", "yellow"))
+
+    voice_input = input(colored(f"  Select voice [1]: ", "magenta")).strip()
+    selected_voice = display_voices[0]["name"]  # default
+
+    if voice_input:
+        try:
+            voice_idx = int(voice_input) - 1
+            if 0 <= voice_idx < len(display_voices):
+                selected_voice = display_voices[voice_idx]["name"]
+        except ValueError:
+            # User typed a voice name — search for it
+            matches = [v for v in voices if voice_input.lower() in v["name"].lower()]
+            if matches:
+                selected_voice = matches[0]["name"]
+                info(f"  Matched: {selected_voice}")
+            else:
+                warning(f"  Voice '{voice_input}' not found. Using default.")
+
+    # --- 5. Subtitle Style ---
+    info("\n  Subtitle Style:", False)
+    for idx, (_, display_name) in enumerate(SUBTITLE_STYLE_OPTIONS):
+        print(colored(f"   {idx + 1}. {display_name}", "cyan"))
+    style_choice = _pick_number("  Select style", len(SUBTITLE_STYLE_OPTIONS), default=1)
+    subtitle_style = SUBTITLE_STYLE_OPTIONS[style_choice - 1][0]
+
+    # --- Summary ---
+    info("\n  ---- Configuration ----", False)
+    info(f"  Topic     : {topic}", False)
+    info(f"  Language  : {language_name}", False)
+    info(f"  TTS       : {tts_provider} / {selected_voice}", False)
+    info(f"  Subtitles : {SUBTITLE_STYLE_OPTIONS[style_choice - 1][1]}", False)
+    info("  ----------------------\n", False)
+
+    confirm = input(colored("  Start generating? (Y/n): ", "magenta")).strip().lower()
+    if confirm == "n":
+        info("  Cancelled.")
+        return
+
+    # --- Generate ---
+    info("\n  Generating video...\n")
+
+    # Temporarily override subtitle style for this generation
+    import config as _cfg
+    _original_get_subtitle_style = _cfg.get_subtitle_style
+    _cfg.get_subtitle_style = lambda: subtitle_style
+
+    try:
+        tts = TTS(provider=tts_provider, voice=selected_voice)
+        youtube = YouTube.for_generation(niche=topic, language=language_name)
+
+        # Step 1: Topic
+        youtube.generate_topic()
+        success(f"  Topic: {youtube.subject[:80]}")
+
+        # Step 2: Script
+        youtube.generate_script()
+        success(f"  Script generated ({len(youtube.script)} chars)")
+
+        # Step 3: Metadata
+        youtube.generate_metadata()
+        success(f"  Title: {youtube.metadata['title'][:60]}")
+
+        # Step 4: Image prompts
+        youtube.generate_prompts()
+        success(f"  {len(youtube.image_prompts)} image prompts generated")
+
+        # Step 5: Images
+        for i, prompt in enumerate(youtube.image_prompts):
+            youtube.generate_image(prompt)
+            success(f"  Image {i + 1}/{len(youtube.image_prompts)} generated")
+
+        # Step 6: TTS
+        youtube.generate_script_to_speech(tts)
+        success(f"  Audio generated ({tts_provider}: {selected_voice})")
+
+        # Step 7: Combine
+        path = youtube.combine()
+        youtube.video_path = os.path.abspath(path)
+
+        info("")
+        success(f"  Video saved: {youtube.video_path}")
+        info("")
+
+        # Optionally upload
+        upload = input(colored("  Upload to YouTube? (y/N): ", "magenta")).strip().lower()
+        if upload == "y":
+            cached_accounts = get_accounts("youtube")
+            if not cached_accounts:
+                warning("  No YouTube accounts configured. Use 'YouTube Shorts Automation' to add one first.")
+            else:
+                info("\n  Select YouTube account:", False)
+                for idx, acc in enumerate(cached_accounts):
+                    print(colored(f"   {idx + 1}. {acc['nickname']} ({acc['niche']})", "cyan"))
+                acc_choice = _pick_number("  Account", len(cached_accounts), default=1)
+                acc = cached_accounts[acc_choice - 1]
+
+                # Create a full YouTube instance with browser for upload
+                yt_upload = YouTube(
+                    acc["id"], acc["nickname"], acc["firefox_profile"],
+                    acc["niche"], acc["language"]
+                )
+                yt_upload.video_path = youtube.video_path
+                yt_upload.metadata = youtube.metadata
+                yt_upload.channel_id = None
+
+                upload_success = yt_upload.upload_video()
+                if upload_success:
+                    success("  Uploaded to YouTube!")
+                    maybe_crosspost_youtube_short(
+                        video_path=youtube.video_path,
+                        title=youtube.metadata.get("title", ""),
+                        interactive=True,
+                    )
+                else:
+                    warning("  Upload failed.")
+    finally:
+        _cfg.get_subtitle_style = _original_get_subtitle_style
+
+
+# ------------------------------------------------------------------
+# Main menu
+# ------------------------------------------------------------------
+
 def main():
-    """Main entry point for the application, providing a menu-driven interface
-    to manage YouTube, Twitter bots, Affiliate Marketing, and Outreach tasks.
+    """Main entry point providing a menu-driven interface."""
 
-    This function allows users to:
-    1. Start the YouTube Shorts Automater to manage YouTube accounts, 
-       generate and upload videos, and set up CRON jobs.
-    2. Start a Twitter Bot to manage Twitter accounts, post tweets, and 
-       schedule posts using CRON jobs.
-    3. Manage Affiliate Marketing by creating pitches and sharing them via 
-       Twitter accounts.
-    4. Initiate an Outreach process for engagement and promotion tasks.
-    5. Exit the application.
-
-    The function continuously prompts users for input, validates it, and 
-    executes the selected option until the user chooses to quit.
-
-    Args:
-        None
-
-    Returns:
-        None"""
-
-    # Get user input
-    # user_input = int(question("Select an option: "))
     valid_input = False
     while not valid_input:
         try:
-    # Show user options
-            info("\n============ OPTIONS ============", False)
+            info("\n========== MONEYPRINTER V2 ==========", False)
 
             for idx, option in enumerate(OPTIONS):
-                print(colored(f" {idx + 1}. {option}", "cyan"))
+                print(colored(f"  {idx + 1}. {option}", "cyan"))
 
-            info("=================================\n", False)
-            user_input = input("Select an option: ").strip()
+            info("=====================================\n", False)
+            user_input = input(colored("  Select an option: ", "magenta")).strip()
             if user_input == '':
                 print("\n" * 100)
                 raise ValueError("Empty input is not allowed.")
@@ -63,9 +246,10 @@ def main():
             print("\n" * 100)
             print(f"Invalid input: {e}")
 
-
     # Start the selected option
     if user_input == 1:
+        quick_generate()
+    elif user_input == 2:
         info("Starting YT Shorts Automater...")
 
         cached_accounts = get_accounts("youtube")
@@ -224,7 +408,7 @@ def main():
                         if get_verbose():
                             info(" => Climbing Options Ladder...", False)
                         break
-    elif user_input == 2:
+    elif user_input == 3:
         info("Starting Twitter Bot...")
 
         cached_accounts = get_accounts("twitter")
@@ -363,7 +547,7 @@ def main():
                         if get_verbose():
                             info(" => Climbing Options Ladder...", False)
                         break
-    elif user_input == 3:
+    elif user_input == 4:
         info("Starting Affiliate Marketing...")
 
         cached_products = get_products()
@@ -424,15 +608,15 @@ def main():
                 afm.generate_pitch()
                 afm.share_pitch("twitter")
 
-    elif user_input == 4:
+    elif user_input == 5:
         info("Starting Outreach...")
 
         outreach = Outreach()
 
         outreach.start()
-    elif user_input == 5:
+    elif user_input == 6:
         if get_verbose():
-            print(colored(" => Quitting...", "blue"))
+            info(" => Quitting...")
         sys.exit(0)
     else:
         error("Invalid option selected. Please try again.", "red")

@@ -98,6 +98,29 @@ class YouTube:
             service=self.service, options=self.options
         )
 
+    @classmethod
+    def for_generation(cls, niche: str, language: str) -> "YouTube":
+        """Create a YouTube instance for video generation only (no browser/upload).
+
+        Use this when you only need to generate a video locally without uploading.
+
+        Args:
+            niche (str): The video topic/niche.
+            language (str): The language for the video.
+
+        Returns:
+            instance (YouTube): A generation-only YouTube instance.
+        """
+        instance = object.__new__(cls)
+        instance._account_uuid = None
+        instance._account_nickname = None
+        instance._fp_profile_path = None
+        instance._niche = niche
+        instance._language = language
+        instance.images = []
+        instance.browser = None
+        return instance
+
     @property
     def niche(self) -> str:
         """
@@ -406,20 +429,21 @@ class YouTube:
 
     def generate_script_to_speech(self, tts_instance: TTS) -> str:
         """
-        Converts the generated script into Speech using KittenTTS and returns the path to the wav file.
+        Converts the generated script into Speech and returns the path to the audio file.
 
         Args:
-            tts_instance (tts): Instance of TTS Class.
+            tts_instance (TTS): Instance of TTS Class.
 
         Returns:
-            path_to_wav (str): Path to generated audio (WAV Format).
+            path (str): Path to generated audio file.
         """
         path = os.path.join(ROOT_DIR, ".mp", str(uuid4()) + ".wav")
 
         # Clean script, remove every character that is not a word character, a space, a period, a question mark, or an exclamation mark.
         self.script = re.sub(r"[^\w\s.?!]", "", self.script)
 
-        tts_instance.synthesize(self.script, path)
+        # Use the returned path (may differ from input, e.g. .mp3 for Edge TTS)
+        path = tts_instance.synthesize(self.script, path)
 
         self.tts_path = path
 
@@ -564,6 +588,46 @@ class YouTube:
 
         return srt_path
 
+    # Subtitle style presets
+    SUBTITLE_STYLES = {
+        "yellow_bold": {
+            "fontsize": 100,
+            "color": "#FFFF00",
+            "stroke_color": "black",
+            "stroke_width": 5,
+        },
+        "white_shadow": {
+            "fontsize": 90,
+            "color": "white",
+            "stroke_color": "#333333",
+            "stroke_width": 3,
+        },
+        "neon_green": {
+            "fontsize": 95,
+            "color": "#39FF14",
+            "stroke_color": "black",
+            "stroke_width": 4,
+        },
+        "red_impact": {
+            "fontsize": 105,
+            "color": "#FF3333",
+            "stroke_color": "white",
+            "stroke_width": 5,
+        },
+        "minimal_white": {
+            "fontsize": 80,
+            "color": "white",
+            "stroke_color": "black",
+            "stroke_width": 2,
+        },
+        "cyan_modern": {
+            "fontsize": 90,
+            "color": "#00FFFF",
+            "stroke_color": "#1a1a2e",
+            "stroke_width": 4,
+        },
+    }
+
     def combine(self) -> str:
         """
         Combines everything into the final video.
@@ -577,14 +641,18 @@ class YouTube:
         max_duration = tts_clip.duration
         req_dur = max_duration / len(self.images)
 
+        # Resolve subtitle style
+        style_name = get_subtitle_style()
+        style = self.SUBTITLE_STYLES.get(style_name, self.SUBTITLE_STYLES["yellow_bold"])
+
         # Make a generator that returns a TextClip when called with consecutive
         generator = lambda txt: TextClip(
             txt,
             font=os.path.join(get_fonts_dir(), get_font()),
-            fontsize=100,
-            color="#FFFF00",
-            stroke_color="black",
-            stroke_width=5,
+            fontsize=style["fontsize"],
+            color=style["color"],
+            stroke_color=style["stroke_color"],
+            stroke_width=style["stroke_width"],
             size=(1080, 1920),
             method="caption",
         )
