@@ -79,6 +79,24 @@ class PostBridgeConfigTests(unittest.TestCase):
         self.assertEqual(post_bridge_config["account_ids"], [])
         self.assertFalse(post_bridge_config["enabled"])
 
+    def test_scraper_timeout_allows_explicit_zero(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            self.write_config(temp_dir, {"scraper_timeout": 0})
+
+            with patch.object(config, "ROOT_DIR", temp_dir):
+                timeout = config.get_scraper_timeout()
+
+        self.assertEqual(timeout, 0)
+
+    def test_scraper_timeout_defaults_when_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            self.write_config(temp_dir, {})
+
+            with patch.object(config, "ROOT_DIR", temp_dir):
+                timeout = config.get_scraper_timeout()
+
+        self.assertEqual(timeout, 300)
+
 
 if __name__ == "__main__":
     unittest.main()
