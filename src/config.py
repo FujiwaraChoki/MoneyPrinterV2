@@ -201,7 +201,8 @@ def get_scraper_timeout() -> int:
         timeout (int): The timeout
     """
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
-        return json.load(file)["scraper_timeout"] or 300
+        timeout = json.load(file).get("scraper_timeout")
+        return 300 if timeout is None else timeout
 
 def get_outreach_message_subject() -> str:
     """
