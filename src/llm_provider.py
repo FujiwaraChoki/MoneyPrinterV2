@@ -55,9 +55,17 @@ def generate_text(prompt: str, model_name: str = None) -> str:
             "No Ollama model selected. Call select_model() first or pass model_name."
         )
 
-    response = _client().chat(
-        model=model,
-        messages=[{"role": "user", "content": prompt}],
-    )
+    try:
+        response = _client().chat(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+        )
+    except Exception as exc:
+        raise RuntimeError(
+            f"Failed to reach Ollama at {get_ollama_base_url()} using model '{model}': {exc}"
+        ) from exc
 
-    return response["message"]["content"].strip()
+    try:
+        return response["message"]["content"].strip()
+    except (TypeError, KeyError) as exc:
+        raise RuntimeError("Ollama response did not include message.content.") from exc
