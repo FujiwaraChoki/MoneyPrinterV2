@@ -20,6 +20,27 @@ fake_ollama = types.ModuleType("ollama")
 fake_ollama.Client = object
 sys.modules.setdefault("ollama", fake_ollama)
 
+fake_termcolor = types.ModuleType("termcolor")
+fake_termcolor.colored = lambda text, *_args, **_kwargs: text
+sys.modules.setdefault("termcolor", fake_termcolor)
+
+fake_status = types.ModuleType("status")
+fake_status.info = lambda *args, **kwargs: None
+fake_status.success = lambda *args, **kwargs: None
+fake_status.warning = lambda *args, **kwargs: None
+fake_status.error = lambda *args, **kwargs: None
+fake_status.question = lambda *_args, **_kwargs: ""
+sys.modules.setdefault("status", fake_status)
+
+fake_cache = types.ModuleType("cache")
+fake_cache.get_accounts = lambda _provider: []
+sys.modules.setdefault("cache", fake_cache)
+
+fake_config = types.ModuleType("config")
+fake_config.get_verbose = lambda: False
+fake_config.get_post_bridge_config = lambda: {}
+sys.modules.setdefault("config", fake_config)
+
 fake_llm_provider = types.ModuleType("llm_provider")
 fake_llm_provider.select_model = lambda model: None
 sys.modules.setdefault("llm_provider", fake_llm_provider)
@@ -82,6 +103,67 @@ class CronPostBridgeTests(unittest.TestCase):
         youtube_instance.generate_video.assert_called_once()
         youtube_instance.upload_video.assert_called_once()
         crosspost_mock.assert_not_called()
+
+    @patch("cron.Twitter")
+    @patch("cron.get_accounts")
+    @patch("cron.select_model")
+    @patch("cron.get_verbose")
+    @patch("cron.error")
+    def test_twitter_missing_account_id_exits_with_error(
+        self,
+        error_mock,
+        get_verbose_mock,
+        select_model_mock,
+        get_accounts_mock,
+        twitter_cls_mock,
+    ) -> None:
+        get_verbose_mock.return_value = False
+        get_accounts_mock.return_value = [{"id": "twitter-1"}]
+
+        with patch.object(
+            sys,
+            "argv",
+            ["cron.py", "twitter", "missing-id", "llama3.2:3b"],
+        ), patch("cron.sys.exit", side_effect=SystemExit(1)) as exit_mock:
+            with self.assertRaises(SystemExit):
+                cron.main()
+
+        select_model_mock.assert_called_once_with("llama3.2:3b")
+        error_mock.assert_called_once_with('Twitter account UUID "missing-id" was not found in cache.')
+        exit_mock.assert_called_once_with(1)
+        twitter_cls_mock.assert_not_called()
+
+    @patch("cron.YouTube")
+    @patch("cron.TTS")
+    @patch("cron.get_accounts")
+    @patch("cron.select_model")
+    @patch("cron.get_verbose")
+    @patch("cron.error")
+    def test_youtube_missing_account_id_exits_with_error(
+        self,
+        error_mock,
+        get_verbose_mock,
+        select_model_mock,
+        get_accounts_mock,
+        tts_cls_mock,
+        youtube_cls_mock,
+    ) -> None:
+        get_verbose_mock.return_value = False
+        get_accounts_mock.return_value = [{"id": "youtube-1"}]
+
+        with patch.object(
+            sys,
+            "argv",
+            ["cron.py", "youtube", "missing-id", "llama3.2:3b"],
+        ), patch("cron.sys.exit", side_effect=SystemExit(1)) as exit_mock:
+            with self.assertRaises(SystemExit):
+                cron.main()
+
+        select_model_mock.assert_called_once_with("llama3.2:3b")
+        error_mock.assert_called_once_with('YouTube account UUID "missing-id" was not found in cache.')
+        exit_mock.assert_called_once_with(1)
+        tts_cls_mock.assert_called_once()
+        youtube_cls_mock.assert_not_called()
 
 
 if __name__ == "__main__":
