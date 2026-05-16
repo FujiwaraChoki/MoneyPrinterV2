@@ -29,16 +29,16 @@ def main():
     to manage YouTube, Twitter bots, Affiliate Marketing, and Outreach tasks.
 
     This function allows users to:
-    1. Start the YouTube Shorts Automater to manage YouTube accounts, 
+    1. Start the YouTube Shorts Automater to manage YouTube accounts,
        generate and upload videos, and set up CRON jobs.
-    2. Start a Twitter Bot to manage Twitter accounts, post tweets, and 
+    2. Start a Twitter Bot to manage Twitter accounts, post tweets, and
        schedule posts using CRON jobs.
-    3. Manage Affiliate Marketing by creating pitches and sharing them via 
+    3. Manage Affiliate Marketing by creating pitches and sharing them via
        Twitter accounts.
     4. Initiate an Outreach process for engagement and promotion tasks.
     5. Exit the application.
 
-    The function continuously prompts users for input, validates it, and 
+    The function continuously prompts users for input, validates it, and
     executes the selected option until the user chooses to quit.
 
     Args:
@@ -299,7 +299,7 @@ def main():
                 twitter = Twitter(selected_account["id"], selected_account["nickname"], selected_account["firefox_profile"], selected_account["topic"])
 
                 while True:
-                    
+
                     info("\n============ OPTIONS ============", False)
 
                     for idx, twitter_option in enumerate(TWITTER_OPTIONS):
@@ -441,7 +441,7 @@ def main():
                 config_data = json.load(f)
 
             keywords = config_data.get("twitter_reply_automation", {}).get("search_keywords", [])
-            
+
             if not keywords:
                 error("[-] No keywords found in config.json! Please add them.", "red")
             else:
@@ -452,14 +452,14 @@ def main():
                 if config_data.get("firefox_profile", ""):
                     options.add_argument("-profile")
                     options.add_argument(config_data["firefox_profile"])
-                
+
                 # Start standard Selenium with the user's Firefox profile
                 driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()), options=options)
-                
+
                 # Run your custom bot!
                 bot = TwitterReplyBot(driver, keywords)
                 bot.run(config_data)
-                
+
         except Exception as e:
             error(f"[-] An error occurred: {e}", "red")
         finally:
@@ -473,7 +473,7 @@ def main():
     else:
         error("Invalid option selected. Please try again.", "red")
         main()
-    
+
 
 if __name__ == "__main__":
     # Print ASCII Banner

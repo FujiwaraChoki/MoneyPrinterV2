@@ -6,9 +6,11 @@
   "ollama_model": "",
   "twitter_language": "English",
   "openrouter_api_key": "",
+  "openrouter_model": "deepseek/deepseek-v4-flash:free",
   "twitter_reply_automation": {
     "enabled": false,
-    "search_keywords": ["keyword1", "keyword2"],
+    "require_review": true,
+    "search_keywords": ["need a new laptop", "best web hosting"],
     "max_replies_per_run": 5,
     "delay_between_replies": [30, 120]
   },
@@ -42,7 +44,10 @@
   "post_bridge": {
     "enabled": false,
     "api_key": "",
-    "platforms": ["tiktok", "instagram"],
+    "platforms": [
+      "tiktok",
+      "instagram"
+    ],
     "account_ids": [],
     "auto_crosspost": false
   }
