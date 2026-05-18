@@ -460,9 +460,11 @@ if __name__ == "__main__":
     # Fetch MP3 Files
     fetch_songs()
 
-    # Select Ollama model — use config value if set, otherwise pick interactively
+    # Select model provider — OpenRouter if configured, otherwise Ollama
     configured_model = get_ollama_model()
-    if configured_model:
+    if get_openrouter_api_key():
+        success(f"Using OpenRouter model: {get_openrouter_model()}")
+    elif configured_model:
         select_model(configured_model)
         success(f"Using configured model: {configured_model}")
     else:
