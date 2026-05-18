@@ -277,7 +277,9 @@ class TwitterReply:
                     try:
                         self.post_reply(tweet["element"], reply)
                         replies_sent += 1
-                        time.sleep(random.uniform(min_delay, max_delay))
+                        delay = random.uniform(min_delay, max_delay)
+                        info(f"Waiting {int(delay)} seconds to mimic human behavior...")
+                        time.sleep(delay)
                     except Exception as e:
                         error(f"Could not post reply: {e}")
         finally:
