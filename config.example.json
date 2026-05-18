@@ -8,12 +8,19 @@
   "openrouter_api_key": "",
   "openrouter_model": "deepseek/deepseek-v4-flash:free",
   "twitter_reply_automation": {
-    "enabled": false,
-    "require_review": true,
-    "search_keywords": ["need a new laptop", "best web hosting"],
-    "max_replies_per_run": 5,
-    "delay_between_replies": [30, 120]
-  },
+      "enabled": false,
+      "require_review": true,
+      "dry_run": true,
+      "search_keywords": [
+        "need a new laptop",
+        "best web hosting"
+      ],
+      "max_replies_per_run": 5,
+      "delay_between_replies": [
+        30,
+        120
+      ]
+    },
   "nanobanana2_api_base_url": "https://generativelanguage.googleapis.com/v1beta",
   "nanobanana2_api_key": "",
   "nanobanana2_model": "gemini-3.1-flash-image-preview",

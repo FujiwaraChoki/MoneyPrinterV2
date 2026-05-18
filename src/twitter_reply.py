@@ -4,7 +4,8 @@ import urllib.parse
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import requests
+# import requests
+import re
 
 class TwitterReplyBot:
     def __init__(self, driver, keywords):
@@ -54,6 +55,37 @@ class TwitterReplyBot:
             print(f"[-] Could not extract tweets. Page might not have loaded correctly. Error: {e}")
 
         return tweet_data
+
+    def is_safe_reply(self, text):
+        """
+        Programmatic output validation to prevent prompt injection, spam, and toxicity.
+        """
+        text_lower = text.lower()
+
+        # 1. Robust Link Blocking (Catches sneaky TLDs, messengers, and hidden schemes)
+        link_pattern = re.compile(r'(http[s]?://|www\.|t\.me/|discord\.gg/|\.com|\.org|\.net|\.io|\.xyz)')
+        if link_pattern.search(text_lower):
+            print("[-] SECURITY BLOCK: AI generated a URL or domain. Skipping to prevent spam.")
+            return False
+
+        # 2. Expanded Threat Categories
+        scam_keywords = ["crypto", "bitcoin", "ethereum", "wallet", "airdrop", "giveaway", "nft", "token"]
+        promo_keywords = ["click here", "buy now", "subscribe", "link in bio", "dm me", "check out my profile"]
+        injection_leaks = ["ignore previous", "ignore all", "system prompt", "instructions:", "you are an ai"]
+
+        all_threats = scam_keywords + promo_keywords + injection_leaks
+
+        if any(keyword in text_lower for keyword in all_threats):
+            print("[-] SECURITY BLOCK: AI generated flagged unsafe or injection keywords. Skipping.")
+            return False
+
+        # 3. Enforce strict length limits (Twitter max is 280)
+        if len(text) > 250:
+            print("[-] SECURITY BLOCK: Generated reply exceeded safe length limits. Skipping.")
+            return False
+
+        return True
+
     def generate_reply(self, config, tweet_text):
         """
         Sends the extracted tweet to the configured LLM (OpenRouter or Ollama) to generate a safe reply.
@@ -95,10 +127,26 @@ class TwitterReplyBot:
 
                 return response_json['choices'][0]['message']['content'].strip(' "')
 
-            # Otherwise, use Local Ollama respecting config parameters
+            # Otherwise, ALWAYS fallback to Local Ollama
             else:
-                ollama_base_url = config.get("ollama_base_url", "http://localhost:11434")
-                ollama_model = config.get("ollama_model", "llama3:latest")
+                ollama_base_url = config.get("ollama_base_url", "http://127.0.0.1:11434")
+
+                # BLOCKER 2 FIX: Fetch from the existing llm_provider startup flow
+                ollama_model = config.get("ollama_model")
+
+                if not ollama_model:
+                    try:
+                        # Import the active state from the main menu flow
+                        from src.llm_provider import get_active_model
+                        ollama_model = get_active_model()
+                    except ImportError:
+                        ollama_model = None
+
+                    # Absolute final safety fallback
+                    if not ollama_model:
+                        ollama_model = "llama3:latest"
+
+                print(f"[*] Routing AI generation to local Ollama (Model: {ollama_model})...")
 
                 data = {"model": ollama_model, "prompt": prompt, "stream": False}
                 response = requests.post(f"{ollama_base_url}/api/generate", json=data)
@@ -202,17 +250,17 @@ class TwitterReplyBot:
                     print(f"\n[TWEET]: {tweet_data['text']}")
                     print(f"[REPLY]: {reply_text}")
 
-                    # SECURITY FIX: Interactive Moderation Gate
-                    require_review = automation_config.get("require_review", True)
+                    # BLOCKER 3 FIX: Run programmatic safety checks before doing anything else
+                    if not self.is_safe_reply(reply_text):
+                        continue
 
+                    require_review = automation_config.get("require_review", True)
                     if require_review:
                         user_choice = input("[?] Post this reply? (y = yes, n = skip, e = edit): ").strip().lower()
-
                         if user_choice == 'n':
                             print("[*] Skipped. Moving to next tweet...\n")
                             continue
                         elif user_choice == 'e':
-                            # Let the user manually rewrite the AI's response
                             reply_text = input("[>] Enter your edited reply: ").strip()
                             if not reply_text:
                                 print("[-] Empty reply. Skipping...\n")
@@ -221,7 +269,13 @@ class TwitterReplyBot:
                             print("[-] Invalid input. Defaulting to skip for safety...\n")
                             continue
 
-                    # If we reach here, it's either approved or require_review is False
+                    # BLOCKER 1 FIX: Re-enforce dry_run right before the actual post occurs
+                    if automation_config.get("dry_run", True):
+                        print("[*] Dry run active: Skipping live post (Safety enforced).")
+                        replies_sent += 1
+                        continue
+
+                    # If we passed safety checks, review, AND dry_run is false, post it!
                     success = self.post_reply(tweet_data['element'], reply_text)
 
                     if success:

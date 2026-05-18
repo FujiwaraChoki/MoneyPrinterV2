@@ -435,3 +435,25 @@ console.error: "Experiment visual-card-updates has unknown featureId: newtabRefi
 1778969905546	Marionette	INFO	Stopped listening on port 65009
 JavaScript error: resource://gre/modules/ConduitsChild.sys.mjs, line 122: Error: sendRemoveListener on closed conduit mozilla_cc3@internetdownloadmanager.com.687194767365
 [GFX1-]: VideoBridgeParent receives IPC close with reason=AbnormalShutdown
+1779089451434	geckodriver	INFO	Listening on 127.0.0.1:50989
+1779089454532	mozrunner::runner	INFO	Running command: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" "--marionette" "-profile" "C:\\Users\\Solutions Team\\AppD ... irefox\\Profiles\\64iudquy.default-release" "--remote-debugging-port" "50990" "--remote-allow-hosts" "localhost" "-no-remote"
+1779089455105	Marionette	INFO	Marionette enabled
+1779089455127	Marionette	INFO	Listening on port 50997
+WebDriver BiDi listening on ws://127.0.0.1:50990
+Read port: 50997
+1779089455257	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+console.error: NewTabGleanUtils: "Failed to complete registration of metrics and pings found in runtime metrics JSON:" (new TypeError("NetworkError when attempting to fetch resource.", ""))
+console.error: "Experiment visual-card-updates has unknown featureId: newtabRefinedCardsLayout"
+1779089525123	Marionette	INFO	Stopped listening on port 50997
+JavaScript error: resource://gre/modules/ConduitsChild.sys.mjs, line 122: Error: sendRemoveListener on closed conduit mozilla_cc3@internetdownloadmanager.com.687194767365
+1779089620932	geckodriver	INFO	Listening on 127.0.0.1:51086
+1779089623969	mozrunner::runner	INFO	Running command: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" "--marionette" "-profile" "C:\\Users\\Solutions Team\\AppD ... irefox\\Profiles\\64iudquy.default-release" "--remote-debugging-port" "51087" "--remote-allow-hosts" "localhost" "-no-remote"
+1779089624185	Marionette	INFO	Marionette enabled
+1779089624204	Marionette	INFO	Listening on port 51094
+WebDriver BiDi listening on ws://127.0.0.1:51087
+Read port: 51094
+1779089624336	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+console.error: NewTabGleanUtils: "Failed to complete registration of metrics and pings found in runtime metrics JSON:" (new TypeError("NetworkError when attempting to fetch resource.", ""))
+console.error: "Experiment visual-card-updates has unknown featureId: newtabRefinedCardsLayout"
+1779090294662	Marionette	INFO	Stopped listening on port 51094
+JavaScript error: resource://gre/modules/ConduitsChild.sys.mjs, line 122: Error: sendRemoveListener on closed conduit mozilla_cc3@internetdownloadmanager.com.687194767365
