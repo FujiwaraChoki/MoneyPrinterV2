@@ -1,10 +1,6 @@
 import schedule
 import subprocess
-import json
-from selenium import webdriver
-from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.firefox.service import Service
-from webdriver_manager.firefox import GeckoDriverManager
+
 from art import *
 from cache import *
 from utils import *
@@ -19,26 +15,25 @@ from classes.YouTube import YouTube
 from prettytable import PrettyTable
 from classes.Outreach import Outreach
 from classes.AFM import AffiliateMarketing
+from classes.TwitterReply import TwitterReply
 from llm_provider import list_models, select_model, get_active_model
 from post_bridge_integration import maybe_crosspost_youtube_short
-
-from twitter_reply import TwitterReplyBot
 
 def main():
     """Main entry point for the application, providing a menu-driven interface
     to manage YouTube, Twitter bots, Affiliate Marketing, and Outreach tasks.
 
     This function allows users to:
-    1. Start the YouTube Shorts Automater to manage YouTube accounts,
+    1. Start the YouTube Shorts Automater to manage YouTube accounts, 
        generate and upload videos, and set up CRON jobs.
-    2. Start a Twitter Bot to manage Twitter accounts, post tweets, and
+    2. Start a Twitter Bot to manage Twitter accounts, post tweets, and 
        schedule posts using CRON jobs.
-    3. Manage Affiliate Marketing by creating pitches and sharing them via
+    3. Manage Affiliate Marketing by creating pitches and sharing them via 
        Twitter accounts.
     4. Initiate an Outreach process for engagement and promotion tasks.
     5. Exit the application.
 
-    The function continuously prompts users for input, validates it, and
+    The function continuously prompts users for input, validates it, and 
     executes the selected option until the user chooses to quit.
 
     Args:
@@ -299,7 +294,7 @@ def main():
                 twitter = Twitter(selected_account["id"], selected_account["nickname"], selected_account["firefox_profile"], selected_account["topic"])
 
                 while True:
-
+                    
                     info("\n============ OPTIONS ============", False)
 
                     for idx, twitter_option in enumerate(TWITTER_OPTIONS):
@@ -435,37 +430,9 @@ def main():
     elif user_input == 5:
         info("Starting Twitter Reply Automation...")
 
-        try:
-            # Load your new config file directly
-            with open("config.json", "r") as f:
-                config_data = json.load(f)
+        reply_bot = TwitterReply()
 
-            keywords = config_data.get("twitter_reply_automation", {}).get("search_keywords", [])
-
-            if not keywords:
-                error("[-] No keywords found in config.json! Please add them.", "red")
-            else:
-                info(" => Opening authenticated Firefox browser...")
-                options = Options()
-                if config_data.get("headless", False):
-                    options.add_argument("--headless")
-                if config_data.get("firefox_profile", ""):
-                    options.add_argument("-profile")
-                    options.add_argument(config_data["firefox_profile"])
-
-                # Start standard Selenium with the user's Firefox profile
-                driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()), options=options)
-
-                # Run your custom bot!
-                bot = TwitterReplyBot(driver, keywords)
-                bot.run(config_data)
-
-        except Exception as e:
-            error(f"[-] An error occurred: {e}", "red")
-        finally:
-            if 'driver' in locals():
-                driver.quit()
-
+        reply_bot.start()
     elif user_input == 6:
         if get_verbose():
             print(colored(" => Quitting...", "blue"))
@@ -473,7 +440,7 @@ def main():
     else:
         error("Invalid option selected. Please try again.", "red")
         main()
-
+    
 
 if __name__ == "__main__":
     # Print ASCII Banner
