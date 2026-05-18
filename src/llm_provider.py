@@ -54,18 +54,21 @@ def _generate_openrouter(prompt: str, model: str) -> str:
     Returns:
         response (str): Generated text
     """
-    response = requests.post(
-        "https://openrouter.ai/api/v1/chat/completions",
-        headers={
-            "Authorization": f"Bearer {get_openrouter_api_key()}",
-            "Content-Type": "application/json",
-        },
-        json={
-            "model": model,
-            "messages": [{"role": "user", "content": prompt}],
-        },
-    )
-    response.raise_for_status()
+    try:
+        response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {get_openrouter_api_key()}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+            },
+        )
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        raise RuntimeError(f"OpenRouter request failed: {e}") from e
 
     return response.json()["choices"][0]["message"]["content"].strip()
 
