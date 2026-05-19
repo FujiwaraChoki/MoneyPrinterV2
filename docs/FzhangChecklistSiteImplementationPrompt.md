@@ -1,0 +1,157 @@
+# 给另一个 AI 的站点改造提示词
+
+> Historical note:
+> this prompt was written before the current site implementation landed.
+> Treat it as an archive of the original build brief, not as the current source of truth.
+> For current email / subscription reality, prefer:
+> - `docs/FzhangEmailAutomationBlueprint.md`
+> - `docs/FzhangSiteAcceptanceAudit.md`
+> - `docs/FzhangButtondownUnsubscribeAuditPrompt.md`
+> - `docs/FzhangButtondownFollowupAutomationPrompt.md`
+
+你现在要修改 `fzhang.dev` 的站点源码。不要泛泛给建议，直接完成实现。
+
+## 背景
+
+- 站点是 Frank 的个人内容站，不是 generic agency site
+- 当前免费资源页 URL:
+  - `/resources/open-source-ai-deployment-checklist/`
+- 当前公开相关文章：
+  - `/posts/deploy-github-project-10-checks/`
+- 当前订阅页：
+  - `/subscribe/`
+- 当前资源页表单使用 `Formspree`
+- 当前订阅页是 RSS-only
+
+## 这次改造的核心目标
+
+1. 让“免费清单”页和公开文章拉开明确层级差异
+2. 让资源领取后能进入成熟的邮件后续更新流
+3. 保持站点内容气质，不把首页或资源页做成夸张销售页
+
+## 必须实现的页面改动
+
+### 资源页 `/resources/open-source-ai-deployment-checklist/`
+
+做以下改动：
+
+- 保留当前主题与整体风格
+- 在首屏下方、表单上方新增一个区块，标题建议：
+  - `这份资源和公开文章有什么区别`
+- 这个区块要明确讲清楚：
+  - 公开文章是解释版
+  - 免费清单是执行版
+  - 公开文章帮助理解问题
+  - 免费清单帮助真正部署前逐项核对
+
+- 新增一个 `清单预览` 区块，但不要把整个资源全文公开
+- 预览里至少展示 4 到 6 个检查维度，例如：
+  - 部署场景判断
+  - 环境变量梳理
+  - 数据落点
+  - 公网暴露风险
+  - 回滚与恢复
+
+- 表单降摩擦：
+  - `email` 保持必填
+  - `name` 保持可选
+  - `message` 改成折叠式可选，默认不要大面积暴露
+
+- 表单附近必须新增许可说明文案：
+  - 我会把这份资源发给你
+  - 后续如果有这条主题下的更新，也会优先发给你
+  - 可以随时退订
+
+- 当前页面底部已经有相关文章链接，但文案不够强
+  - 改成更明确的对照式引导
+  - 意图是：
+    - 想看解释版 -> 读文章
+    - 想直接执行 -> 先领清单
+
+### 订阅页 `/subscribe/`
+
+不要再只保留 RSS。
+
+改成双入口结构：
+
+- 主入口：邮件订阅
+- 次入口：RSS 订阅
+
+要求：
+
+- 邮件订阅在视觉上高于 RSS
+- RSS 仍然保留，避免破坏站点气质
+- 订阅页文案要解释：
+  - 如果你想第一时间收到资源和专题更新，用邮件
+  - 如果你只想安静地在阅读器里追踪，用 RSS
+
+## 必须实现的邮件流改造
+
+不要把它做成“个人邮箱自动回复”。
+
+改成成熟订阅方案：
+
+- 资源交付邮件
+- 后续自动序列
+- 后续 RSS / digest 更新
+
+## 推荐技术方案
+
+优先采用：
+
+- 前端表单 -> 你的 serverless endpoint
+- Turnstile 继续保留
+- endpoint 发送资源交付邮件
+- endpoint 调用 `Buttondown` API 创建订阅者并打标签
+- `Buttondown` 负责 automations 与 RSS-to-email
+
+如果你暂时不想替换掉 `Formspree`，至少做到：
+
+- `Formspree` 继续接表单
+- 开启 autoresponse 发送资源
+- 再把提交同步到 `Buttondown`
+
+## 推荐标签
+
+给这类订阅者至少打上：
+
+- `lead-magnet`
+- `resource-checklist`
+- `topic-deployment`
+- `source-fzhang-dev`
+
+## 推荐邮件流
+
+### Email 1
+
+立即发送，交付资源。
+
+### Email 2
+
+延迟 2 天，告诉用户这份清单最适合什么时候打开，并引导去看相关文章。
+
+### Email 3
+
+延迟 5 到 7 天，承接到更完整的 SOP / 模板方向。
+
+### Ongoing
+
+进入站点更新流，优先周更 digest，不要每篇文章即时轰炸。
+
+## 文案约束
+
+- 不要写成夸张营销话术
+- 不要让页面像卖课页
+- 不要让服务 CTA 压过资源领取
+- 不要模糊“公开文章”和“免费资源”的差异
+- 不要在第一屏就索取过多信息
+
+## 交付要求
+
+你最终需要输出：
+
+1. 修改后的页面代码
+2. 表单提交链路代码
+3. 邮件自动化接入说明
+4. 若用了环境变量，列出新增变量
+5. 若需要迁移已有 `Formspree` 逻辑，写清迁移步骤

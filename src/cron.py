@@ -54,7 +54,8 @@ def main():
                     acc["id"],
                     acc["nickname"],
                     acc["firefox_profile"],
-                    acc["topic"]
+                    acc["topic"],
+                    acc.get("content_profile"),
                 )
                 twitter.post()
                 if verbose:
@@ -77,7 +78,8 @@ def main():
                     acc["nickname"],
                     acc["firefox_profile"],
                     acc["niche"],
-                    acc["language"]
+                    acc["language"],
+                    acc.get("content_profile"),
                 )
                 youtube.generate_video(tts)
                 upload_success = youtube.upload_video()

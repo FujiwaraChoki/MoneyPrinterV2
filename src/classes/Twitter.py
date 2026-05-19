@@ -8,6 +8,12 @@ from cache import *
 from config import *
 from status import *
 from llm_provider import generate_text
+from content_profile import (
+    build_profile_context,
+    has_service_strategy,
+    load_case_brief,
+    normalize_content_profile,
+)
 from typing import List, Optional
 from datetime import datetime
 from termcolor import colored
@@ -26,8 +32,58 @@ class Twitter:
     Class for the Bot, that grows a Twitter account.
     """
 
+    def _variant_instruction(self) -> str:
+        """
+        Returns a specialized instruction block for the selected service variant.
+
+        Returns:
+            instruction (str): Variant-specific prompt guidance
+        """
+        variant = self.content_profile.get("content_variant", "general")
+
+        if variant == "deployment":
+            return (
+                "Focus on shipping a real project from repo to running environment. "
+                "Prefer setup pitfalls, environment mismatches, hosting choices, or launch blockers."
+            )
+        if variant == "hardening":
+            return (
+                "Focus on security, auth, exposure, secret handling, backup gaps, or operational risk reduction."
+            )
+        if variant == "customization":
+            return (
+                "Focus on adapting an existing project to a workflow, client need, UI change, or integration requirement."
+            )
+
+        return (
+            "Focus on practical implementation lessons that can become reusable content, downloadable resources, or low-touch monetizable assets."
+        )
+
+    def _asset_instruction(self) -> str:
+        """
+        Returns specialized guidance for the selected asset type.
+
+        Returns:
+            instruction (str): Asset-specific prompt guidance
+        """
+        asset_type = self.content_profile.get("asset_type", "")
+        capture_type = self.content_profile.get("capture_type", "")
+        monetization_type = self.content_profile.get("monetization_type", "")
+
+        return (
+            f"Primary asset type: {asset_type or 'general content asset'}. "
+            f"Capture type: {capture_type or 'none'}. "
+            f"Monetization type: {monetization_type or 'none'}. "
+            "The post should nudge the reader toward a reusable asset or owned relationship, not only a direct service sale."
+        )
+
     def __init__(
-        self, account_uuid: str, account_nickname: str, fp_profile_path: str, topic: str
+        self,
+        account_uuid: str,
+        account_nickname: str,
+        fp_profile_path: str,
+        topic: str,
+        content_profile: dict | None = None,
     ) -> None:
         """
         Initializes the Twitter Bot.
@@ -44,6 +100,8 @@ class Twitter:
         self.account_nickname: str = account_nickname
         self.fp_profile_path: str = fp_profile_path
         self.topic: str = topic
+        self.content_profile = normalize_content_profile(content_profile)
+        self.case_brief = load_case_brief(self.content_profile)
 
         # Initialize the Firefox profile
         self.options: Options = Options()
@@ -202,10 +260,35 @@ class Twitter:
         Returns:
             post (str): The post
         """
-        completion = generate_text(
-            f"Generate a Twitter post about: {self.topic} in {get_twitter_language()}. "
-            "The Limit is 2 sentences. Choose a specific sub-topic of the provided topic."
-        )
+        if has_service_strategy(self.content_profile):
+            completion = generate_text(
+                f"""
+                Write a concise X post in {get_twitter_language()} for a technical content and audience-building business.
+
+                Topic / angle: {self.topic}
+                {build_profile_context(self.content_profile)}
+                Reusable case brief:
+                {self.case_brief or "None"}
+                Variant guidance:
+                {self._variant_instruction()}
+                Asset guidance:
+                {self._asset_instruction()}
+
+                Requirements:
+                - Maximum 240 characters
+                - Sound like a calm operator, not a hype marketer
+                - Mention one concrete problem and one practical insight
+                - Prefer deployment, security, workflow, cost, or implementation lessons
+                - Avoid generic inspiration, vague AI hot takes, and empty engagement bait
+                - If there is a CTA, point to a reusable asset, subscription, download, or owned destination before direct selling
+                - Only return the post text
+                """
+            )
+        else:
+            completion = generate_text(
+                f"Generate a Twitter post about: {self.topic} in {get_twitter_language()}. "
+                "The Limit is 2 sentences. Choose a specific sub-topic of the provided topic."
+            )
 
         if get_verbose():
             info("Generating a post...")
@@ -217,9 +300,52 @@ class Twitter:
         # Apply Regex to remove all *
         completion = re.sub(r"\*", "", completion).replace('"', "")
 
+        if has_service_strategy(self.content_profile):
+            completion = self.review_post(completion)
+
         if get_verbose():
             info(f"Length of post: {len(completion)}")
         if len(completion) >= 260:
             return completion[:257].rsplit(" ", 1)[0] + "..."
 
         return completion
+
+    def review_post(self, draft: str) -> str:
+        """
+        Reviews the generated post against service-led quality constraints.
+
+        Args:
+            draft (str): Initial generated post
+
+        Returns:
+            post (str): Reviewed post
+        """
+        reviewed = generate_text(
+            f"""
+            Review and improve this X post for a technical asset-building operator.
+
+            Draft:
+            {draft}
+
+            Context:
+            Topic / angle: {self.topic}
+            {build_profile_context(self.content_profile)}
+            Reusable case brief:
+            {self.case_brief or "None"}
+            Variant guidance:
+            {self._variant_instruction()}
+            Asset guidance:
+            {self._asset_instruction()}
+
+            Requirements:
+            - Keep the core meaning
+            - Remove hype, fluff, and generic AI phrasing
+            - Make it sound specific, credible, and useful
+            - Prefer owned-audience or reusable-asset direction over hard selling
+            - Keep it under 240 characters
+            - Only return the final post
+            """
+        )
+
+        cleaned = re.sub(r"\*", "", reviewed).replace('"', "").strip()
+        return cleaned or draft

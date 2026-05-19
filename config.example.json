@@ -13,6 +13,7 @@
   "zip_url": "",
   "is_for_kids": false,
   "google_maps_scraper": "https://github.com/gosom/google-maps-scraper/archive/refs/tags/v0.9.7.zip",
+  "google_maps_scraper_sha256": "",
   "email": {
     "smtp_server": "smtp.gmail.com",
     "smtp_port": 587,
