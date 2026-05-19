@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script to generate & Upload a video to YT Shorts
+# Script to generate & Upload a video to YT Shorts with channel selection
 
 # Check which interpreter to use (python)
 if [ -x "$(command -v python3)" ]; then
@@ -20,15 +20,15 @@ for id in $youtube_ids; do
 done
 
 # Ask for the id
-read -p "Enter the id: " id
+read -p "Enter the id: " account_id
 
 # Check if the id is in the list
-if [[ " ${youtube_ids[@]} " =~ " ${id} " ]]; then
-  echo "ID found"
-else
+if [[ ! " ${youtube_ids[@]} " =~ " ${account_id} " ]]; then
   echo "ID not found"
   exit 1
 fi
 
-# Run python script
-$PYTHON src/cron.py youtube $id
+echo "ID found"
+
+# Run python script (channel_id is optional - leave empty for default)
+$PYTHON src/cron.py youtube $account_id
