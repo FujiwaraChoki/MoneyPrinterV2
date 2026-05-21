@@ -16,8 +16,17 @@ def list_models() -> list[str]:
     Returns:
         models (list[str]): Sorted list of model names.
     """
-    response = _client().list()
-    return sorted(m.model for m in response.models)
+    try:
+        response = _client().list()
+    except Exception as exc:
+        raise RuntimeError(
+            f"Unable to list Ollama models from {get_ollama_base_url()}: {exc}"
+        ) from exc
+
+    try:
+        return sorted(m.model for m in response.models)
+    except Exception as exc:
+        raise RuntimeError("Ollama returned an unexpected model list response") from exc
 
 
 def select_model(model: str) -> None:
@@ -55,9 +64,15 @@ def generate_text(prompt: str, model_name: str = None) -> str:
             "No Ollama model selected. Call select_model() first or pass model_name."
         )
 
-    response = _client().chat(
-        model=model,
-        messages=[{"role": "user", "content": prompt}],
-    )
+    try:
+        response = _client().chat(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+        )
+    except Exception as exc:
+        raise RuntimeError(f"Ollama chat request failed for model '{model}': {exc}") from exc
 
-    return response["message"]["content"].strip()
+    try:
+        return response["message"]["content"].strip()
+    except Exception as exc:
+        raise RuntimeError("Ollama returned an unexpected chat response") from exc
