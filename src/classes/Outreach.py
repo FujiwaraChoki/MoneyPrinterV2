@@ -219,6 +219,9 @@ class Outreach:
             f.write(self.niche)
 
         output_path = get_results_cache_path()
+        if os.path.exists(output_path):
+            os.remove(output_path)
+
         message_subject = get_outreach_message_subject()
         message_body = get_outreach_message_body_file()
 
