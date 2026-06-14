@@ -17,6 +17,12 @@ if [[ ! -x "$PYTHON_BIN" ]]; then
   echo "[setup] Created virtual environment at venv/"
 fi
 
+PYTHON_VERSION=$("$PYTHON_BIN" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+if [[ "$PYTHON_VERSION" == "3.13" ]] || [[ "$PYTHON_VERSION" > "3.13" ]]; then
+  echo "[setup] Error: Python 3.13+ is not supported. Please use Python 3.12."
+  exit 1
+fi
+
 "$PYTHON_BIN" -m ensurepip --upgrade >/dev/null 2>&1 || true
 "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
 "$PYTHON_BIN" -m pip install -r requirements.txt
