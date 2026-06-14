@@ -11,7 +11,6 @@ from llm_provider import generate_text
 from typing import List, Optional
 from datetime import datetime
 from termcolor import colored
-from selenium_firefox import *
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.service import Service

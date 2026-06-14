@@ -2,11 +2,10 @@ wheel
 termcolor
 schedule
 requests
-kittentts @ https://github.com/KittenML/KittenTTS/releases/download/0.8.1/kittentts-0.8.1-py3-none-any.whl
+kittentts @ https://github.com/KittenML/KittenTTS/releases/download/0.8.1/kittentts-0.8.1-py3-none-any.whl ; python_version < "3.13"
 soundfile
 prettytable
 webdriver_manager
-selenium_firefox
 selenium
 ollama
 moviepy

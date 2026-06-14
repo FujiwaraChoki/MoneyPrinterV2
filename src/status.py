@@ -1,71 +1,44 @@
+import sys
+
 from termcolor import colored
 
+
+def _supports_unicode_output() -> bool:
+    encoding = getattr(sys.stdout, "encoding", None) or ""
+    try:
+        "x".encode(encoding)
+        "✓".encode(encoding)
+        return True
+    except Exception:
+        return False
+
+
+def _prefix(unicode_symbol: str, ascii_symbol: str, show_emoji: bool) -> str:
+    if not show_emoji:
+        return ""
+    return unicode_symbol if _supports_unicode_output() else ascii_symbol
+
+
 def error(message: str, show_emoji: bool = True) -> None:
-    """
-    Prints an error message.
+    prefix = _prefix("✖", "[x]", show_emoji)
+    print(colored(f"{prefix} {message}".strip(), "red"))
 
-    Args:
-        message (str): The error message
-        show_emoji (bool): Whether to show the emoji
-
-    Returns:
-        None
-    """
-    emoji = "❌" if show_emoji else ""
-    print(colored(f"{emoji} {message}", "red"))
 
 def success(message: str, show_emoji: bool = True) -> None:
-    """
-    Prints a success message.
+    prefix = _prefix("✔", "[+]", show_emoji)
+    print(colored(f"{prefix} {message}".strip(), "green"))
 
-    Args:
-        message (str): The success message
-        show_emoji (bool): Whether to show the emoji
-
-    Returns:
-        None
-    """
-    emoji = "✅" if show_emoji else ""
-    print(colored(f"{emoji} {message}", "green"))
 
 def info(message: str, show_emoji: bool = True) -> None:
-    """
-    Prints an info message.
+    prefix = _prefix("i", "[i]", show_emoji)
+    print(colored(f"{prefix} {message}".strip(), "magenta"))
 
-    Args:
-        message (str): The info message
-        show_emoji (bool): Whether to show the emoji
-
-    Returns:
-        None
-    """
-    emoji = "ℹ️" if show_emoji else ""
-    print(colored(f"{emoji} {message}", "magenta"))
 
 def warning(message: str, show_emoji: bool = True) -> None:
-    """
-    Prints a warning message.
+    prefix = _prefix("!", "[!]", show_emoji)
+    print(colored(f"{prefix} {message}".strip(), "yellow"))
 
-    Args:
-        message (str): The warning message
-        show_emoji (bool): Whether to show the emoji
-
-    Returns:
-        None
-    """
-    emoji = "⚠️" if show_emoji else ""
-    print(colored(f"{emoji} {message}", "yellow"))
 
 def question(message: str, show_emoji: bool = True) -> str:
-    """
-    Prints a question message and returns the user's input.
-
-    Args:
-        message (str): The question message
-        show_emoji (bool): Whether to show the emoji
-
-    Returns:
-        user_input (str): The user's input
-    """
-    emoji = "❓" if show_emoji else ""
-    return input(colored(f"{emoji} {message}", "magenta"))
+    prefix = _prefix("?", "[?]", show_emoji)
+    return input(colored(f"{prefix} {message}".strip(), "magenta"))

@@ -4,11 +4,10 @@ import os
 import sys
 from typing import Tuple
 
-import requests
-
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_PATH = os.path.join(ROOT_DIR, "config.json")
+SUPPORTED_PYTHON_MINOR = (3, 12)
 
 
 def ok(msg: str) -> None:
@@ -23,7 +22,27 @@ def fail(msg: str) -> None:
     print(f"[FAIL] {msg}")
 
 
+def check_python_version() -> bool:
+    version = sys.version_info[:3]
+    if version[:2] != SUPPORTED_PYTHON_MINOR:
+        warn(
+            "Python "
+            f"{version[0]}.{version[1]}.{version[2]} detected. "
+            "This project is best supported on Python 3.12.x. "
+            "TTS via KittenTTS is skipped on Python 3.13+ because its upstream "
+            "dependencies are not published for those versions. "
+            "Recreate the virtual environment with 'py -3.12 -m venv venv' if you "
+            "need YouTube voice generation."
+        )
+        return True
+
+    ok(f"Python version supported: {version[0]}.{version[1]}.{version[2]}")
+    return True
+
+
 def check_url(url: str, timeout: int = 3) -> Tuple[bool, str]:
+    import requests
+
     try:
         response = requests.get(url, timeout=timeout)
         return True, f"HTTP {response.status_code}"
@@ -32,14 +51,25 @@ def check_url(url: str, timeout: int = 3) -> Tuple[bool, str]:
 
 
 def main() -> int:
+    failures = 0
+
+    check_python_version()
+
     if not os.path.exists(CONFIG_PATH):
         fail(f"Missing config file: {CONFIG_PATH}")
         return 1
 
+    try:
+        import requests
+    except ImportError as exc:
+        fail(
+            "The 'requests' package is not installed in this environment yet. "
+            "Install dependencies after creating a Python 3.12 virtual environment."
+        )
+        return 1
+
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
         cfg = json.load(f)
-
-    failures = 0
 
     stt_provider = str(cfg.get("stt_provider", "local_whisper")).lower()
 
