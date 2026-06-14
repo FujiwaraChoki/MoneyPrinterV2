@@ -23,7 +23,7 @@ def main():
     to manage YouTube, Twitter bots, Affiliate Marketing, and Outreach tasks.
 
     This function allows users to:
-    1. Start the YouTube Shorts Automater to manage YouTube accounts, 
+    1. Start the YouTube Shorts Automator to manage YouTube accounts,
        generate and upload videos, and set up CRON jobs.
     2. Start a Twitter Bot to manage Twitter accounts, post tweets, and 
        schedule posts using CRON jobs.
@@ -66,7 +66,7 @@ def main():
 
     # Start the selected option
     if user_input == 1:
-        info("Starting YT Shorts Automater...")
+        info("Starting YT Shorts Automator...")
 
         cached_accounts = get_accounts("youtube")
 
