@@ -23,9 +23,9 @@ def fail(msg: str) -> None:
     print(f"[FAIL] {msg}")
 
 
-def check_url(url: str, timeout: int = 3) -> Tuple[bool, str]:
+def check_url(url: str, timeout: int = 3, headers=None) -> Tuple[bool, str]:
     try:
-        response = requests.get(url, timeout=timeout)
+        response = requests.get(url, timeout=timeout, headers=headers)
         return True, f"HTTP {response.status_code}"
     except Exception as exc:
         return False, str(exc)
@@ -63,23 +63,40 @@ def main() -> int:
     else:
         warn("firefox_profile is empty. Twitter/YouTube automation requires this.")
 
-    # Ollama (LLM)
-    base = str(cfg.get("ollama_base_url", "http://127.0.0.1:11434")).rstrip("/")
-    reachable, detail = check_url(f"{base}/api/tags")
-    if not reachable:
-        fail(f"Ollama is not reachable at {base}: {detail}")
-        failures += 1
-    else:
-        ok(f"Ollama reachable at {base}")
-        try:
-            tags = requests.get(f"{base}/api/tags", timeout=5).json()
-            models = [m.get("name") for m in tags.get("models", [])]
-            if models:
-                ok(f"Ollama models available: {', '.join(models[:10])}")
+    # LLM Provider
+    provider = cfg.get("llm_provider", "ollama")
+    
+    if provider == "groq":
+        groq_api_key = cfg.get("groq_api_key", "") or os.environ.get("GROQ_API_KEY", "")
+        if groq_api_key:
+            ok("groq_api_key is set")
+            base = str(cfg.get("groq_base_url", "https://api.groq.com/openai/v1")).rstrip("/")
+            reachable, detail = check_url(f"{base}/models", headers={"Authorization": f"Bearer {groq_api_key}"})
+            if not reachable:
+                warn(f"Groq API endpoint {base}/models returned: {detail}")
             else:
-                warn("No models found on Ollama. Pull a model first (e.g. 'ollama pull llama3.2:3b').")
-        except Exception as exc:
-            warn(f"Could not validate Ollama model list: {exc}")
+                ok(f"Groq API is reachable at {base}")
+        else:
+            fail("groq_api_key is empty (and GROQ_API_KEY is not set) but provider is 'groq'")
+            failures += 1
+    else:
+        # Ollama (LLM)
+        base = str(cfg.get("ollama_base_url", "http://127.0.0.1:11434")).rstrip("/")
+        reachable, detail = check_url(f"{base}/api/tags")
+        if not reachable:
+            fail(f"Ollama is not reachable at {base}: {detail}")
+            failures += 1
+        else:
+            ok(f"Ollama reachable at {base}")
+            try:
+                tags = requests.get(f"{base}/api/tags", timeout=5).json()
+                models = [m.get("name") for m in tags.get("models", [])]
+                if models:
+                    ok(f"Ollama models available: {', '.join(models[:10])}")
+                else:
+                    warn("No models found on Ollama. Pull a model first (e.g. 'ollama pull llama3.2:3b').")
+            except Exception as exc:
+                warn(f"Could not validate Ollama model list: {exc}")
 
     # Nano Banana 2 (image generation)
     api_key = cfg.get("nanobanana2_api_key", "") or os.environ.get("GEMINI_API_KEY", "")
