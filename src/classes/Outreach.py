@@ -222,6 +222,11 @@ class Outreach:
         message_subject = get_outreach_message_subject()
         message_body = get_outreach_message_body_file()
 
+        # Remove any stale results file from a previous run so we can reliably
+        # detect whether the current scraper invocation produced fresh output.
+        if os.path.exists(output_path):
+            os.remove(output_path)
+
         # Run
         self.run_scraper_with_args_for_30_seconds(
             f'-input niche.txt -results "{output_path}"', timeout=get_scraper_timeout()
