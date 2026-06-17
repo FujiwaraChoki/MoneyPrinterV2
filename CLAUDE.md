@@ -32,6 +32,10 @@ python src/main.py
 
 The app **must** be run from the project root. `python src/main.py` adds `src/` to `sys.path`, so all imports use bare module names (e.g., `from config import *`, not `from src.config import *`).
 
+After activating the venv, `python` resolves to 3.12; outside it, prefer `python3` (this is what `AGENTS.md` and `scripts/` use).
+
+For a non-interactive YouTube upload, `bash scripts/upload_video.sh` runs the upload flow directly (must also be invoked from the repo root).
+
 ## Architecture
 
 ### Entry Points
@@ -45,7 +49,7 @@ Two service categories use a string-based dispatch pattern configured in `config
 |---|---|---|
 | LLM | `ollama_model` | Ollama (via `ollama` Python SDK). If empty, user picks from available models at startup. |
 | Image gen | — | `nanobanana2` (Gemini image API) |
-| STT | `stt_provider` | `local_whisper`, `third_party_assemblyai` |
+| STT | `stt_provider` | `local_whisper` (configurable via `whisper_model`, `whisper_device`, `whisper_compute_type`), `third_party_assemblyai` |
 
 LLM always uses the local Ollama server. Image generation always uses Nano Banana 2.
 
@@ -54,11 +58,12 @@ LLM always uses the local Ollama server. Image generation always uses Nano Banan
 - **`src/config.py`** — 30+ getter functions, each re-reads `config.json` on every call (no caching). `ROOT_DIR` = project root, computed as `os.path.dirname(sys.path[0])`
 - **`src/cache.py`** — JSON file persistence in `.mp/` directory (accounts, videos, posts, products)
 - **`src/constants.py`** — menu strings, Selenium selectors (YouTube Studio, X.com, Amazon)
+- **`src/status.py`** — colored logger (`info`, `success`, `error`, `warning`) imported by every module; prefer this over `print`
 - **`src/classes/YouTube.py`** — most complex class; full pipeline: topic → script → metadata → image prompts → images → TTS → subtitles → MoviePy combine → Selenium upload
 - **`src/classes/Twitter.py`** — Selenium automation against x.com
 - **`src/classes/AFM.py`** — Amazon scraping + LLM pitch generation
 - **`src/classes/Outreach.py`** — Google Maps scraper (requires Go) + email sending via yagmail
-- **`src/classes/Tts.py`** — KittenTTS wrapper
+- **`src/classes/Tts.py`** — KittenTTS wrapper; available voices: `Bella`, `Jasper` (default), `Luna`, `Bruno`, `Rosie`, `Hugo`, `Kiki`, `Leo`
 
 ### Data Storage
 All persistent state lives in `.mp/` at the project root as JSON files (`youtube.json`, `twitter.json`, `afm.json`). This directory also serves as scratch space for temporary WAV, PNG, SRT, and MP4 files — non-JSON files are cleaned on each run by `rem_temp_files()`.
@@ -71,13 +76,15 @@ Uses Python's `schedule` library (in-process, not OS cron). The scheduled job sp
 
 ## Configuration
 
-All config lives in `config.json` at the project root. See `config.example.json` for the full template and `docs/Configuration.md` for reference. Key external dependencies to configure:
+All config lives in `config.json` at the project root. See `config.example.json` for the full template and `docs/Configuration.md` for reference. Per-feature docs live alongside it: `docs/YouTube.md`, `docs/TwitterBot.md`, `docs/AffiliateMarketing.md`, `docs/Roadmap.md` — check there before re-deriving feature behavior. Key external dependencies to configure:
 - **ImageMagick** — required for MoviePy subtitle rendering (`imagemagick_path`)
 - **Firefox profile** — must be pre-logged-in to target platforms (`firefox_profile`)
-- **Ollama** — for LLM text generation (via `ollama` Python SDK)
+- **Ollama** — for LLM text generation (via `ollama` Python SDK); server URL via `ollama_base_url` (default: `http://127.0.0.1:11434`)
 - **Nano Banana 2** — for image generation (Gemini image API)
 - **Go** — only needed for Outreach (Google Maps scraper)
 
 ## Contributing
 
 PRs go against `main`. One feature/fix per PR. Open an issue first. Use `WIP` label for in-progress PRs.
+
+Commit messages use imperative summaries (`Fix ...`, `Update ...`, `Switch ...`) with an optional issue ref in parens (e.g., `Fix critical supply chain poisoning vulnerability in song archive download (#133)`).
