@@ -40,58 +40,72 @@ def main():
 
     verbose = get_verbose()
 
+    if not account_id:
+        error("Account UUID cannot be empty.")
+        sys.exit(1)
+
     if purpose == "twitter":
         accounts = get_accounts("twitter")
 
-        if not account_id:
-            error("Account UUID cannot be empty.")
-
+        account = None
         for acc in accounts:
             if acc["id"] == account_id:
-                if verbose:
-                    info("Initializing Twitter...")
-                twitter = Twitter(
-                    acc["id"],
-                    acc["nickname"],
-                    acc["firefox_profile"],
-                    acc["topic"]
-                )
-                twitter.post()
-                if verbose:
-                    success("Done posting.")
+                account = acc
                 break
+
+        if account is None:
+            error(f"Twitter account with UUID '{account_id}' not found.")
+            sys.exit(1)
+
+        if verbose:
+            info("Initializing Twitter...")
+        twitter = Twitter(
+            account["id"],
+            account["nickname"],
+            account["firefox_profile"],
+            account["topic"]
+        )
+        twitter.post()
+        if verbose:
+            success("Done posting.")
+
     elif purpose == "youtube":
         tts = TTS()
 
         accounts = get_accounts("youtube")
 
-        if not account_id:
-            error("Account UUID cannot be empty.")
-
+        account = None
         for acc in accounts:
             if acc["id"] == account_id:
-                if verbose:
-                    info("Initializing YouTube...")
-                youtube = YouTube(
-                    acc["id"],
-                    acc["nickname"],
-                    acc["firefox_profile"],
-                    acc["niche"],
-                    acc["language"]
-                )
-                youtube.generate_video(tts)
-                upload_success = youtube.upload_video()
-                if upload_success:
-                    if verbose:
-                        success("Uploaded Short.")
-                    maybe_crosspost_youtube_short(
-                        video_path=youtube.video_path,
-                        title=youtube.metadata.get("title", ""),
-                        interactive=False,
-                    )
-                else:
-                    warning("YouTube upload failed. Skipping Post Bridge cross-post.")
+                account = acc
                 break
+
+        if account is None:
+            error(f"YouTube account with UUID '{account_id}' not found.")
+            sys.exit(1)
+
+        if verbose:
+            info("Initializing YouTube...")
+        youtube = YouTube(
+            account["id"],
+            account["nickname"],
+            account["firefox_profile"],
+            account["niche"],
+            account["language"]
+        )
+        youtube.generate_video(tts)
+        upload_success = youtube.upload_video()
+        if upload_success:
+            if verbose:
+                success("Uploaded Short.")
+            maybe_crosspost_youtube_short(
+                video_path=youtube.video_path,
+                title=youtube.metadata.get("title", ""),
+                interactive=False,
+            )
+        else:
+            warning("YouTube upload failed. Skipping Post Bridge cross-post.")
+
     else:
         error("Invalid Purpose, exiting...")
         sys.exit(1)
