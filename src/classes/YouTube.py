@@ -848,7 +848,7 @@ class YouTube:
             driver.quit()
 
             return True
-        except:
+        except Exception as e:
             self.browser.quit()
             return False
 
