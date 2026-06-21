@@ -54,6 +54,7 @@ class YouTube:
         fp_profile_path: str,
         niche: str,
         language: str,
+        character_context: str = "",
     ) -> None:
         """
         Constructor for YouTube Class.
@@ -73,6 +74,7 @@ class YouTube:
         self._fp_profile_path: str = fp_profile_path
         self._niche: str = niche
         self._language: str = language
+        self._character_context: str = character_context.strip()
 
         self.images = []
 
@@ -131,6 +133,22 @@ class YouTube:
         """
         return generate_text(prompt, model_name=model_name)
 
+    def _get_character_context_block(self) -> str:
+        """
+        Returns an optional prompt block that keeps generations aligned with
+        the account's persistent character and voice.
+
+        Returns:
+            block (str): prompt block or empty string
+        """
+        if not self._character_context:
+            return ""
+
+        return (
+            f"Channel character context: {self._character_context}\n"
+            "Keep the topic, script, visuals, and metadata aligned with this channel identity.\n"
+        )
+
     def generate_topic(self) -> str:
         """
         Generates a topic based on the YouTube Channel niche.
@@ -139,6 +157,7 @@ class YouTube:
             topic (str): The generated topic.
         """
         completion = self.generate_response(
+            f"{self._get_character_context_block()}"
             f"Please generate a specific video idea that takes about the following topic: {self.niche}. Make it exactly one sentence. Only return the topic, nothing else."
         )
 
@@ -175,6 +194,7 @@ class YouTube:
         YOU MUST NOT INCLUDE ANY TYPE OF MARKDOWN OR FORMATTING IN THE SCRIPT, NEVER USE A TITLE.
         YOU MUST WRITE THE SCRIPT IN THE LANGUAGE SPECIFIED IN [LANGUAGE].
         ONLY RETURN THE RAW CONTENT OF THE SCRIPT. DO NOT INCLUDE "VOICEOVER", "NARRATOR" OR SIMILAR INDICATORS OF WHAT SHOULD BE SPOKEN AT THE BEGINNING OF EACH PARAGRAPH OR LINE. YOU MUST NOT MENTION THE PROMPT, OR ANYTHING ABOUT THE SCRIPT ITSELF. ALSO, NEVER TALK ABOUT THE AMOUNT OF PARAGRAPHS OR LINES. JUST WRITE THE SCRIPT
+        {self._get_character_context_block()}
         
         Subject: {self.subject}
         Language: {self.language}
@@ -205,6 +225,7 @@ class YouTube:
             metadata (dict): The generated metadata.
         """
         title = self.generate_response(
+            f"{self._get_character_context_block()}"
             f"Please generate a YouTube Video Title for the following subject, including hashtags: {self.subject}. Only return the title, nothing else. Limit the title under 100 characters."
         )
 
@@ -214,6 +235,7 @@ class YouTube:
             return self.generate_metadata()
 
         description = self.generate_response(
+            f"{self._get_character_context_block()}"
             f"Please generate a YouTube Video Description for the following script: {self.script}. Only return the description, nothing else."
         )
 
@@ -234,6 +256,7 @@ class YouTube:
         Generate {n_prompts} Image Prompts for AI Image Generation,
         depending on the subject of a video.
         Subject: {self.subject}
+        {self._get_character_context_block()}
 
         The image prompts are to be returned as
         a JSON-Array of strings.

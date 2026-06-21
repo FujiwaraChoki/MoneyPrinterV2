@@ -141,6 +141,38 @@ def remove_account(provider: str, account_id: str) -> None:
             "accounts": accounts
         }, file, indent=4)
 
+def update_account(provider: str, account_id: str, updates: dict) -> bool:
+    """
+    Updates an existing cached account with the provided fields.
+
+    Args:
+        provider (str): The provider to update ("twitter" or "youtube")
+        account_id (str): The account UUID
+        updates (dict): Fields to update
+
+    Returns:
+        updated (bool): True when an account was updated
+    """
+    accounts = get_accounts(provider)
+    updated = False
+
+    for account in accounts:
+        if account.get("id") == account_id:
+            account.update(updates)
+            updated = True
+            break
+
+    if not updated:
+        return False
+
+    cache_path = get_provider_cache_path(provider)
+    with open(cache_path, 'w') as file:
+        json.dump({
+            "accounts": accounts
+        }, file, indent=4)
+
+    return True
+
 def get_products() -> List[dict]:
     """
     Gets the products from the cache.

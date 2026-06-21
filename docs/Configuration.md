@@ -9,7 +9,8 @@ All your configurations will be in a file in the root directory, called `config.
 - `headless`: `boolean` - If `true`, the application will run in headless mode. This means that the browser will not be visible.
 - `ollama_base_url`: `string` - Base URL of your local Ollama server (default: `http://127.0.0.1:11434`).
 - `ollama_model`: `string` - Ollama model to use for text generation (e.g. `llama3.2:3b`). If empty, the app queries Ollama at startup and lets you pick from the available models interactively.
-- `twitter_language`: `string` - The language that will be used to generate & post tweets.
+- `twitter_language`: `string` - The base language that will be used to generate & post tweets.
+- `twitter_dialect`: `string` - Optional dialect/local style for tweets, for example `Egyptian Arabic`, `Gulf Arabic`, or `Moroccan Darija`.
 - `nanobanana2_api_base_url`: `string` - Nano Banana 2 API base URL (default: `https://generativelanguage.googleapis.com/v1beta`).
 - `nanobanana2_api_key`: `string` - API key for Nano Banana 2 (Gemini image API). If empty, MPV2 falls back to environment variable `GEMINI_API_KEY`.
 - `nanobanana2_model`: `string` - Nano Banana 2 model name (default: `gemini-3.1-flash-image-preview`).
@@ -55,6 +56,7 @@ All your configurations will be in a file in the root directory, called `config.
   "ollama_base_url": "http://127.0.0.1:11434",
   "ollama_model": "",
   "twitter_language": "English",
+  "twitter_dialect": "",
   "nanobanana2_api_base_url": "https://generativelanguage.googleapis.com/v1beta",
   "nanobanana2_api_key": "",
   "nanobanana2_model": "gemini-3.1-flash-image-preview",
