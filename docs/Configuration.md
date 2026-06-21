@@ -7,8 +7,11 @@ All your configurations will be in a file in the root directory, called `config.
 - `verbose`: `boolean` - If `true`, the application will print out more information.
 - `firefox_profile`: `string` - The path to your Firefox profile. This is used to use your Social Media Accounts without having to log in every time you run the application.
 - `headless`: `boolean` - If `true`, the application will run in headless mode. This means that the browser will not be visible.
-- `ollama_base_url`: `string` - Base URL of your local Ollama server (default: `http://127.0.0.1:11434`).
-- `ollama_model`: `string` - Ollama model to use for text generation (e.g. `llama3.2:3b`). If empty, the app queries Ollama at startup and lets you pick from the available models interactively.
+- `llm_provider`: `string` - Which LLM provider to use. Options: `ollama` (default), `openrouter`.
+- `ollama_base_url`: `string` - Base URL of your local Ollama server (default: `http://127.0.0.1:11434`). Only used when `llm_provider` is `ollama`.
+- `ollama_model`: `string` - Ollama model to use for text generation (e.g. `llama3.2:3b`). If empty, the app queries Ollama at startup and lets you pick from the available models interactively. Only used when `llm_provider` is `ollama`.
+- `openrouter_api_key`: `string` - API key for OpenRouter. Get yours from [openrouter.ai](https://openrouter.ai). Falls back to `OPENROUTER_API_KEY` environment variable. Only used when `llm_provider` is `openrouter`.
+- `openrouter_model`: `string` - OpenRouter model name (default: `openai/gpt-4o-mini`). See [openrouter.ai/models](https://openrouter.ai/models) for the full list. Only used when `llm_provider` is `openrouter`.
 - `twitter_language`: `string` - The language that will be used to generate & post tweets.
 - `nanobanana2_api_base_url`: `string` - Nano Banana 2 API base URL (default: `https://generativelanguage.googleapis.com/v1beta`).
 - `nanobanana2_api_key`: `string` - API key for Nano Banana 2 (Gemini image API). If empty, MPV2 falls back to environment variable `GEMINI_API_KEY`.
@@ -52,8 +55,11 @@ All your configurations will be in a file in the root directory, called `config.
   "verbose": true,
   "firefox_profile": "",
   "headless": false,
+  "llm_provider": "ollama",
   "ollama_base_url": "http://127.0.0.1:11434",
   "ollama_model": "",
+  "openrouter_api_key": "",
+  "openrouter_model": "openai/gpt-4o-mini",
   "twitter_language": "English",
   "nanobanana2_api_base_url": "https://generativelanguage.googleapis.com/v1beta",
   "nanobanana2_api_key": "",
@@ -95,6 +101,7 @@ All your configurations will be in a file in the root directory, called `config.
 ## Environment Variable Fallbacks
 
 - `GEMINI_API_KEY`: used when `nanobanana2_api_key` is empty.
+- `OPENROUTER_API_KEY`: used when `openrouter_api_key` is empty and `llm_provider` is `openrouter`.
 - `POST_BRIDGE_API_KEY`: used when `post_bridge.api_key` is empty.
 
 Example:

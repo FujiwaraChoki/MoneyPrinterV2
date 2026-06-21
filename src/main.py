@@ -15,6 +15,7 @@ from classes.YouTube import YouTube
 from prettytable import PrettyTable
 from classes.Outreach import Outreach
 from classes.AFM import AffiliateMarketing
+from config import get_llm_provider, get_openrouter_model
 from llm_provider import list_models, select_model, get_active_model
 from post_bridge_integration import maybe_crosspost_youtube_short
 
@@ -453,41 +454,48 @@ if __name__ == "__main__":
     # Fetch MP3 Files
     fetch_songs()
 
-    # Select Ollama model — use config value if set, otherwise pick interactively
-    configured_model = get_ollama_model()
-    if configured_model:
-        select_model(configured_model)
-        success(f"Using configured model: {configured_model}")
+    # Select LLM model based on configured provider
+    provider = get_llm_provider()
+
+    if provider == "openrouter":
+        model = get_openrouter_model()
+        select_model(model)
+        success(f"Using OpenRouter model: {model}")
     else:
-        try:
-            models = list_models()
-        except Exception as e:
-            error(f"Could not connect to Ollama: {e}")
-            sys.exit(1)
-
-        if not models:
-            error("No models found on Ollama. Pull a model first (e.g. 'ollama pull llama3.2:3b').")
-            sys.exit(1)
-
-        info("\n========== OLLAMA MODELS =========", False)
-        for idx, model_name in enumerate(models):
-            print(colored(f" {idx + 1}. {model_name}", "cyan"))
-        info("==================================\n", False)
-
-        model_choice = None
-        while model_choice is None:
-            raw = input(colored("Select a model: ", "magenta")).strip()
+        configured_model = get_ollama_model()
+        if configured_model:
+            select_model(configured_model)
+            success(f"Using configured model: {configured_model}")
+        else:
             try:
-                choice_idx = int(raw) - 1
-                if 0 <= choice_idx < len(models):
-                    model_choice = models[choice_idx]
-                else:
-                    warning("Invalid selection. Try again.")
-            except ValueError:
-                warning("Please enter a number.")
+                models = list_models()
+            except Exception as e:
+                error(f"Could not connect to Ollama: {e}")
+                sys.exit(1)
 
-        select_model(model_choice)
-        success(f"Using model: {model_choice}")
+            if not models:
+                error("No models found on Ollama. Pull a model first (e.g. 'ollama pull llama3.2:3b').")
+                sys.exit(1)
+
+            info("\n========== OLLAMA MODELS =========", False)
+            for idx, model_name in enumerate(models):
+                print(colored(f" {idx + 1}. {model_name}", "cyan"))
+            info("==================================\n", False)
+
+            model_choice = None
+            while model_choice is None:
+                raw = input(colored("Select a model: ", "magenta")).strip()
+                try:
+                    choice_idx = int(raw) - 1
+                    if 0 <= choice_idx < len(models):
+                        model_choice = models[choice_idx]
+                    else:
+                        warning("Invalid selection. Try again.")
+                except ValueError:
+                    warning("Please enter a number.")
+
+            select_model(model_choice)
+            success(f"Using model: {model_choice}")
 
     while True:
         main()
