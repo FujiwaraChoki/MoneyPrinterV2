@@ -144,6 +144,7 @@ class YouTube:
 
         if not completion:
             error("Failed to generate Topic.")
+            return None
 
         self.subject = completion
 
@@ -189,10 +190,18 @@ class YouTube:
             return
 
         if len(completion) > 5000:
-            if get_verbose():
-                warning("Generated Script is too long. Retrying...")
-            return self.generate_script()
+            if not hasattr(self, '_script_retries'):
+                self._script_retries = 0
+            self._script_retries += 1
+            if self._script_retries > 5:
+                warning("Max retries reached for script generation. Using current script.")
+                self._script_retries = 0
+            else:
+                if get_verbose():
+                    warning("Generated Script is too long. Retrying...")
+                return self.generate_script()
 
+        self._script_retries = 0
         self.script = completion
 
         return completion
@@ -209,14 +218,23 @@ class YouTube:
         )
 
         if len(title) > 100:
-            if get_verbose():
-                warning("Generated Title is too long. Retrying...")
-            return self.generate_metadata()
+            if not hasattr(self, '_metadata_retries'):
+                self._metadata_retries = 0
+            self._metadata_retries += 1
+            if self._metadata_retries > 5:
+                warning("Max retries reached for metadata generation. Truncating title.")
+                self._metadata_retries = 0
+                title = title[:97] + "..."
+            else:
+                if get_verbose():
+                    warning("Generated Title is too long. Retrying...")
+                return self.generate_metadata()
 
         description = self.generate_response(
             f"Please generate a YouTube Video Description for the following script: {self.script}. Only return the description, nothing else."
         )
 
+        self._metadata_retries = 0
         self.metadata = {"title": title, "description": description}
 
         return self.metadata
@@ -228,7 +246,7 @@ class YouTube:
         Returns:
             image_prompts (List[str]): Generated List of image prompts.
         """
-        n_prompts = len(self.script) / 3
+        n_prompts = max(1, len(self.script) // 3)
 
         prompt = f"""
         Generate {n_prompts} Image Prompts for AI Image Generation,
@@ -281,13 +299,21 @@ class YouTube:
                 r = re.compile(r"\[.*\]")
                 image_prompts = r.findall(completion)
                 if len(image_prompts) == 0:
+                    if not hasattr(self, '_prompts_retries'):
+                        self._prompts_retries = 0
+                    self._prompts_retries += 1
+                    if self._prompts_retries > 5:
+                        warning("Max retries reached for image prompt generation.")
+                        self._prompts_retries = 0
+                        return []
                     if get_verbose():
                         warning("Failed to generate Image Prompts. Retrying...")
                     return self.generate_prompts()
 
         if len(image_prompts) > n_prompts:
-            image_prompts = image_prompts[: int(n_prompts)]
+            image_prompts = image_prompts[:n_prompts]
 
+        self._prompts_retries = 0
         self.image_prompts = image_prompts
 
         success(f"Generated {len(image_prompts)} Image Prompts.")
@@ -560,6 +586,9 @@ class YouTube:
         threads = get_threads()
         tts_clip = AudioFileClip(self.tts_path)
         max_duration = tts_clip.duration
+        if not self.images:
+            error("No images were generated. Cannot combine video.")
+            raise RuntimeError("No images available to combine into video.")
         req_dur = max_duration / len(self.images)
 
         # Make a generator that returns a TextClip when called with consecutive
@@ -657,16 +686,22 @@ class YouTube:
             path (str): The path to the generated MP4 File.
         """
         # Generate the Topic
-        self.generate_topic()
+        topic = self.generate_topic()
+        if not topic:
+            raise RuntimeError("Failed to generate a topic.")
 
         # Generate the Script
-        self.generate_script()
+        script = self.generate_script()
+        if not script:
+            raise RuntimeError("Failed to generate a script.")
 
         # Generate the Metadata
         self.generate_metadata()
 
         # Generate the Image Prompts
         self.generate_prompts()
+        if not self.image_prompts:
+            raise RuntimeError("Failed to generate image prompts.")
 
         # Generate the Images
         for prompt in self.image_prompts:
@@ -707,6 +742,10 @@ class YouTube:
         Returns:
             success (bool): Whether the upload was successful or not.
         """
+        if not hasattr(self, 'video_path') or not self.video_path:
+            error("No video path set. Call generate_video() first.")
+            return False
+
         try:
             self.get_channel_id()
 
@@ -819,6 +858,9 @@ class YouTube:
             )
             time.sleep(2)
             videos = driver.find_elements(By.TAG_NAME, "ytcp-video-row")
+            if not videos:
+                error("No videos found on YouTube Studio.")
+                return False
             first_video = videos[0]
             anchor_tag = first_video.find_element(By.TAG_NAME, "a")
             href = anchor_tag.get_attribute("href")
@@ -844,13 +886,12 @@ class YouTube:
                 }
             )
 
-            # Close the browser
-            driver.quit()
-
             return True
-        except:
-            self.browser.quit()
+        except Exception as e:
+            error(f"Failed to upload video: {e}")
             return False
+        finally:
+            self.browser.quit()
 
     def get_videos(self) -> List[dict]:
         """
