@@ -16,7 +16,6 @@ from uuid import uuid4
 from constants import *
 from typing import List
 from moviepy.editor import *
-from termcolor import colored
 from selenium_firefox import *
 from selenium import webdriver
 from moviepy.video.fx.all import crop
@@ -99,6 +98,29 @@ class YouTube:
             service=self.service, options=self.options
         )
 
+    @classmethod
+    def for_generation(cls, niche: str, language: str) -> "YouTube":
+        """Create a YouTube instance for video generation only (no browser/upload).
+
+        Use this when you only need to generate a video locally without uploading.
+
+        Args:
+            niche (str): The video topic/niche.
+            language (str): The language for the video.
+
+        Returns:
+            instance (YouTube): A generation-only YouTube instance.
+        """
+        instance = object.__new__(cls)
+        instance._account_uuid = None
+        instance._account_nickname = None
+        instance._fp_profile_path = None
+        instance._niche = niche
+        instance._language = language
+        instance.images = []
+        instance.browser = None
+        return instance
+
     @property
     def niche(self) -> str:
         """
@@ -149,13 +171,14 @@ class YouTube:
 
         return completion
 
-    def generate_script(self) -> str:
+    def generate_script(self, _attempt: int = 0) -> str:
         """
         Generate a script for a video, depending on the subject of the video, the number of paragraphs, and the AI model.
 
         Returns:
             script (str): The script of the video.
         """
+        MAX_RETRIES = 5
         sentence_length = get_script_sentence_length()
         prompt = f"""
         Generate a script for a video in {sentence_length} sentences, depending on the subject of the video.
@@ -170,12 +193,12 @@ class YouTube:
         Get straight to the point, don't start with unnecessary things like, "welcome to this video".
 
         Obviously, the script should be related to the subject of the video.
-        
+
         YOU MUST NOT EXCEED THE {sentence_length} SENTENCES LIMIT. MAKE SURE THE {sentence_length} SENTENCES ARE SHORT.
         YOU MUST NOT INCLUDE ANY TYPE OF MARKDOWN OR FORMATTING IN THE SCRIPT, NEVER USE A TITLE.
         YOU MUST WRITE THE SCRIPT IN THE LANGUAGE SPECIFIED IN [LANGUAGE].
         ONLY RETURN THE RAW CONTENT OF THE SCRIPT. DO NOT INCLUDE "VOICEOVER", "NARRATOR" OR SIMILAR INDICATORS OF WHAT SHOULD BE SPOKEN AT THE BEGINNING OF EACH PARAGRAPH OR LINE. YOU MUST NOT MENTION THE PROMPT, OR ANYTHING ABOUT THE SCRIPT ITSELF. ALSO, NEVER TALK ABOUT THE AMOUNT OF PARAGRAPHS OR LINES. JUST WRITE THE SCRIPT
-        
+
         Subject: {self.subject}
         Language: {self.language}
         """
@@ -189,29 +212,38 @@ class YouTube:
             return
 
         if len(completion) > 5000:
-            if get_verbose():
-                warning("Generated Script is too long. Retrying...")
-            return self.generate_script()
+            if _attempt >= MAX_RETRIES:
+                error(f"Generated script still too long after {MAX_RETRIES} retries. Using truncated version.")
+                completion = completion[:5000]
+            else:
+                if get_verbose():
+                    warning(f"Generated Script is too long. Retrying ({_attempt + 1}/{MAX_RETRIES})...")
+                return self.generate_script(_attempt=_attempt + 1)
 
         self.script = completion
 
         return completion
 
-    def generate_metadata(self) -> dict:
+    def generate_metadata(self, _attempt: int = 0) -> dict:
         """
         Generates Video metadata for the to-be-uploaded YouTube Short (Title, Description).
 
         Returns:
             metadata (dict): The generated metadata.
         """
+        MAX_RETRIES = 5
         title = self.generate_response(
             f"Please generate a YouTube Video Title for the following subject, including hashtags: {self.subject}. Only return the title, nothing else. Limit the title under 100 characters."
         )
 
         if len(title) > 100:
-            if get_verbose():
-                warning("Generated Title is too long. Retrying...")
-            return self.generate_metadata()
+            if _attempt >= MAX_RETRIES:
+                error(f"Generated title still too long after {MAX_RETRIES} retries. Truncating.")
+                title = title[:97] + "..."
+            else:
+                if get_verbose():
+                    warning(f"Generated Title is too long. Retrying ({_attempt + 1}/{MAX_RETRIES})...")
+                return self.generate_metadata(_attempt=_attempt + 1)
 
         description = self.generate_response(
             f"Please generate a YouTube Video Description for the following script: {self.script}. Only return the description, nothing else."
@@ -221,13 +253,14 @@ class YouTube:
 
         return self.metadata
 
-    def generate_prompts(self) -> List[str]:
+    def generate_prompts(self, _attempt: int = 0) -> List[str]:
         """
         Generates AI Image Prompts based on the provided Video Script.
 
         Returns:
             image_prompts (List[str]): Generated List of image prompts.
         """
+        MAX_RETRIES = 5
         n_prompts = len(self.script) / 3
 
         prompt = f"""
@@ -271,7 +304,7 @@ class YouTube:
                 image_prompts = json.loads(completion)
                 if get_verbose():
                     info(f" => Generated Image Prompts: {image_prompts}")
-            except Exception:
+            except json.JSONDecodeError:
                 if get_verbose():
                     warning(
                         "LLM returned an unformatted response. Attempting to clean..."
@@ -281,9 +314,12 @@ class YouTube:
                 r = re.compile(r"\[.*\]")
                 image_prompts = r.findall(completion)
                 if len(image_prompts) == 0:
+                    if _attempt >= MAX_RETRIES:
+                        error(f"Failed to generate image prompts after {MAX_RETRIES} retries.")
+                        return []
                     if get_verbose():
-                        warning("Failed to generate Image Prompts. Retrying...")
-                    return self.generate_prompts()
+                        warning(f"Failed to generate Image Prompts. Retrying ({_attempt + 1}/{MAX_RETRIES})...")
+                    return self.generate_prompts(_attempt=_attempt + 1)
 
         if len(image_prompts) > n_prompts:
             image_prompts = image_prompts[: int(n_prompts)]
@@ -305,7 +341,9 @@ class YouTube:
         Returns:
             path (str): Absolute image path
         """
-        image_path = os.path.join(ROOT_DIR, ".mp", str(uuid4()) + ".png")
+        mp_dir = os.path.join(ROOT_DIR, ".mp")
+        os.makedirs(mp_dir, exist_ok=True)
+        image_path = os.path.join(mp_dir, str(uuid4()) + ".png")
 
         with open(image_path, "wb") as image_file:
             image_file.write(image_bytes)
@@ -326,7 +364,7 @@ class YouTube:
         Returns:
             path (str): The path to the generated image.
         """
-        print(f"Generating Image using Nano Banana 2 API: {prompt}")
+        info(f"Generating Image using Nano Banana 2 API: {prompt}")
 
         api_key = get_nanobanana2_api_key()
         if not api_key:
@@ -391,20 +429,21 @@ class YouTube:
 
     def generate_script_to_speech(self, tts_instance: TTS) -> str:
         """
-        Converts the generated script into Speech using KittenTTS and returns the path to the wav file.
+        Converts the generated script into Speech and returns the path to the audio file.
 
         Args:
-            tts_instance (tts): Instance of TTS Class.
+            tts_instance (TTS): Instance of TTS Class.
 
         Returns:
-            path_to_wav (str): Path to generated audio (WAV Format).
+            path (str): Path to generated audio file.
         """
         path = os.path.join(ROOT_DIR, ".mp", str(uuid4()) + ".wav")
 
         # Clean script, remove every character that is not a word character, a space, a period, a question mark, or an exclamation mark.
         self.script = re.sub(r"[^\w\s.?!]", "", self.script)
 
-        tts_instance.synthesize(self.script, path)
+        # Use the returned path (may differ from input, e.g. .mp3 for Edge TTS)
+        path = tts_instance.synthesize(self.script, path)
 
         self.tts_path = path
 
@@ -549,6 +588,46 @@ class YouTube:
 
         return srt_path
 
+    # Subtitle style presets
+    SUBTITLE_STYLES = {
+        "yellow_bold": {
+            "fontsize": 100,
+            "color": "#FFFF00",
+            "stroke_color": "black",
+            "stroke_width": 5,
+        },
+        "white_shadow": {
+            "fontsize": 90,
+            "color": "white",
+            "stroke_color": "#333333",
+            "stroke_width": 3,
+        },
+        "neon_green": {
+            "fontsize": 95,
+            "color": "#39FF14",
+            "stroke_color": "black",
+            "stroke_width": 4,
+        },
+        "red_impact": {
+            "fontsize": 105,
+            "color": "#FF3333",
+            "stroke_color": "white",
+            "stroke_width": 5,
+        },
+        "minimal_white": {
+            "fontsize": 80,
+            "color": "white",
+            "stroke_color": "black",
+            "stroke_width": 2,
+        },
+        "cyan_modern": {
+            "fontsize": 90,
+            "color": "#00FFFF",
+            "stroke_color": "#1a1a2e",
+            "stroke_width": 4,
+        },
+    }
+
     def combine(self) -> str:
         """
         Combines everything into the final video.
@@ -562,19 +641,23 @@ class YouTube:
         max_duration = tts_clip.duration
         req_dur = max_duration / len(self.images)
 
+        # Resolve subtitle style
+        style_name = get_subtitle_style()
+        style = self.SUBTITLE_STYLES.get(style_name, self.SUBTITLE_STYLES["yellow_bold"])
+
         # Make a generator that returns a TextClip when called with consecutive
         generator = lambda txt: TextClip(
             txt,
             font=os.path.join(get_fonts_dir(), get_font()),
-            fontsize=100,
-            color="#FFFF00",
-            stroke_color="black",
-            stroke_width=5,
+            fontsize=style["fontsize"],
+            color=style["color"],
+            stroke_color=style["stroke_color"],
+            stroke_width=style["stroke_width"],
             size=(1080, 1920),
             method="caption",
         )
 
-        print(colored("[+] Combining images...", "blue"))
+        info("[+] Combining images...")
 
         clips = []
         tot_dur = 0
@@ -848,7 +931,8 @@ class YouTube:
             driver.quit()
 
             return True
-        except:
+        except Exception as e:
+            warning(f"Failed to upload video: {e}")
             self.browser.quit()
             return False
 

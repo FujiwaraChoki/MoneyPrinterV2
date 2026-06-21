@@ -29,7 +29,12 @@ class Outreach:
             None
         """
         # Check if go is installed
-        self.go_installed = os.system("go version") == 0
+        try:
+            self.go_installed = subprocess.run(
+                ["go", "version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            ).returncode == 0
+        except FileNotFoundError:
+            self.go_installed = False
 
         # Set niche
         self.niche = get_google_maps_scraper_niche()
@@ -53,11 +58,11 @@ class Outreach:
         Returns:
             bool: True if go is installed, False otherwise.
         """
-        # Check if go is installed
         try:
-            subprocess.call(["go", "version"])
-            return True
-        except Exception as e:
+            return subprocess.run(
+                ["go", "version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            ).returncode == 0
+        except FileNotFoundError:
             return False
 
     def unzip_file(self, zip_link: str) -> None:
@@ -74,7 +79,7 @@ class Outreach:
             info("=> Scraper already unzipped. Skipping unzip.")
             return
 
-        r = requests.get(zip_link)
+        r = requests.get(zip_link, timeout=60)
         z = zipfile.ZipFile(io.BytesIO(r.content))
         for member in z.namelist():
             if ".." in member or member.startswith("/"):
@@ -95,7 +100,7 @@ class Outreach:
             else "google-maps-scraper"
         )
         if os.path.exists(binary_name):
-            print(colored("=> Scraper already built. Skipping build.", "blue"))
+            info("=> Scraper already built. Skipping build.")
             return
 
         scraper_dir = self._find_scraper_dir()
@@ -135,14 +140,13 @@ class Outreach:
             scraper_process = subprocess.run(command, timeout=float(timeout))
 
             if scraper_process.returncode == 0:
-                print(colored("=> Scraper finished successfully.", "green"))
+                success("=> Scraper finished successfully.")
             else:
-                print(colored("=> Scraper finished with an error.", "red"))
+                error(f"=> Scraper finished with return code {scraper_process.returncode}.")
         except subprocess.TimeoutExpired:
-            print(colored("=> Scraper timed out.", "red"))
+            error("=> Scraper timed out.")
         except Exception as e:
-            print(colored("An error occurred while running the scraper:", "red"))
-            print(str(e))
+            error(f"An error occurred while running the scraper: {e}")
 
     def get_items_from_file(self, file_name: str) -> list:
         """
@@ -175,7 +179,7 @@ class Outreach:
         # Extract and set an email for a website
         email = ""
 
-        r = requests.get(website)
+        r = requests.get(website, timeout=30)
         if r.status_code == 200:
             # Define a regular expression pattern to match email addresses
             email_pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b"
@@ -186,7 +190,7 @@ class Outreach:
             email = email_addresses[0] if len(email_addresses) > 0 else ""
 
         if email:
-            print(f"=> Setting email {email} for website {website}")
+            info(f"=> Setting email {email} for website {website}")
             with open(output_file, "r", newline="", errors="ignore") as csvfile:
                 csvreader = csv.reader(csvfile)
                 items = list(csvreader)
@@ -259,7 +263,7 @@ class Outreach:
                 website = [w for w in website if w.startswith("http")]
                 website = website[0] if len(website) > 0 else ""
                 if website != "":
-                    test_r = requests.get(website)
+                    test_r = requests.get(website, timeout=30)
                     if test_r.status_code == 200:
                         self.set_email_for_website(index, website, output_path)
 

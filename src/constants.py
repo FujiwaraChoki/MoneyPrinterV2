@@ -6,11 +6,38 @@ TWITTER_TEXTAREA_CLASS = "public-DraftStyleDefault-block public-DraftStyleDefaul
 TWITTER_POST_BUTTON_XPATH = "/html/body/div[1]/div/div/div[2]/main/div/div/div/div[1]/div/div[3]/div/div[2]/div[1]/div/div/div/div[2]/div[2]/div[2]/div/div/div/div[3]"
 
 OPTIONS = [
+    "Quick Generate  (prompt -> video)",
     "YouTube Shorts Automation",
     "Twitter Bot",
     "Affiliate Marketing",
     "Outreach",
     "Quit"
+]
+
+# Language options for Quick Generate
+LANGUAGES = [
+    ("English", "en"),
+    ("Espanol", "es"),
+    ("Francais", "fr"),
+    ("Deutsch", "de"),
+    ("Portugues", "pt"),
+    ("Italiano", "it"),
+    ("Japanese", "ja"),
+    ("Chinese", "zh"),
+    ("Korean", "ko"),
+    ("Hindi", "hi"),
+    ("Arabic", "ar"),
+    ("Russian", "ru"),
+]
+
+# Subtitle style display names
+SUBTITLE_STYLE_OPTIONS = [
+    ("yellow_bold", "Yellow Bold (default)"),
+    ("white_shadow", "White Shadow"),
+    ("neon_green", "Neon Green"),
+    ("red_impact", "Red Impact"),
+    ("minimal_white", "Minimal White"),
+    ("cyan_modern", "Cyan Modern"),
 ]
 
 TWITTER_OPTIONS = [

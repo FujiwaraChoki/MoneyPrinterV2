@@ -1,5 +1,6 @@
 import os
 import random
+import subprocess
 import zipfile
 import requests
 import platform
@@ -22,9 +23,11 @@ def close_running_selenium_instances() -> None:
 
         # Kill all running Firefox instances
         if platform.system() == "Windows":
-            os.system("taskkill /f /im firefox.exe")
+            subprocess.run(["taskkill", "/f", "/im", "firefox.exe"],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         else:
-            os.system("pkill firefox")
+            subprocess.run(["pkill", "firefox"],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
         success(" => Closed running Selenium instances.")
 
