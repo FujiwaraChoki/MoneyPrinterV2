@@ -848,7 +848,8 @@ class YouTube:
             driver.quit()
 
             return True
-        except:
+        except Exception as e:
+            error(f"Failed to upload video: {e}")
             self.browser.quit()
             return False
 
