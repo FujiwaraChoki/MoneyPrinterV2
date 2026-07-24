@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "ozon-recipe",
+  "format": "vertical_short",
+  "purpose": "Ozon и вертикальные социальные видео",
+  "language": "русский",
+  "hook_template": "Готовый напиток и главный результат.",
+  "scene_templates": [
+    "Готовый напиток и главный результат.",
+    "Упаковка и количество порций.",
+    "Приготовление по инструкции на упаковке без неподтверждённых деталей рецепта.",
+    "Готовый напиток крупным планом.",
+    "Призыв приготовить Bubble Tea дома."
+  ],
+  "cta_template": "Приготовьте Bubble Tea дома.",
+  "target_duration_seconds": {"min": 15, "max": 20},
+  "requires_manual_review": true,
+  "auto_publish": false,
+  "intended_channels": ["Ozon", "вертикальные социальные видео"]
+}

@@ -67,6 +67,41 @@ python src/main.py
 
 All relevant documents can be found [here](docs/).
 
+## Yoku Tea Video Factory
+
+Yoku Tea Video Factory is a safe MVP that reads a validated product card and a
+content template, builds a deterministic Russian-language script, checks its
+claims, and writes five files for manual review. Product cards live in
+`data/products/`, templates in `data/templates/`, and isolated implementation
+modules in `src/yoku/`.
+
+The MVP does **not** generate video, images, voice-over, or recipes; call LLMs,
+Ollama, external APIs, or websites; send messages; or publish content. Automatic
+publication is disabled, and every generated draft must be manually reviewed.
+
+Run it from the repository root:
+
+```bash
+python src/yoku_main.py generate --product taro-100g --template ozon-recipe
+```
+
+The command creates a directory such as
+`output/20260724-120000_taro-100g_ozon-recipe/`, containing `brief.json`,
+`script.txt`, `claims-report.json`, `metadata.json`, and `review.md`. Generated
+packages are ignored by Git.
+
+Run the checks with:
+
+```bash
+python -m unittest discover -s tests -v
+python -m compileall src
+```
+
+Never store secrets or real API keys in Git. Keep local values in `.env`; only
+the safe, empty `.env.example` template is versioned. A `PASS` from Claims Guard
+does not authorize publication: the review checklist must still be completed by
+a person, and `auto_publish` remains `false`.
+
 ## Scripts
 
 For easier usage, there are some scripts in the `scripts` directory that can be used to directly access the core functionality of MPV2 without the need for user interaction.

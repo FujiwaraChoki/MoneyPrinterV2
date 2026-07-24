@@ -8,3 +8,19 @@ niche.txt
 *.exe
 auto.sh
 .DS_Store
+
+# Yoku Tea environment variables
+.env
+.env.*
+!.env.example
+
+# Generated content
+output/*
+!output/.gitkeep
+
+# Private assets and business data
+assets/yoku/private/
+data/leads/
+
+# Logs
+*.log
