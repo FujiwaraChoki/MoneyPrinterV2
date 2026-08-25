@@ -8,6 +8,7 @@ from cache import *
 from config import *
 from status import *
 from llm_provider import generate_text
+from xquik_integration import get_xquik_research_context
 from typing import List, Optional
 from datetime import datetime
 from termcolor import colored
@@ -202,10 +203,15 @@ class Twitter:
         Returns:
             post (str): The post
         """
-        completion = generate_text(
+        research_context = get_xquik_research_context(self.topic)
+        prompt = (
             f"Generate a Twitter post about: {self.topic} in {get_twitter_language()}. "
             "The Limit is 2 sentences. Choose a specific sub-topic of the provided topic."
         )
+        if research_context:
+            prompt = f"{prompt}\n\n{research_context}"
+
+        completion = generate_text(prompt)
 
         if get_verbose():
             info("Generating a post...")

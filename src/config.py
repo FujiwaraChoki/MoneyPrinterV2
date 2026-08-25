@@ -99,6 +99,47 @@ def get_twitter_language() -> str:
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file)["twitter_language"]
 
+def get_xquik_config() -> dict:
+    """
+    Gets the optional Xquik research configuration.
+
+    Returns:
+        config (dict): Sanitized Xquik configuration
+    """
+    defaults = {
+        "enabled": False,
+        "api_key": "",
+        "search_limit": 5,
+    }
+
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        config_json = json.load(file)
+
+    raw_config = config_json.get("xquik", {})
+    if not isinstance(raw_config, dict):
+        raw_config = {}
+
+    raw_api_key = raw_config.get("api_key", "")
+    api_key = raw_api_key.strip() if isinstance(raw_api_key, str) else ""
+    if not api_key:
+        api_key = os.environ.get("XQUIK_API_KEY", "").strip()
+
+    raw_limit = raw_config.get("search_limit", defaults["search_limit"])
+    if isinstance(raw_limit, bool):
+        search_limit = defaults["search_limit"]
+    else:
+        try:
+            search_limit = int(raw_limit)
+        except (TypeError, ValueError):
+            search_limit = defaults["search_limit"]
+    search_limit = min(max(search_limit, 1), 25)
+
+    return {
+        "enabled": raw_config.get("enabled") is True,
+        "api_key": api_key,
+        "search_limit": search_limit,
+    }
+
 def get_nanobanana2_api_base_url() -> str:
     """
     Gets the Nano Banana 2 (Gemini image) API base URL.
