@@ -127,6 +127,7 @@ class XquikClientTests(unittest.TestCase):
                 "quotes": "exclude",
                 "limit": 5,
             },
+            allow_redirects=False,
             timeout=30,
         )
 

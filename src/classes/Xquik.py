@@ -62,6 +62,7 @@ class Xquik:
                     "quotes": "exclude",
                     "limit": limit,
                 },
+                allow_redirects=False,
                 timeout=30,
             )
         except requests.RequestException as exc:
