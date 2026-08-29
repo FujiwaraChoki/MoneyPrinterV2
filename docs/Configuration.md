@@ -10,6 +10,14 @@ All your configurations will be in a file in the root directory, called `config.
 - `ollama_base_url`: `string` - Base URL of your local Ollama server (default: `http://127.0.0.1:11434`).
 - `ollama_model`: `string` - Ollama model to use for text generation (e.g. `llama3.2:3b`). If empty, the app queries Ollama at startup and lets you pick from the available models interactively.
 - `twitter_language`: `string` - The language that will be used to generate & post tweets.
+- `xquik`: `object` - Optional recent X research before Twitter post
+  generation.
+- `xquik.enabled`: `boolean` - Enables 1 metered Xquik search per generated
+  post.
+- `xquik.api_key`: `string` - Xquik API key. If empty, MPV2 uses
+  `XQUIK_API_KEY`.
+- `xquik.search_limit`: `number` - Recent posts added to the prompt. MPV2
+  limits values to 1 through 25.
 - `nanobanana2_api_base_url`: `string` - Nano Banana 2 API base URL (default: `https://generativelanguage.googleapis.com/v1beta`).
 - `nanobanana2_api_key`: `string` - API key for Nano Banana 2 (Gemini image API). If empty, MPV2 falls back to environment variable `GEMINI_API_KEY`.
 - `nanobanana2_model`: `string` - Nano Banana 2 model name (default: `gemini-3.1-flash-image-preview`).
@@ -55,6 +63,11 @@ All your configurations will be in a file in the root directory, called `config.
   "ollama_base_url": "http://127.0.0.1:11434",
   "ollama_model": "",
   "twitter_language": "English",
+  "xquik": {
+    "enabled": false,
+    "api_key": "",
+    "search_limit": 5
+  },
   "nanobanana2_api_base_url": "https://generativelanguage.googleapis.com/v1beta",
   "nanobanana2_api_key": "",
   "nanobanana2_model": "gemini-3.1-flash-image-preview",
@@ -96,12 +109,14 @@ All your configurations will be in a file in the root directory, called `config.
 
 - `GEMINI_API_KEY`: used when `nanobanana2_api_key` is empty.
 - `POST_BRIDGE_API_KEY`: used when `post_bridge.api_key` is empty.
+- `XQUIK_API_KEY`: used when `xquik.api_key` is empty.
 
 Example:
 
 ```bash
 export GEMINI_API_KEY="your_api_key_here"
 export POST_BRIDGE_API_KEY="your_post_bridge_api_key_here"
+export XQUIK_API_KEY="your_xquik_api_key_here"
 ```
 
 See [PostBridge.md](./PostBridge.md) for the full Post Bridge setup and behavior details.
