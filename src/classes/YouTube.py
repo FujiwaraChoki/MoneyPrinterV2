@@ -17,7 +17,6 @@ from constants import *
 from typing import List
 from moviepy.editor import *
 from termcolor import colored
-from selenium_firefox import *
 from selenium import webdriver
 from moviepy.video.fx.all import crop
 from moviepy.config import change_settings
@@ -88,8 +87,8 @@ class YouTube:
                 f"Firefox profile path does not exist or is not a directory: {self._fp_profile_path}"
             )
 
-        self.options.add_argument("-profile")
-        self.options.add_argument(self._fp_profile_path)
+        # Set Firefox profile using the proper Selenium 4 method
+        self.options.profile = self._fp_profile_path
 
         # Set the service
         self.service: Service = Service(GeckoDriverManager().install())
@@ -210,8 +209,8 @@ class YouTube:
 
         if len(title) > 100:
             if get_verbose():
-                warning("Generated Title is too long. Retrying...")
-            return self.generate_metadata()
+                warning("Generated Title is too long. Truncating to 100 characters...")
+            title = title[:100]
 
         description = self.generate_response(
             f"Please generate a YouTube Video Description for the following script: {self.script}. Only return the description, nothing else."

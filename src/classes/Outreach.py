@@ -132,14 +132,19 @@ class Outreach:
         )
         command = [os.path.join(os.getcwd(), binary_name)] + shlex.split(args)
         try:
-            scraper_process = subprocess.run(command, timeout=float(timeout))
+            # Redirect stderr to suppress Playwright EPIPE errors when timeout kills the process
+            scraper_process = subprocess.run(
+                command, 
+                timeout=float(timeout),
+                stderr=subprocess.DEVNULL
+            )
 
             if scraper_process.returncode == 0:
                 print(colored("=> Scraper finished successfully.", "green"))
             else:
                 print(colored("=> Scraper finished with an error.", "red"))
         except subprocess.TimeoutExpired:
-            print(colored("=> Scraper timed out.", "red"))
+            print(colored("=> Scraper timed out (this is expected).", "blue"))
         except Exception as e:
             print(colored("An error occurred while running the scraper:", "red"))
             print(str(e))
@@ -254,43 +259,80 @@ class Outreach:
         # Get the email for each business
         for index, item in enumerate(items, start=1):
             try:
-                # Check if the item"s website is valid
-                website = item.split(",")
-                website = [w for w in website if w.startswith("http")]
-                website = website[0] if len(website) > 0 else ""
-                if website != "":
-                    test_r = requests.get(website)
-                    if test_r.status_code == 200:
-                        self.set_email_for_website(index, website, output_path)
+                # Parse the CSV row - website is the 5th column (index 4)
+                parts = item.split(",")
+                if len(parts) < 5:
+                    warning(f" => Row {index}: Invalid CSV format. Skipping...")
+                    continue
+                
+                # Extract website from Google's redirect URL format: /url?q=ACTUAL_URL&...
+                website_field = parts[4]  # 5th column is website
+                website = ""
+                
+                if website_field and "/url?q=" in website_field:
+                    # Extract URL from Google redirect format
+                    try:
+                        import urllib.parse
+                        # Find the URL after 'q='
+                        if "q=" in website_field:
+                            start = website_field.index("q=") + 2
+                            url_part = website_field[start:]
+                            # Stop at the first '&' if present
+                            if "&" in url_part:
+                                url_part = url_part[:url_part.index("&")]
+                            website = urllib.parse.unquote(url_part)
+                    except Exception as e:
+                        warning(f" => Could not parse URL from {website_field}: {e}")
+                
+                if not website or not website.startswith("http"):
+                    info(f" => {parts[0]}: No valid website found. Skipping...")
+                    continue
+                
+                info(f" => Processing {parts[0]} ({website})...")
+                
+                # Test if website is accessible
+                try:
+                    test_r = requests.get(website, timeout=10)
+                    if test_r.status_code != 200:
+                        warning(f" => Website {website} returned status {test_r.status_code}. Skipping...")
+                        continue
+                except Exception as e:
+                    warning(f" => Could not access {website}: {e}. Skipping...")
+                    continue
+                
+                # Extract email from website
+                self.set_email_for_website(index, website, output_path)
 
-                        # Send emails using the existing SMTP connection
-                        receiver_email = item.split(",")[-1]
+                # Send emails using the existing SMTP connection
+                receiver_email = item.split(",")[-1]
 
-                        if "@" not in receiver_email:
-                            warning(f" => No email provided. Skipping...")
-                            continue
+                if "@" not in receiver_email:
+                    warning(f" => No email provided. Skipping...")
+                    continue
 
-                        company_name = item.split(",")[0]
-                        subject = message_subject.replace(
-                            "{{COMPANY_NAME}}", company_name
-                        )
-                        body = (
-                            open(message_body, "r")
-                            .read()
-                            .replace("{{COMPANY_NAME}}", company_name)
-                        )
+                company_name = parts[0]
+                subject = message_subject.replace(
+                    "{{COMPANY_NAME}}", company_name
+                )
+                body = (
+                    open(message_body, "r")
+                    .read()
+                    .replace("{{COMPANY_NAME}}", company_name)
+                )
 
-                        info(f" => Sending email to {receiver_email}...")
+                info(f" => Sending email to {receiver_email}...")
 
-                        yag.send(
-                            to=receiver_email,
-                            subject=subject,
-                            contents=body,
-                        )
+                yag.send(
+                    to=receiver_email,
+                    subject=subject,
+                    contents=body,
+                )
 
-                        success(f" => Sent email to {receiver_email}")
-                    else:
-                        warning(f" => Website {website} is invalid. Skipping...")
+                success(f" => Sent email to {receiver_email}")
+                
+                # Small delay to avoid rate limiting
+                time.sleep(2)
+                
             except Exception as err:
                 error(f" => Error: {err}...")
                 continue
