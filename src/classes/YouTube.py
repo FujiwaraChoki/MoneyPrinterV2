@@ -15,11 +15,11 @@ from status import *
 from uuid import uuid4
 from constants import *
 from typing import List
-from moviepy.editor import *
+from moviepy import *
 from termcolor import colored
 from selenium_firefox import *
 from selenium import webdriver
-from moviepy.video.fx.all import crop
+from moviepy.video.fx import Crop as crop
 from moviepy.config import change_settings
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.service import Service
@@ -583,30 +583,28 @@ class YouTube:
             for image_path in self.images:
                 clip = ImageClip(image_path)
                 clip.duration = req_dur
-                clip = clip.set_fps(30)
+                clip = clip.with_fps(30)
 
                 # Not all images are same size,
                 # so we need to resize them
                 if round((clip.w / clip.h), 4) < 0.5625:
                     if get_verbose():
                         info(f" => Resizing Image: {image_path} to 1080x1920")
-                    clip = crop(
-                        clip,
-                        width=clip.w,
-                        height=round(clip.w / 0.5625),
-                        x_center=clip.w / 2,
-                        y_center=clip.h / 2,
-                    )
+                    clip = clip.with_effects([Crop(
+    width=clip.w,
+    height=round(clip.w / 0.5625),
+    x_center=clip.w / 2,
+    y_center=clip.h / 2,
+)])
                 else:
                     if get_verbose():
                         info(f" => Resizing Image: {image_path} to 1920x1080")
-                    clip = crop(
-                        clip,
-                        width=round(0.5625 * clip.h),
-                        height=clip.h,
-                        x_center=clip.w / 2,
-                        y_center=clip.h / 2,
-                    )
+                    clip = clip.with_effects([Crop(
+    width=round(0.5625 * clip.h),
+    height=clip.h,
+    x_center=clip.w / 2,
+    y_center=clip.h / 2,
+)])
                 clip = clip.resize((1080, 1920))
 
                 # FX (Fade In)
@@ -616,7 +614,7 @@ class YouTube:
                 tot_dur += clip.duration
 
         final_clip = concatenate_videoclips(clips)
-        final_clip = final_clip.set_fps(30)
+        final_clip = final_clip.with_fps(30)
         random_song = choose_random_song()
 
         subtitles = None
@@ -631,7 +629,7 @@ class YouTube:
         random_song_clip = AudioFileClip(random_song).set_fps(44100)
 
         # Turn down volume
-        random_song_clip = random_song_clip.fx(afx.volumex, 0.1)
+        random_song_clip = random_song_clip.with_effects([afx.MultiplyVolume(0.1)])
         comp_audio = CompositeAudioClip([tts_clip.set_fps(44100), random_song_clip])
 
         final_clip = final_clip.set_audio(comp_audio)
