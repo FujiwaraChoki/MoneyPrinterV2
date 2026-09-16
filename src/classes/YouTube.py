@@ -15,21 +15,24 @@ from status import *
 from uuid import uuid4
 from constants import *
 from typing import List
-from moviepy.editor import *
+from moviepy import (
+    AudioFileClip, ImageClip, TextClip, concatenate_videoclips,
+    CompositeAudioClip, CompositeVideoClip, afx
+)
+from moviepy.video.fx import Crop
+from moviepy.video.tools.subtitles import SubtitlesClip
 from termcolor import colored
-from selenium_firefox import *
 from selenium import webdriver
-from moviepy.video.fx.all import crop
-from moviepy.config import change_settings
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.firefox.options import Options
-from moviepy.video.tools.subtitles import SubtitlesClip
 from webdriver_manager.firefox import GeckoDriverManager
 from datetime import datetime
 
-# Set ImageMagick Path
-change_settings({"IMAGEMAGICK_BINARY": get_imagemagick_path()})
+# Set ImageMagick Path via environment variable for MoviePy 2.x
+imagemagick_path = get_imagemagick_path()
+if imagemagick_path:
+    os.environ['IMAGEMAGICK_BINARY'] = imagemagick_path
 
 
 class YouTube:
@@ -590,23 +593,25 @@ class YouTube:
                 if round((clip.w / clip.h), 4) < 0.5625:
                     if get_verbose():
                         info(f" => Resizing Image: {image_path} to 1080x1920")
-                    clip = crop(
-                        clip,
-                        width=clip.w,
-                        height=round(clip.w / 0.5625),
-                        x_center=clip.w / 2,
-                        y_center=clip.h / 2,
-                    )
+                    clip = clip.with_effects([
+                        Crop(
+                            width=clip.w,
+                            height=round(clip.w / 0.5625),
+                            x_center=clip.w / 2,
+                            y_center=clip.h / 2,
+                        )
+                    ])
                 else:
                     if get_verbose():
                         info(f" => Resizing Image: {image_path} to 1920x1080")
-                    clip = crop(
-                        clip,
-                        width=round(0.5625 * clip.h),
-                        height=clip.h,
-                        x_center=clip.w / 2,
-                        y_center=clip.h / 2,
-                    )
+                    clip = clip.with_effects([
+                        Crop(
+                            width=round(0.5625 * clip.h),
+                            height=clip.h,
+                            x_center=clip.w / 2,
+                            y_center=clip.h / 2,
+                        )
+                    ])
                 clip = clip.resize((1080, 1920))
 
                 # FX (Fade In)
