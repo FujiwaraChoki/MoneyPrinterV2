@@ -17,7 +17,6 @@ from constants import *
 from typing import List
 from moviepy.editor import *
 from termcolor import colored
-from selenium_firefox import *
 from selenium import webdriver
 from moviepy.video.fx.all import crop
 from moviepy.config import change_settings
