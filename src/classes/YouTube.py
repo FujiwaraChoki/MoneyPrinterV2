@@ -471,11 +471,25 @@ class YouTube:
 
         Returns:
             path (str): Path to SRT file
+
+        Raises:
+            ValueError: If transcription fails or returns empty text
         """
         aai.settings.api_key = get_assemblyai_api_key()
         config = aai.TranscriptionConfig()
         transcriber = aai.Transcriber(config=config)
         transcript = transcriber.transcribe(audio_path)
+
+        # Check transcript status before exporting
+        if transcript.status == aai.TranscriptStatus.error:
+            raise ValueError(
+                f"AssemblyAI transcription failed: {transcript.error or 'Unknown error'}"
+            )
+
+        # Check for empty transcript text before calling export_subtitles_srt
+        if not transcript.text.strip():
+            raise ValueError(f"Transcription returned empty text: {audio_path}")
+
         subtitles = transcript.export_subtitles_srt()
 
         srt_path = os.path.join(ROOT_DIR, ".mp", str(uuid4()) + ".srt")
