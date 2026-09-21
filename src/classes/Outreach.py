@@ -15,6 +15,37 @@ from cache import *
 from status import *
 from config import *
 
+REQUEST_TIMEOUT = 10
+
+JUNK_EMAIL_PREFIXES = [
+    "noreply", "no-reply", "donotreply", "do-not-reply",
+    "webmaster", "postmaster", "mailer-daemon", "admin",
+    "hostmaster", "abuse", "root", "sysadmin",
+]
+
+JUNK_EMAIL_DOMAINS = [
+    "example.com", "example.org", "example.net",
+    "test.com", "localhost", "sentry.io", "wixpress.com",
+]
+
+
+def _is_valid_email(email):
+    email = email.strip().lower()
+
+    if "@" not in email or "." not in email.split("@")[-1]:
+        return False
+
+    local, domain = email.rsplit("@", 1)
+
+    for prefix in JUNK_EMAIL_PREFIXES:
+        if local == prefix or local.startswith(prefix + "+"):
+            return False
+
+    if domain in JUNK_EMAIL_DOMAINS:
+        return False
+
+    return True
+
 
 class Outreach:
     """
@@ -74,7 +105,7 @@ class Outreach:
             info("=> Scraper already unzipped. Skipping unzip.")
             return
 
-        r = requests.get(zip_link)
+        r = requests.get(zip_link, timeout=REQUEST_TIMEOUT)
         z = zipfile.ZipFile(io.BytesIO(r.content))
         for member in z.namelist():
             if ".." in member or member.startswith("/"):
@@ -175,7 +206,11 @@ class Outreach:
         # Extract and set an email for a website
         email = ""
 
-        r = requests.get(website)
+        try:
+            r = requests.get(website, timeout=REQUEST_TIMEOUT)
+        except requests.exceptions.RequestException:
+            return
+
         if r.status_code == 200:
             # Define a regular expression pattern to match email addresses
             email_pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b"
@@ -183,7 +218,11 @@ class Outreach:
             # Find all email addresses in the HTML string
             email_addresses = re.findall(email_pattern, r.text)
 
-            email = email_addresses[0] if len(email_addresses) > 0 else ""
+            # Pick the first valid email
+            for candidate in email_addresses:
+                if _is_valid_email(candidate):
+                    email = candidate
+                    break
 
         if email:
             print(f"=> Setting email {email} for website {website}")
@@ -254,20 +293,30 @@ class Outreach:
         # Get the email for each business
         for index, item in enumerate(items, start=1):
             try:
-                # Check if the item"s website is valid
+                # Check if the item's website is valid
                 website = item.split(",")
                 website = [w for w in website if w.startswith("http")]
                 website = website[0] if len(website) > 0 else ""
                 if website != "":
-                    test_r = requests.get(website)
+                    try:
+                        test_r = requests.get(website, timeout=REQUEST_TIMEOUT)
+                    except requests.exceptions.RequestException:
+                        warning(f" => Website {website} unreachable. Skipping...")
+                        continue
+
                     if test_r.status_code == 200:
                         self.set_email_for_website(index, website, output_path)
 
-                        # Send emails using the existing SMTP connection
-                        receiver_email = item.split(",")[-1]
+                        # Extract and set an email for the website
+                        receiver_email = item.split(",")[-1].strip().lower()
 
                         if "@" not in receiver_email:
                             warning(f" => No email provided. Skipping...")
+                            continue
+
+                        # Validate email before sending
+                        if not _is_valid_email(receiver_email):
+                            warning(f" => Invalid email: {receiver_email}. Skipping...")
                             continue
 
                         company_name = item.split(",")[0]
