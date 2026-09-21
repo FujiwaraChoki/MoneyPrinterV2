@@ -1,3 +1,9 @@
+import sys
+
+if sys.version_info >= (3, 13):
+    print("Error: Python 3.13+ is not supported due to PyTorch compatibility issues. Please use Python 3.12.")
+    sys.exit(1)
+
 import schedule
 import subprocess
 
