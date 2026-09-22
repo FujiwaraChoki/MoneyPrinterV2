@@ -222,6 +222,9 @@ class Outreach:
         message_subject = get_outreach_message_subject()
         message_body = get_outreach_message_body_file()
 
+        if os.path.exists(output_path):
+            os.remove(output_path)
+
         # Run
         self.run_scraper_with_args_for_30_seconds(
             f'-input niche.txt -results "{output_path}"', timeout=get_scraper_timeout()
