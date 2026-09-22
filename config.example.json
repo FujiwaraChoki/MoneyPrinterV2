@@ -4,6 +4,8 @@
   "headless": false,
   "ollama_base_url": "http://127.0.0.1:11434",
   "ollama_model": "",
+  "openrouter_api_key": "",
+  "openrouter_model": "deepseek/deepseek-v4-flash:free",
   "twitter_language": "English",
   "nanobanana2_api_base_url": "https://generativelanguage.googleapis.com/v1beta",
   "nanobanana2_api_key": "",
@@ -38,5 +40,12 @@
     "platforms": ["tiktok", "instagram"],
     "account_ids": [],
     "auto_crosspost": false
+  },
+  "twitter_reply": {
+    "require_review": true,
+    "dry_run": true,
+    "search_keywords": ["need a new laptop", "best web hosting"],
+    "max_replies_per_run": 5,
+    "delay_between_replies": [30, 120]
   }
 }

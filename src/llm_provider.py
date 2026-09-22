@@ -1,6 +1,11 @@
 import ollama
+import requests
 
-from config import get_ollama_base_url
+from config import (
+    get_ollama_base_url,
+    get_openrouter_api_key,
+    get_openrouter_model,
+)
 
 _selected_model: str | None = None
 
@@ -38,9 +43,40 @@ def get_active_model() -> str | None:
     return _selected_model
 
 
+def _generate_openrouter(prompt: str, model: str) -> str:
+    """
+    Generates text using the OpenRouter API.
+
+    Args:
+        prompt (str): User prompt
+        model (str): OpenRouter model name
+
+    Returns:
+        response (str): Generated text
+    """
+    try:
+        response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {get_openrouter_api_key()}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+            },
+        )
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        raise RuntimeError(f"OpenRouter request failed: {e}") from e
+
+    return response.json()["choices"][0]["message"]["content"].strip()
+
+
 def generate_text(prompt: str, model_name: str = None) -> str:
     """
-    Generates text using the local Ollama server.
+    Generates text using OpenRouter if an API key is configured,
+    otherwise the local Ollama server.
 
     Args:
         prompt (str): User prompt
@@ -49,6 +85,15 @@ def generate_text(prompt: str, model_name: str = None) -> str:
     Returns:
         response (str): Generated text
     """
+    if get_openrouter_api_key():
+        model = model_name or get_openrouter_model()
+        if not model:
+            raise RuntimeError(
+                "OpenRouter API key is set but no openrouter_model is configured."
+            )
+
+        return _generate_openrouter(prompt, model)
+
     model = model_name or _selected_model
     if not model:
         raise RuntimeError(

@@ -89,6 +89,26 @@ def get_ollama_model() -> str:
     with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
         return json.load(file).get("ollama_model", "")
 
+def get_openrouter_api_key() -> str:
+    """
+    Gets the OpenRouter API key from the config file.
+
+    Returns:
+        key (str): The OpenRouter API key, or empty string if not set.
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("openrouter_api_key", "")
+
+def get_openrouter_model() -> str:
+    """
+    Gets the OpenRouter model name from the config file.
+
+    Returns:
+        model (str): The OpenRouter model name, or empty string if not set.
+    """
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        return json.load(file).get("openrouter_model", "")
+
 def get_twitter_language() -> str:
     """
     Gets the Twitter language from the config file.
@@ -402,4 +422,52 @@ def get_post_bridge_config() -> dict:
         "auto_crosspost": bool(
             raw_config.get("auto_crosspost", defaults["auto_crosspost"])
         ),
+    }
+
+def get_twitter_reply_config() -> dict:
+    """
+    Gets the Twitter Reply Automation configuration with safe defaults.
+
+    Returns:
+        config (dict): Sanitized Twitter Reply Automation configuration
+    """
+    defaults = {
+        "require_review": True,
+        "dry_run": True,
+        "search_keywords": [],
+        "max_replies_per_run": 5,
+        "delay_between_replies": [30, 120],
+    }
+
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        raw_config = json.load(file).get("twitter_reply", {})
+
+    if not isinstance(raw_config, dict):
+        raw_config = {}
+
+    raw_keywords = raw_config.get("search_keywords", defaults["search_keywords"])
+    keywords = [
+        str(keyword).strip()
+        for keyword in raw_keywords
+        if isinstance(raw_keywords, list) and str(keyword).strip()
+    ]
+
+    raw_delay = raw_config.get("delay_between_replies", defaults["delay_between_replies"])
+    if (
+        not isinstance(raw_delay, list)
+        or len(raw_delay) != 2
+        or not all(isinstance(value, (int, float)) for value in raw_delay)
+    ):
+        raw_delay = defaults["delay_between_replies"]
+
+    return {
+        "require_review": bool(
+            raw_config.get("require_review", defaults["require_review"])
+        ),
+        "dry_run": bool(raw_config.get("dry_run", defaults["dry_run"])),
+        "search_keywords": keywords,
+        "max_replies_per_run": int(
+            raw_config.get("max_replies_per_run", defaults["max_replies_per_run"])
+        ),
+        "delay_between_replies": [raw_delay[0], raw_delay[1]],
     }
