@@ -86,7 +86,11 @@ class AffiliateMarketing:
         self.topic: str = topic
 
         # Scrape the product information
-        self.scrape_product_information()
+        try:
+            self.scrape_product_information()
+        except Exception as e:
+            self.browser.quit()
+            raise RuntimeError(f"Failed to scrape product information: {e}") from e
 
     def scrape_product_information(self) -> None:
         """
@@ -97,9 +101,13 @@ class AffiliateMarketing:
         self.browser.get(self.affiliate_link)
 
         # Get the product name
-        product_title: str = self.browser.find_element(
-            By.ID, AMAZON_PRODUCT_TITLE_ID
-        ).text
+        try:
+            product_title: str = self.browser.find_element(
+                By.ID, AMAZON_PRODUCT_TITLE_ID
+            ).text
+        except Exception:
+            error("Could not find product title on page. Check the affiliate link.")
+            raise
 
         # Get the features of the product
         features: Any = self.browser.find_elements(By.ID, AMAZON_FEATURE_BULLETS_ID)
