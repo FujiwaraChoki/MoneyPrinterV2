@@ -55,9 +55,15 @@ def generate_text(prompt: str, model_name: str = None) -> str:
             "No Ollama model selected. Call select_model() first or pass model_name."
         )
 
-    response = _client().chat(
-        model=model,
-        messages=[{"role": "user", "content": prompt}],
-    )
+    try:
+        response = _client().chat(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+        )
+    except Exception as e:
+        raise RuntimeError(
+            f"Ollama request failed (model={model}): {e}. "
+            "Ensure the Ollama server is running and the model is pulled."
+        ) from e
 
     return response["message"]["content"].strip()
