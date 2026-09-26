@@ -79,17 +79,23 @@ def get_accounts(provider: str) -> List[dict]:
                 "accounts": []
             }, file, indent=4)
 
-    with open(cache_path, 'r') as file:
-        parsed = json.load(file)
+    try:
+        with open(cache_path, 'r') as file:
+            parsed = json.load(file)
+    except (json.JSONDecodeError, ValueError):
+        # Cache file is corrupted, reset it
+        with open(cache_path, 'w') as file:
+            json.dump({"accounts": []}, file, indent=4)
+        return []
 
-        if parsed is None:
-            return []
-        
-        if 'accounts' not in parsed:
-            return []
+    if parsed is None:
+        return []
 
-        # Get accounts dictionary
-        return parsed['accounts']
+    if 'accounts' not in parsed:
+        return []
+
+    # Get accounts dictionary
+    return parsed['accounts']
 
 def add_account(provider: str, account: dict) -> None:
     """
@@ -155,11 +161,16 @@ def get_products() -> List[dict]:
                 "products": []
             }, file, indent=4)
 
-    with open(get_afm_cache_path(), 'r') as file:
-        parsed = json.load(file)
+    try:
+        with open(get_afm_cache_path(), 'r') as file:
+            parsed = json.load(file)
+    except (json.JSONDecodeError, ValueError):
+        with open(get_afm_cache_path(), 'w') as file:
+            json.dump({"products": []}, file, indent=4)
+        return []
 
-        # Get the products
-        return parsed["products"]
+    # Get the products
+    return parsed.get("products", [])
     
 def add_product(product: dict) -> None:
     """
