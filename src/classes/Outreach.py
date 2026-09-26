@@ -5,6 +5,7 @@ import csv
 import time
 import glob
 import shlex
+import shutil
 import zipfile
 import yagmail
 import requests
@@ -29,7 +30,7 @@ class Outreach:
             None
         """
         # Check if go is installed
-        self.go_installed = os.system("go version") == 0
+        self.go_installed = shutil.which("go") is not None
 
         # Set niche
         self.niche = get_google_maps_scraper_niche()
@@ -231,7 +232,8 @@ class Outreach:
             error(
                 f" => Scraper output not found at {output_path}. Check scraper logs and configuration."
             )
-            os.remove("niche.txt")
+            if os.path.exists("niche.txt"):
+                os.remove("niche.txt")
             return
 
         # Get the items from the file
@@ -251,43 +253,46 @@ class Outreach:
             port=self.email_creds["smtp_port"],
         )
 
-        # Get the email for each business
-        for index, item in enumerate(items, start=1):
-            try:
-                # Check if the item"s website is valid
-                website = item.split(",")
-                website = [w for w in website if w.startswith("http")]
-                website = website[0] if len(website) > 0 else ""
-                if website != "":
-                    test_r = requests.get(website)
-                    if test_r.status_code == 200:
-                        self.set_email_for_website(index, website, output_path)
+        try:
+            # Get the email for each business
+            for index, item in enumerate(items, start=1):
+                try:
+                    # Parse CSV fields properly
+                    parsed_row = list(csv.reader([item]))[0]
+                    websites = [w for w in parsed_row if w.startswith("http")]
+                    website = websites[0] if websites else ""
+                    if website != "":
+                        test_r = requests.get(website)
+                        if test_r.status_code == 200:
+                            self.set_email_for_website(index, website, output_path)
 
-                        # Send emails using the existing SMTP connection
-                        receiver_email = item.split(",")[-1]
+                            # Send emails using the existing SMTP connection
+                            receiver_email = parsed_row[-1].strip()
 
-                        if "@" not in receiver_email:
-                            warning(f" => No email provided. Skipping...")
-                            continue
+                            if "@" not in receiver_email:
+                                warning(f" => No email provided. Skipping...")
+                                continue
 
-                        company_name = item.split(",")[0]
-                        subject = message_subject.replace(
-                            "{{COMPANY_NAME}}", company_name
-                        )
-                        with open(message_body, "r") as f:
-                            body = f.read().replace("{{COMPANY_NAME}}", company_name)
+                            company_name = parsed_row[0].strip()
+                            subject = message_subject.replace(
+                                "{{COMPANY_NAME}}", company_name
+                            )
+                            with open(message_body, "r") as f:
+                                body = f.read().replace("{{COMPANY_NAME}}", company_name)
 
-                        info(f" => Sending email to {receiver_email}...")
+                            info(f" => Sending email to {receiver_email}...")
 
-                        yag.send(
-                            to=receiver_email,
-                            subject=subject,
-                            contents=body,
-                        )
+                            yag.send(
+                                to=receiver_email,
+                                subject=subject,
+                                contents=body,
+                            )
 
-                        success(f" => Sent email to {receiver_email}")
-                    else:
-                        warning(f" => Website {website} is invalid. Skipping...")
-            except Exception as err:
-                error(f" => Error: {err}...")
-                continue
+                            success(f" => Sent email to {receiver_email}")
+                        else:
+                            warning(f" => Website {website} is invalid. Skipping...")
+                except Exception as err:
+                    error(f" => Error: {err}...")
+                    continue
+        finally:
+            yag.close()
