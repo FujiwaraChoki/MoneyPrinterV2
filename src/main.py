@@ -1,3 +1,4 @@
+import sys
 import schedule
 import subprocess
 
@@ -144,7 +145,7 @@ def main():
                         break
 
                 if account_to_delete is None:
-                    error("Invalid account selected. Please try again.", "red")
+                    error("Invalid account selected. Please try again.")
                 else:
                     confirm = question(f"Are you sure you want to delete '{account_to_delete['nickname']}'? (Yes/No): ").strip().lower()
 
@@ -163,8 +164,8 @@ def main():
                     selected_account = account
 
             if selected_account is None:
-                error("Invalid account selected. Please try again.", "red")
-                main()
+                error("Invalid account selected. Please try again.")
+                return
             else:
                 youtube = YouTube(
                     selected_account["id"],
@@ -184,7 +185,11 @@ def main():
                     info("=================================\n", False)
 
                     # Get user input
-                    user_input = int(question("Select an option: "))
+                    try:
+                        user_input = int(question("Select an option: "))
+                    except ValueError:
+                        error("Invalid input. Please enter a number.")
+                        continue
                     tts = TTS()
 
                     if user_input == 1:
@@ -223,10 +228,14 @@ def main():
 
                         info("=================================\n", False)
 
-                        user_input = int(question("Select an Option: "))
+                        try:
+                            user_input = int(question("Select an Option: "))
+                        except ValueError:
+                            error("Invalid input. Please enter a number.")
+                            continue
 
                         cron_script_path = os.path.join(ROOT_DIR, "src", "cron.py")
-                        command = ["python", cron_script_path, "youtube", selected_account['id'], get_active_model()]
+                        command = [sys.executable, cron_script_path, "youtube", selected_account['id'], get_active_model()]
 
                         def job():
                             subprocess.run(command)
@@ -292,7 +301,7 @@ def main():
                         break
 
                 if account_to_delete is None:
-                    error("Invalid account selected. Please try again.", "red")
+                    error("Invalid account selected. Please try again.")
                 else:
                     confirm = question(f"Are you sure you want to delete '{account_to_delete['nickname']}'? (Yes/No): ").strip().lower()
 
@@ -311,8 +320,8 @@ def main():
                     selected_account = account
 
             if selected_account is None:
-                error("Invalid account selected. Please try again.", "red")
-                main()
+                error("Invalid account selected. Please try again.")
+                return
             else:
                 twitter = Twitter(selected_account["id"], selected_account["nickname"], selected_account["firefox_profile"], selected_account["topic"])
 
@@ -326,7 +335,11 @@ def main():
                     info("=================================\n", False)
 
                     # Get user input
-                    user_input = int(question("Select an option: "))
+                    try:
+                        user_input = int(question("Select an option: "))
+                    except ValueError:
+                        error("Invalid input. Please enter a number.")
+                        continue
 
                     if user_input == 1:
                         twitter.post()
@@ -354,10 +367,14 @@ def main():
 
                         info("=================================\n", False)
 
-                        user_input = int(question("Select an Option: "))
+                        try:
+                            user_input = int(question("Select an Option: "))
+                        except ValueError:
+                            error("Invalid input. Please enter a number.")
+                            continue
 
                         cron_script_path = os.path.join(ROOT_DIR, "src", "cron.py")
-                        command = ["python", cron_script_path, "twitter", selected_account['id'], get_active_model()]
+                        command = [sys.executable, cron_script_path, "twitter", selected_account['id'], get_active_model()]
 
                         def job():
                             subprocess.run(command)
@@ -402,6 +419,10 @@ def main():
                     if acc["id"] == twitter_uuid:
                         account = acc
 
+                if account is None:
+                    error("Twitter account not found for the given UUID.")
+                    return
+
                 add_product({
                     "id": str(uuid4()),
                     "affiliate_link": affiliate_link,
@@ -430,14 +451,18 @@ def main():
                     selected_product = product
 
             if selected_product is None:
-                error("Invalid product selected. Please try again.", "red")
-                main()
+                error("Invalid product selected. Please try again.")
+                return
             else:
                 # Find the account
                 account = None
                 for acc in get_accounts("twitter"):
                     if acc["id"] == selected_product["twitter_uuid"]:
                         account = acc
+
+                if account is None:
+                    error("Twitter account not found for the given UUID.")
+                    return
 
                 afm = AffiliateMarketing(selected_product["affiliate_link"], account["firefox_profile"], account["id"], account["nickname"], account["topic"])
 
@@ -455,8 +480,8 @@ def main():
             print(colored(" => Quitting...", "blue"))
         sys.exit(0)
     else:
-        error("Invalid option selected. Please try again.", "red")
-        main()
+        error("Invalid option selected. Please try again.")
+        return
     
 
 if __name__ == "__main__":
