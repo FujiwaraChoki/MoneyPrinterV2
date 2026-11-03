@@ -19,6 +19,14 @@ In your `config.json`, you need the following attributes filled out, so that the
 }
 ```
 
+## Custom Topics
+
+By default, MPV2 asks the LLM to come up with a video idea based on the account's niche. If you already know what the Short should be about, pick **Upload Short with custom topic** from the YouTube menu instead of **Upload Short**.
+
+You will be prompted for the topic / video idea, e.g. `Why index funds beat stock picking`. The topic generation step is skipped and your text is used as the subject for the script, title, description and image prompts. Everything else (script, metadata, images, voiceover, subtitles, upload, Post Bridge cross-post) works exactly the same.
+
+Leaving the topic empty returns you to the menu without generating anything.
+
 ## Roadmap
 
 Here are some features that are planned for the future:

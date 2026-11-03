@@ -645,18 +645,49 @@ class YouTube:
 
         return combined_image_path
 
-    def generate_video(self, tts_instance: TTS) -> str:
+    def set_topic(self, topic: str) -> str:
+        """
+        Sets a user-provided topic for the next video instead of generating one.
+
+        Args:
+            topic (str): The topic / video idea supplied by the user.
+
+        Returns:
+            topic (str): The cleaned topic that was stored.
+
+        Raises:
+            ValueError: If the topic is empty or whitespace only.
+        """
+        cleaned = " ".join(str(topic).split())
+
+        if not cleaned:
+            raise ValueError("Topic cannot be empty.")
+
+        self.subject = cleaned
+
+        return cleaned
+
+    def generate_video(self, tts_instance: TTS, topic: str | None = None) -> str:
         """
         Generates a YouTube Short based on the provided niche and language.
 
         Args:
             tts_instance (TTS): Instance of TTS Class.
+            topic (str | None): Optional user-provided topic. When given, the
+                LLM topic generation step is skipped and this topic is used
+                as the subject of the video instead.
 
         Returns:
             path (str): The path to the generated MP4 File.
         """
-        # Generate the Topic
-        self.generate_topic()
+        # Use the custom topic if one was supplied, otherwise generate one
+        if topic is not None and topic.strip():
+            self.set_topic(topic)
+
+            if get_verbose():
+                info(f" => Using custom topic: {self.subject}")
+        else:
+            self.generate_topic()
 
         # Generate the Script
         self.generate_script()

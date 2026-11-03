@@ -339,3 +339,67 @@ def get_script_sentence_length() -> int:
             return config_json["script_sentence_length"]
         else:
             return 4
+
+def get_post_bridge_config() -> dict:
+    """
+    Gets the Post Bridge configuration with safe defaults.
+
+    Returns:
+        config (dict): Sanitized Post Bridge configuration
+    """
+    defaults = {
+        "enabled": False,
+        "api_key": "",
+        "platforms": ["tiktok", "instagram"],
+        "account_ids": [],
+        "auto_crosspost": False,
+    }
+    supported_platforms = {"tiktok", "instagram"}
+
+    with open(os.path.join(ROOT_DIR, "config.json"), "r") as file:
+        config_json = json.load(file)
+
+    raw_config = config_json.get("post_bridge", {})
+    if not isinstance(raw_config, dict):
+        raw_config = {}
+
+    raw_platforms = raw_config.get("platforms")
+    normalized_platforms = []
+    seen_platforms = set()
+
+    if raw_platforms is None:
+        normalized_platforms = defaults["platforms"].copy()
+    elif isinstance(raw_platforms, list):
+        for platform in raw_platforms:
+            normalized_platform = str(platform).strip().lower()
+            if (
+                normalized_platform in supported_platforms
+                and normalized_platform not in seen_platforms
+            ):
+                normalized_platforms.append(normalized_platform)
+                seen_platforms.add(normalized_platform)
+    else:
+        normalized_platforms = []
+
+    raw_account_ids = raw_config.get("account_ids", defaults["account_ids"])
+    normalized_account_ids = []
+    if isinstance(raw_account_ids, list):
+        for account_id in raw_account_ids:
+            try:
+                normalized_account_ids.append(int(account_id))
+            except (TypeError, ValueError):
+                continue
+
+    api_key = str(raw_config.get("api_key", "")).strip()
+    if not api_key:
+        api_key = os.environ.get("POST_BRIDGE_API_KEY", "").strip()
+
+    return {
+        "enabled": bool(raw_config.get("enabled", defaults["enabled"])),
+        "api_key": api_key,
+        "platforms": normalized_platforms,
+        "account_ids": normalized_account_ids,
+        "auto_crosspost": bool(
+            raw_config.get("auto_crosspost", defaults["auto_crosspost"])
+        ),
+    }
