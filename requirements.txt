@@ -8,7 +8,7 @@ prettytable
 webdriver_manager
 selenium
 ollama
-moviepy
+moviepy<2.0.0
 Pillow>=10.0.0
 yagmail
 assemblyai
