@@ -640,7 +640,8 @@ class YouTube:
         if subtitles is not None:
             final_clip = CompositeVideoClip([final_clip, subtitles])
 
-        final_clip.write_videofile(combined_image_path, threads=threads)
+        # MoviePy 1.x defaults to MP3; use AAC for native MP4 playback.
+        final_clip.write_videofile(combined_image_path, threads=threads, audio_codec="aac")
 
         success(f'Wrote Video to "{combined_image_path}"')
 
