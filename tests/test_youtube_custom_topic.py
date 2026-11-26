@@ -3,6 +3,7 @@ import sys
 import types
 import unittest
 from unittest.mock import Mock
+from unittest.mock import MagicMock
 from unittest.mock import patch
 
 
@@ -116,6 +117,59 @@ class YouTubeCustomTopicTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             youtube.set_topic("   ")
+
+
+class YouTubeAudioCodecTests(unittest.TestCase):
+    def _assert_aac_export(self, subtitles_available: bool) -> None:
+        youtube = YouTube.__new__(YouTube)
+        youtube.images = ["image.png"]
+        youtube.tts_path = "speech.wav"
+        youtube.generate_subtitles = Mock(return_value="captions.srt")
+        if not subtitles_available:
+            youtube.generate_subtitles.side_effect = RuntimeError("No subtitles")
+
+        audio = MagicMock(duration=1)
+        audio.set_fps.return_value = audio
+        audio.fx.return_value = audio
+        image = MagicMock(w=1080, h=1920)
+        image.set_fps.return_value = image
+        image.resize.return_value = image
+        final_clip = MagicMock()
+        final_clip.set_fps.return_value = final_clip
+        final_clip.set_audio.return_value = final_clip
+        final_clip.set_duration.return_value = final_clip
+
+        # Exercise the real combine() flow without provider requests, Firefox,
+        # ImageMagick or media rendering, so this regression test does not
+        # require the optional media/provider dependencies.
+        with patch.dict(YouTube.combine.__globals__, {
+            "get_threads": lambda: 2,
+            "get_verbose": lambda: False,
+            "choose_random_song": lambda: "background.wav",
+            "AudioFileClip": Mock(return_value=audio),
+            "ImageClip": Mock(return_value=image),
+            "crop": Mock(return_value=image),
+            "concatenate_videoclips": Mock(return_value=final_clip),
+            "SubtitlesClip": Mock(return_value=MagicMock()),
+            "equalize_subtitles": Mock(),
+            "CompositeAudioClip": Mock(return_value=audio),
+            "CompositeVideoClip": Mock(return_value=final_clip),
+            "afx": types.SimpleNamespace(volumex=object()),
+            "warning": Mock(),
+            "success": Mock(),
+        }):
+            output = youtube.combine()
+
+        self.assertTrue(output.endswith(".mp4"))
+        final_clip.write_videofile.assert_called_once_with(
+            output, threads=2, audio_codec="aac"
+        )
+
+    def test_mp4_export_uses_aac_with_subtitles(self) -> None:
+        self._assert_aac_export(subtitles_available=True)
+
+    def test_mp4_export_uses_aac_without_subtitles(self) -> None:
+        self._assert_aac_export(subtitles_available=False)
 
 
 if __name__ == "__main__":
