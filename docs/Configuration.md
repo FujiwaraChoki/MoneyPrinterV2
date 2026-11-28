@@ -45,6 +45,8 @@ All your configurations will be in a file in the root directory, called `config.
     - `account_ids`: `number[]` - Optional fixed Post Bridge account IDs to avoid account-selection prompts.
     - `auto_crosspost`: `boolean` - If `true`, cross-post automatically after a successful YouTube upload. If `false`, interactive runs ask and cron runs skip.
 
+Outreach shows the discovered recipient and subject before each send. Press Enter or enter no to skip. Only confirm a send if you have permission to contact that recipient.
+
 ## Example
 
 ```json
