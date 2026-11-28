@@ -144,23 +144,14 @@ class Outreach:
             print(colored("An error occurred while running the scraper:", "red"))
             print(str(e))
 
-    def get_items_from_file(self, file_name: str) -> list:
-        """
-        Read and return items from a file.
+    def get_items_from_file(self, file_name: str) -> list[list[str]]:
+        """Read data records, preserving quoted CSV fields."""
+        with open(file_name, "r", newline="", errors="ignore") as handle:
+            reader = csv.reader(handle)
+            next(reader, None)
+            return list(reader)
 
-        Args:
-            file_name (str): The name of the file to read from.
-
-        Returns:
-            list: The items from the file.
-        """
-        # Read and return items from a file
-        with open(file_name, "r", errors="ignore") as f:
-            items = f.readlines()
-            items = [item.strip() for item in items[1:]]
-            return items
-
-    def set_email_for_website(self, index: int, website: str, output_file: str):
+    def set_email_for_website(self, index: int, website: str, output_file: str) -> str:
         """Extracts an email address from a website and updates a CSV file with it.
 
         This method sends a GET request to the specified website, searches for the
@@ -171,7 +162,11 @@ class Outreach:
         Args:
             index (int): The row index in the CSV file where the email should be appended.
             website (str): The URL of the website to extract the email address from.
-            output_file (str): The path to the CSV file to update with the extracted email."""
+            output_file (str): The path to the CSV file to update with the extracted email.
+
+        Returns:
+            str: The saved email address, or an empty string if none was found.
+        """
         # Extract and set an email for a website
         email = ""
 
@@ -195,6 +190,8 @@ class Outreach:
             with open(output_file, "w", newline="", errors="ignore") as csvfile:
                 csvwriter = csv.writer(csvfile)
                 csvwriter.writerows(items)
+
+        return email
 
     def start(self) -> None:
         """
@@ -243,51 +240,55 @@ class Outreach:
 
         time.sleep(2)
 
-        # Create a yagmail SMTP client outside the loop
-        yag = yagmail.SMTP(
-            user=self.email_creds["username"],
-            password=self.email_creds["password"],
-            host=self.email_creds["smtp_server"],
-            port=self.email_creds["smtp_port"],
-        )
+        yag = None
 
         # Get the email for each business
-        for index, item in enumerate(items, start=1):
+        for index, row in enumerate(items, start=1):
             try:
-                # Check if the item"s website is valid
-                website = item.split(",")
-                website = [w for w in website if w.startswith("http")]
-                website = website[0] if len(website) > 0 else ""
+                website = next(
+                    (value for value in row if value.startswith(("http://", "https://"))),
+                    "",
+                )
                 if website != "":
-                    test_r = requests.get(website)
-                    if test_r.status_code == 200:
-                        self.set_email_for_website(index, website, output_path)
+                    receiver_email = self.set_email_for_website(index, website, output_path)
 
-                        # Send emails using the existing SMTP connection
-                        receiver_email = item.split(",")[-1]
+                    if not receiver_email:
+                        warning(f" => No email provided. Skipping...")
+                        continue
 
-                        if "@" not in receiver_email:
-                            warning(f" => No email provided. Skipping...")
-                            continue
+                    company_name = row[0]
+                    subject = message_subject.replace(
+                        "{{COMPANY_NAME}}", company_name
+                    )
+                    with open(message_body, "r") as f:
+                        body = f.read().replace("{{COMPANY_NAME}}", company_name)
 
-                        company_name = item.split(",")[0]
-                        subject = message_subject.replace(
-                            "{{COMPANY_NAME}}", company_name
+                    answer = question(
+                        f"Send to {receiver_email!r} for {company_name!r} "
+                        f"with subject {subject!r}? Confirm only if you have "
+                        "permission to contact this address. [y/N] "
+                    )
+                    if answer.strip().lower() not in {"y", "yes"}:
+                        continue
+
+                    if yag is None:
+                        yag = yagmail.SMTP(
+                            user=self.email_creds["username"],
+                            password=self.email_creds["password"],
+                            host=self.email_creds["smtp_server"],
+                            port=self.email_creds["smtp_port"],
                         )
-                        with open(message_body, "r") as f:
-                            body = f.read().replace("{{COMPANY_NAME}}", company_name)
+                    info(f" => Sending email to {receiver_email}...")
 
-                        info(f" => Sending email to {receiver_email}...")
+                    yag.send(
+                        to=receiver_email,
+                        subject=subject,
+                        contents=body,
+                    )
 
-                        yag.send(
-                            to=receiver_email,
-                            subject=subject,
-                            contents=body,
-                        )
-
-                        success(f" => Sent email to {receiver_email}")
-                    else:
-                        warning(f" => Website {website} is invalid. Skipping...")
+                    success(f" => Sent email to {receiver_email}")
+            except EOFError:
+                break
             except Exception as err:
                 error(f" => Error: {err}...")
                 continue
